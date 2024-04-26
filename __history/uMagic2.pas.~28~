@@ -1,0 +1,748 @@
+unit uMagic2;
+
+interface
+
+uses
+  Windows, Messages, SysUtils, Variants, System.Classes, Graphics, Controls, Forms, Dialogs, StdCtrls, IniFiles,
+  ADODB, ComObj, Statistica_le, ComCtrls, Menus, Structs;
+
+type
+  TMDBForm = class(TForm)
+    LoadMDBBtn: TButton;
+    WafersLB: TListBox;
+    ProcessBtn: TButton;
+    LoadNormsBtn: TButton;
+    LoadMapBtn: TButton;
+    LoadMDBLab: TLabel;
+    LoadNormsLab: TLabel;
+    LoadMapLab: TLabel;
+    ResultRE: TRichEdit;
+    MainMenu1: TMainMenu;
+    PrefMenu: TMenuItem;
+    ExitMenu: TMenuItem;
+    Label1: TLabel;
+    Label2: TLabel;
+    ClearBtn: TButton;
+    Label3: TLabel;
+    TimeLab: TLabel;
+    MSystemCB: TComboBox;
+    Label4: TLabel;
+    LoadTXTBtn: TButton;
+    LoadTXTLab: TLabel;
+
+    procedure LoadMDBBtnClick(Sender: TObject);
+    procedure FormCreate(Sender: TObject);
+    procedure FormDestroy(Sender: TObject);
+    procedure ProcessBtnClick(Sender: TObject);
+    procedure LoadNormsBtnClick(Sender: TObject);
+    procedure LoadMapBtnClick(Sender: TObject);
+    procedure PrefMenuClick(Sender: TObject);
+    procedure ExitMenuClick(Sender: TObject);
+    procedure ClearBtnClick(Sender: TObject);
+    procedure LoadTXTBtnClick(Sender: TObject);
+    procedure WafersLBDrawItem(Control: TWinControl; Index: Integer;
+      Rect: TRect; State: TOwnerDrawState);
+  private
+    Lot: TLot;
+    Params: TTestsParams;
+    ExePath, MDBPath, MDBfName: TFileName;
+    ToFirstFail, CreateSTS, NoNorms, NoMap: byte;
+    BegTime: Int64;
+
+    function LoadMDB  (const fName: string): Boolean;
+    function LoadNorms(const fName: string): Boolean;
+    function LoadMap  (const fName: string): Boolean;
+    function SaveSTS(const fName: TFileName; Waf: TWafer): Boolean;
+
+    procedure CloneBlankWafer(sWaf, dWaf: TWafer);
+
+    procedure OnEvent(const EvenType: TEventType; const Str: string);
+    procedure Print_Result(const Str: string; const Col: TColor=clBlack);
+    function  MDBLoaded()  : Boolean;
+    function  NormsLoaded(): Boolean;
+    function  MapLoaded()  : Boolean;
+    function  GetEnableProcess()  : Boolean;
+    procedure StartTime();
+    function  StopTime(): Double;
+  public
+    { Public declarations }
+  end;
+
+var
+  MDBForm: TMDBForm;
+
+implementation
+
+uses PrefDlg;
+
+
+{$R *.dfm}
+
+/////////////////////////////////////////////////////////////////////////////////
+procedure TMDBForm.FormCreate(Sender: TObject);                                //
+                                                                               //
+/////////////////////////////////////////////////////////////////////////////  //
+  function GetVersion(var Major, Minor, Release, Build: byte): Boolean;    //  //
+  var                                                                      //  //
+    info: Pointer;                                                         //  //
+    infosize: DWORD;                                                       //  //
+    fileinfo: PVSFixedFileInfo;                                            //  //
+    fileinfosize: DWORD;                                                   //  //
+    tmp: DWORD;                                                            //  //
+  begin                                                                    //  //
+    Major   := 0;                                                          //  //
+    Minor   := 0;                                                          //  //
+    Release := 0;                                                          //  //
+    Build   := 0;                                                          //  //
+                                                                           //  //
+    infosize := GetFileVersionInfoSize(PChar(Application.ExeName), tmp);   //  //
+    Result := infosize <> 0;                                               //  //
+                                                                           //  //
+    if Result then                                                         //  //
+    begin                                                                  //  //
+      info := AllocMem(infosize);                                          //  //
+      try                                                                  //  //
+        GetFileVersionInfo(PChar(Application.ExeName), 0, infosize, info); //  //
+        VerQueryValueA(info, nil, Pointer(fileinfo), fileinfosize);        //  //
+        Major   := fileinfo.dwFileVersionMS shr 16;                        //  //
+        Minor   := fileinfo.dwFileVersionMS and $FFFF;                     //  //
+        Release := fileinfo.dwFileVersionLS shr 16;                        //  //
+        Build   := fileinfo.dwFileVersionLS and $FFFF;                     //  //
+      finally                                                              //  //
+        FreeMem(info, fileinfosize);                                       //  //
+      end;                                                                 //  //
+    end;                                                                   //  //
+  end;                                                                     //  //
+/////////////////////////////////////////////////////////////////////////////  //
+                                                                               //
+var                                                                            //
+  IniFile: TIniFile;                                                           //
+  Major, Minor, Release, Build: byte;                                          //
+begin                                                                          //
+  if GetVersion(Major, Minor, Release, Build) then                             //
+    Caption := 'Magic2   v.'+IntToStr(Major)+'.'+                              //
+                             IntToStr(Minor)+'.'+                              //
+                             IntToStr(Release)+'.'+                            //
+                             IntToStr(Build)                                   //
+  else                                                                         //
+    Caption := 'Magic2';                                                       //
+  FormatSettings.DecimalSeparator := '.';                                      //
+  ExePath := ExtractFilePath(Application.ExeName);                             //
+                                                                               //
+  PrefForm := TPrefForm.Create(self);                                          //
+                                                                               //
+  try                                                                          //
+    IniFile := TIniFile.Create(ExePath+'Magic2.ini');                          //
+    MDBPath   := IniFile.ReadString ('System', 'Path', 'C:');                  //
+    self.Top  := IniFile.ReadInteger('System', 'Top',  250);                   //
+    self.Left := IniFile.ReadInteger('System', 'Left', 500);                   //
+                                                                               //
+    ToFirstFail := IniFile.ReadInteger('Preference', 'ToFirstFail', 1);        //
+    CreateSTS   := IniFile.ReadInteger('Preference', 'CreateSTS',   0);        //
+    NoNorms     := IniFile.ReadInteger('Preference', 'NoNorms',     0);        //
+    NoMap       := IniFile.ReadInteger('Preference', 'NoMap',       0);        //
+  finally                                                                      //
+    IniFile.Free();                                                            //
+  end;                                                                         //
+                                                                               //
+  LoadMDBLab.Font.Color   := clRed;                                            //
+  LoadNormsLab.Font.Color := clRed;                                            //
+  LoadMapLab.Font.Color   := clRed;                                            //
+                                                                               //
+  Lot := TLot.Create(Handle);                                                  //
+  Lot.OnEvent := OnEvent;                                                      //
+end;                                                                           //
+/////////////////////////////////////////////////////////////////////////////////
+/////////////////////////////////////////////////////////////////////////////////
+procedure TMDBForm.FormDestroy(Sender: TObject);                               //
+var                                                                            //
+  IniFile: TIniFile;                                                           //
+begin                                                                          //
+  try                                                                          //
+    IniFile := TIniFile.Create(ExePath+'Magic2.ini');                          //
+    try                                                                        //
+      IniFile.WriteString ('System', 'Path', MDBPath);                         //
+      IniFile.WriteInteger('System', 'Top',  self.Top);                        //
+      IniFile.WriteInteger('System', 'Left', self.Left);                       //
+                                                                               //
+      IniFile.WriteInteger('Preference', 'ToFirstFail', ToFirstFail);          //
+      IniFile.WriteInteger('Preference', 'CreateSTS',   CreateSTS  );          //
+      IniFile.WriteInteger('Preference', 'NoNorms',     NoNorms    );          //
+      IniFile.WriteInteger('Preference', 'NoMap',       NoMap      );          //
+    except                                                                     //
+    end;                                                                       //
+  finally                                                                      //
+    IniFile.Free();                                                            //
+  end;                                                                         //
+                                                                               //
+  PrefForm.Free();                                                             //
+  Lot.Free();                                                                  //
+end;                                                                           //
+/////////////////////////////////////////////////////////////////////////////////
+
+///////////////////////////////////////////////////////
+procedure TMDBForm.PrefMenuClick(Sender: TObject);   //
+begin                                                //
+  with PrefForm do                                   //
+  begin                                              //
+    ToFirstFailChB.Checked := ToFirstFail = 1;       //
+    CreateSTSChB.Checked   := CreateSTS   = 1;       //
+    NoNormsChB.Checked     := NoNorms     = 1;       //
+    NoMapChB.Checked       := NoMap       = 1;       //
+                                                     //
+    Top  := self.Top +50;                            //
+    Left := self.Left+0;                             //
+    ShowModal();                                     //
+                                                     //
+    if ToFirstFailChB.Checked then ToFirstFail := 1  //
+                              else ToFirstFail := 0; //
+    if CreateSTSChB.Checked   then CreateSTS   := 1  //
+                              else CreateSTS   := 0; //
+    if NoNormsChB.Checked     then NoNorms     := 1  //
+                              else NoNorms     := 0; //
+    if NoMapChB.Checked       then NoMap       := 1  //
+                              else NoMap       := 0; //
+  end;                                               //
+                                                     //
+  ProcessBtn.Enabled := GetEnableProcess();          //
+end;                                                 //
+///////////////////////////////////////////////////////
+///////////////////////////////////////////////////////
+procedure TMDBForm.ExitMenuClick(Sender: TObject);   //
+begin                                                //
+  Close();                                           //
+end;                                                 //
+///////////////////////////////////////////////////////
+
+///////////////////////////////////////////////////////////////////////////////////////////////
+procedure TMDBForm.LoadMDBBtnClick(Sender: TObject);                                         //
+var                                                                                          //
+  OpenDlg: TOpenDialog;                                                                      //
+begin                                                                                        //
+  OpenDlg := TOpenDialog.Create(self);                                                       //
+  with OpenDlg do                                                                            //
+  begin                                                                                      //
+    InitialDir := MDBPath;                                                                   //
+    Filter := 'Файлы измерений Гамма-156 (*.mdb)|*.mdb*';                                    //
+    Title := 'Загрузить файл статистики';                                                    //
+                                                                                             //
+    if Execute then                                                                          //
+      if LoadMDB(FileName) then                                                              //
+      begin                                                                                  //
+        MDBfName := FileName;                                                                //
+        MDBPath := ExtractFilePath(MDBfName);                                                //
+                                                                                             //
+        LoadMDBLab.Font.Color := $00CAF90D;                                                  //
+                                                                                             //
+        Print_Result('* Файл измерений '+ExtractFileName(MDBfName)+' загружен!', clTeal);    //
+                                                                                             //
+        ProcessBtn.Enabled := GetEnableProcess();                                            //
+      end                                                                                    //
+      else                                                                                   //
+      begin                                                                                  //
+        LoadMDBLab.Font.Color := clRed;                                                      //
+                                                                                             //
+        Print_Result('* Ошибка загрузки файла измерений '+ExtractFileName(MDBfName), clRed); //
+                                                                                             //
+        ProcessBtn.Enabled := False;                                                         //
+      end;                                                                                   //
+                                                                                             //
+    Free;                                                                                    //
+  end;                                                                                       //
+end;                                                                                         //
+///////////////////////////////////////////////////////////////////////////////////////////////
+///////////////////////////////////////////////////////////////////////////////////////////////
+procedure TMDBForm.LoadNormsBtnClick(Sender: TObject);                                       //
+var                                                                                          //
+  OpenDlg: TOpenDialog;                                                                      //
+begin                                                                                        //
+  OpenDlg := TOpenDialog.Create(self);                                                       //
+  with OpenDlg do                                                                            //
+  begin                                                                                      //
+    InitialDir := MDBPath;                                                                   //
+    Filter := 'Файлы норм (*.nrm)|*.nrm*';                                                   //
+    Title := 'Загрузить файл норм';                                                          //
+                                                                                             //
+    if Execute then                                                                          //
+      if LoadNorms(FileName) then                                                            //
+      begin                                                                                  //
+        LoadNormsLab.Font.Color := $00CAF90D;                                                //
+                                                                                             //
+        Print_Result('* Нормы из файла '+ExtractFileName(FileName)+' загружены!', clTeal);   //
+                                                                                             //
+        ProcessBtn.Enabled := GetEnableProcess();                                            //
+      end                                                                                    //
+      else                                                                                   //
+      begin                                                                                  //
+        LoadNormsLab.Font.Color := clRed;                                                    //
+                                                                                             //
+        Print_Result('* Ошибка загрузки норм '+ExtractFileName(FileName), clRed);            //
+                                                                                             //
+        ProcessBtn.Enabled := GetEnableProcess();                                            //
+      end;                                                                                   //
+                                                                                             //
+    Free;                                                                                    //
+  end;                                                                                       //
+end;                                                                                         //
+///////////////////////////////////////////////////////////////////////////////////////////////
+///////////////////////////////////////////////////////////////////////////////////////////////
+procedure TMDBForm.LoadMapBtnClick(Sender: TObject);                                         //
+var                                                                                          //
+  OpenDlg: TOpenDialog;                                                                      //
+begin                                                                                        //
+  OpenDlg := TOpenDialog.Create(self);                                                       //
+  with OpenDlg do                                                                            //
+  begin                                                                                      //
+    InitialDir := MDBPath;                                                                   //
+    Filter := 'Карта обхода (*.sts)|*.sts*';                                                 //
+    Title := 'Загрузить карту обхода';                                                       //
+                                                                                             //
+    if Execute then                                                                          //
+      if LoadMap(FileName) then                                                              //
+      begin                                                                                  //
+        LoadMapLab.Font.Color := $00CAF90D;                                                  //
+                                                                                             //
+        Print_Result('* Карта обхода '+ExtractFileName(FileName)+' загружена!', clTeal);     //
+                                                                                             //
+        ProcessBtn.Enabled := GetEnableProcess();                                            //
+      end                                                                                    //
+      else                                                                                   //
+      begin                                                                                  //
+        LoadMapLab.Font.Color := clRed;                                                      //
+                                                                                             //
+        Print_Result('* Ошибка загрузки карты обхода '+ExtractFileName(FileName), clRed);    //
+                                                                                             //
+        ProcessBtn.Enabled := GetEnableProcess();                                            //
+      end;                                                                                   //
+                                                                                             //
+    Free;                                                                                    //
+  end;                                                                                       //
+end;                                                                                         //
+///////////////////////////////////////////////////////////////////////////////////////////////
+///////////////////////////////////////////////////////////////////////////////////////////////
+procedure TMDBForm.LoadTXTBtnClick(Sender: TObject);                                         //
+var                                                                                          //
+  OpenDlg: TOpenDialog;                                                                      //
+begin                                                                                        //
+  OpenDlg := TOpenDialog.Create(self);                                                       //
+  with OpenDlg do                                                                            //
+  begin                                                                                      //
+    InitialDir := MDBPath;                                                                   //
+    Filter := 'Файлы статистики Schuster TSM (*.txt)|*.txt*';                                //
+    Title := 'Загрузить файл статистики';                                                    //
+                                                                                             //
+    if Execute then                                                                          //
+      if LoadMDB(FileName) then                                                              //
+      begin                                                                                  //
+        MDBfName := FileName;                                                                //
+        MDBPath := ExtractFilePath(MDBfName);                                                //
+                                                                                             //
+        LoadTXTLab.Font.Color := $00CAF90D;                                                  //
+                                                                                             //
+        Print_Result('* Файл измерений '+ExtractFileName(MDBfName)+' загружен!', clTeal);    //
+                                                                                             //
+        ProcessBtn.Enabled := GetEnableProcess();                                            //
+      end                                                                                    //
+      else                                                                                   //
+      begin                                                                                  //
+        LoadTXTLab.Font.Color := clRed;                                                      //
+                                                                                             //
+        Print_Result('* Ошибка загрузки файла измерений '+ExtractFileName(MDBfName), clRed); //
+                                                                                             //
+        ProcessBtn.Enabled := False;                                                         //
+      end;                                                                                   //
+                                                                                             //
+    Free;                                                                                    //
+  end;                                                                                       //
+end;                                                                                         //
+///////////////////////////////////////////////////////////////////////////////////////////////
+
+////////////////////////////////////////////////////////////////////////////////////////
+procedure TMDBForm.ProcessBtnClick(Sender: TObject);                                  //
+var                                                                                   //
+  n, nWf: DWORD;                                                                      //
+  Str: string;                                                                        //
+  P: WORD;                                                                            //
+  STSFName: TFileName;                                                                //
+begin                                                                                 //
+  if WafersLB.SelCount = 0 then                                                       //
+  begin                                                                               //
+    Print_Result('Не выбраны пластины!', clRed);                                      //
+    Exit;                                                                             //
+  end;                                                                                //
+                                                                                      //
+  StartTime();                                                                        //
+                                                                                      //
+  nWf := 0;                                                                           //
+                                                                                      //
+  if WafersLB.SelCount > 0 then                                                       //
+  Lot.Init();                                                                         //
+  SetLength(Lot.Wafer, WafersLB.SelCount);                                            //
+                                                                                      //
+  Print_Result('... Идёт загрузка пластин!');                                         //
+                                                                                      //
+  with WafersLB do                                                                    //
+    for n := 0 to Items.Count-1 do                                                    //
+      if Selected[n] then                                                             //
+      begin                                                                           //
+        Lot.Wafer[nWf] := TWafer.Create(Handle);                                      //
+                                                                                      //
+        Str := Items[n];                                                              //
+        P := Pos('№', Str);                                                           //
+        if P <> 0 then Str := Copy(Items[n], P+2, Length(Items[n]));                  //
+                                                                                      //
+        if not Lot.Wafer[nWf].LoadGammaMDB(MDBfName, Str) then                        //
+        begin                                                                         //
+          Print_Result('Ошибка загрузки пластины!', clRed);                           //
+          Continue;                                                                   //
+        end;                                                                          //
+        Lot.fName := MDBfName;                                                        //
+                                                                                      //
+                                                                                      //
+        if NormsLoaded then // Если нормы есть                                        //
+          if not Lot.Wafer[nWf].AddNorms(Params) then                                 //
+          begin                                                                       //
+            Print_Result('Ошибка добавления норм!', clRed);                           //
+            Continue;                                                                 //
+          end;                                                                        //
+                                                                                      //
+                                                                                      //
+        if CreateSTS = 1 then                                                         //
+        begin                                                                         //
+          STSFName := ChangeFileExt(MDBfName, '')+'_'+Str+'.sts';                     //
+                                                                                      //
+          if SaveSTS(STSFName, Lot.Wafer[nWf]) then                                   //
+            Print_Result('Создан файл: '+ExtractFileName(STSFName), clBlue)           //
+          else                                                                        //
+            Print_Result('Ошибка создания файла: '+ExtractFileName(STSFName), clRed); //
+        end;                                                                          //
+                                                                                      //
+        Inc(nWf);                                                                     //
+      end;                                                                            //
+                                                                                      //
+  Print_Result('>>> Пластины загружены!', clGreen);                                   //
+                                                                                      //
+  if NormsLoaded then // Если нормы есть                                              //
+    Lot.SaveXLS(ToFirstFail = 1)                                                      //
+  else                                                                                //
+    Lot.SaveXLS(False);                                                               //
+                                                                                      //
+  TimeLab.Caption := FormatFloat('0.0', StopTime)+' сек.';                            //
+end;                                                                                  //
+////////////////////////////////////////////////////////////////////////////////////////
+
+/////////////////////////////////////////////////////
+procedure TMDBForm.ClearBtnClick(Sender: TObject); //
+begin                                              //
+  ResultRE.Clear();                                //
+end;                                               //
+/////////////////////////////////////////////////////
+
+
+function TMDBForm.LoadMDB(const fName: String): Boolean;
+var
+  ADOConnection: TADOConnection;
+  n: WORD;
+begin
+  Result := False;
+
+  ADOConnection := TADOConnection.Create(nil);
+  with ADOConnection do
+  try
+    Connected := False;
+    ConnectionString := ConnStr+fName+';';
+    LoginPrompt := False;
+    GetTableNames(WafersLB.Items);
+  except
+    Print_Result(fName+': ошибка ADO!', clRed);
+    Exit;
+  end;
+
+  ADOConnection.Free;
+
+  if WafersLB.Items.Count > 0 then
+  begin
+    for n := 0 to WafersLB.Items.Count-1 do
+    WafersLB.Items[n] := 'Пластина № '+WafersLB.Items[n];
+  end
+  else
+  begin
+    Print_Result(fName+' : в файле нет пластин!', clRed);
+    Exit;
+  end;
+
+  Result := True;
+end;
+
+
+////////////////////////////////////////////////////////////////////////
+function TMDBForm.LoadNorms(const fName: string): Boolean;            //
+var                                                                   //
+  n, Cnt: WORD;                                                       //
+  P: byte;                                                            //
+  SL: TStringList;                                                    //
+  Str: string;                                                        //
+begin                                                                 //
+  Result := False;                                                    //
+                                                                      //
+  SetLength(Params, 0);                                               //
+  SL := TStringList.Create();                                         //
+  SL.LoadFromFile(fName);                                             //
+  for n := 0 to SL.Count-1 do                                         //
+  begin                                                               //
+    Str := Trim(SL.Strings[n]);                                       //
+    if Str = '' then Continue;                                        //
+                                                                      //
+    P := Pos('"cp"', Str);                                            //
+    if P <> 0 then                                                    //
+    begin                                                             //
+      Cnt := Length(Params);                                          //
+      SetLength(Params, Cnt+1);                                       //
+                                                                      //
+      Delete(Str, 1, Pos(',', Str)+1);                                //
+      P := Pos('"', Str);                                             //
+      Params[Cnt].Name := Trim(Copy(Str, 1, P-1));                    //
+                                                                      //
+      Delete(Str, 1, P+1);                                            //
+      P := Pos(',', Str);                                             //
+      try                                                             //
+        Params[Cnt].Norma.Max := StrToFloat(Trim(Copy(Str, 1, P-1))); //
+      except                                                          //
+        Params[Cnt].Norma.Max := NotSpec;                             //
+      end;                                                            //
+                                                                      //
+      Delete(Str, 1, P+1);                                            //
+      P := Pos(',', Str);                                             //
+      try                                                             //
+        Params[Cnt].Norma.Min := StrToFloat(Trim(Copy(Str, 1, P-1))); //
+      except                                                          //
+        Params[Cnt].Norma.Min := -NotSpec;                            //
+      end;                                                            //
+                                                                      //
+      Delete(Str, 1, P+2);                                            //
+      P := Pos('"', Str);                                             //
+      Params[Cnt].MUnit := Trim(Copy(Str, 1, P-1));                   //
+    end;                                                              //
+  end;                                                                //
+                                                                      //
+  SL.Free();                                                          //
+                                                                      //
+  Result := True;                                                     //
+end;                                                                  //
+////////////////////////////////////////////////////////////////////////
+
+///////////////////////////////////////////////////////////
+function TMDBForm.LoadMap(const fName: string): Boolean; //
+begin                                                    //
+  Result := False;                                       //
+                                                         //
+  if not Lot.BlankWafer.LoadBlankSTS(fName) then Exit;   //
+                                                         //
+  Result := True;                                        //
+end;                                                     //
+///////////////////////////////////////////////////////////
+
+
+function TMDBForm.SaveSTS(const fName: TFileName; Waf: TWafer): Boolean;
+var
+  tmpWafer: TWafer;
+  X, Y, n, vX, vY, Count: DWORD;
+begin
+  Result := False;
+
+  if not MapLoaded() then Exit;
+
+  tmpWafer := TWafer.Create(Handle);
+  CloneBlankWafer(Lot.BlankWafer, tmpWafer);
+
+  tmpWafer.fName := Waf.fName;
+  tmpWafer.Code  := Waf.Code;
+  tmpWafer.TimeDate := Waf.TimeDate;
+  tmpWafer.NLot := Waf.NLot;
+  tmpWafer.Num  := Waf.Num;
+
+  SetLength(tmpWafer.TestsParams, Length(Waf.TestsParams));
+  for n := 0 to Length(tmpWafer.TestsParams)-1 do
+  begin
+    tmpWafer.TestsParams[n].Name      := Waf.TestsParams[n].Name;
+    tmpWafer.TestsParams[n].Norma.Min := Waf.TestsParams[n].Norma.Min;
+    tmpWafer.TestsParams[n].Norma.Max := Waf.TestsParams[n].Norma.Max;
+  end;
+
+  Count := 0;
+  for Y := 0 to Length(tmpWafer.Chip)-1 do
+    for X := 0 to Length(tmpWafer.Chip[0])-1 do
+      if tmpWafer.Chip[Y, X].Status = 0 then
+      begin
+        if Count > Waf.NTotal then Break;
+        vX := Waf.ChipN[tmpWafer.Chip[Y, X].ID-1].X;
+        vY := Waf.ChipN[tmpWafer.Chip[Y, X].ID-1].Y;
+
+        tmpWafer.Chip[Y, X].Status := Waf.Chip[vY, vX].Status;
+
+        SetLength(tmpWafer.Chip[Y, X].ChipParams, Length(tmpWafer.TestsParams));
+        for n := 0 to Length(tmpWafer.TestsParams)-1 do
+          tmpWafer.Chip[Y, X].ChipParams[n] := Waf.Chip[vY, vX].ChipParams[n];
+
+        Inc(Count);
+      end;
+
+  tmpWafer.SaveSTS(fName);
+
+  tmpWafer.Free();
+
+  Result := True;
+end;
+
+
+///////////////////////////////////////////////////////////////////
+procedure TMDBForm.CloneBlankWafer(sWaf, dWaf: TWafer);          //
+var                                                              //
+  X, Y: DWORD;                                                   //
+begin                                                            //
+  dWaf.OKR        := sWaf.OKR;                                   //
+  dWaf.Code       := sWaf.Code;                                  //
+  dWaf.MPW        := sWaf.MPW;                                   //
+  dWaf.MPWPos     := sWaf.MPWPos;                                //
+  dWaf.Device     := sWaf.Device;                                //
+  dWaf.DscrDev    := sWaf.DscrDev;                               //
+  dWaf.MeasSystem := sWaf.MeasSystem;                            //
+  dWaf.Prober     := sWaf.Prober;                                //
+  dWaf.Diameter   := sWaf.Diameter;                              //
+  dWaf.StepX      := sWaf.StepX;                                 //
+  dWaf.StepY      := sWaf.StepY;                                 //
+                                                                 //
+  dWaf.Cadre.StartX := sWaf.Cadre.StartX;                        //
+  dWaf.Cadre.StartY := sWaf.Cadre.StartY;                        //
+  dWaf.Cadre.ScaleX := sWaf.Cadre.ScaleX;                        //
+  dWaf.Cadre.ScaleY := sWaf.Cadre.ScaleY;                        //
+                                                                 //
+  dWaf.BaseChip.X := sWaf.BaseChip.X;                            //
+  dWaf.BaseChip.Y := sWaf.BaseChip.Y;                            //
+                                                                 //
+  dWaf.Direct  := sWaf.Direct;                                   //
+  dWaf.CutSide := sWaf.CutSide;                                  //
+                                                                 //
+  dWaf.LDiameter := sWaf.LDiameter;                              //
+  dWaf.Radius    := sWaf.Radius;                                 //
+  dWaf.LRadius   := sWaf.LRadius;                                //
+  dWaf.Chord     := sWaf.Chord;                                  //
+                                                                 //
+  SetLength(dWaf.ChipN, 0);                                      //
+  SetLength(dWaf.ChipN, sWaf.NTotal);                            //
+  SetLength(dWaf.Chip, 0, 0);                                    //
+  SetLength(dWaf.Chip, Length(sWaf.Chip), Length(sWaf.Chip[0])); //
+  for Y := 0 to Length(dWaf.Chip)-1 do                           //
+    for X := 0 to Length(dWaf.Chip[0])-1 do                      //
+    begin                                                        //
+      dWaf.Chip[Y, X].Status := sWaf.Chip[Y, X].Status;          //
+      dWaf.Chip[Y, X].ID     := sWaf.Chip[Y, X].ID;              //
+      if dWaf.Chip[Y, X].ID > 0 then                             //
+        dWaf.ChipN[dWaf.Chip[Y, X].ID-1] := Point(X, Y);         //
+    end;                                                         //
+end;                                                             //
+///////////////////////////////////////////////////////////////////
+
+//////////////////////////////////////////
+function TMDBForm.MDBLoaded: Boolean;   //
+begin                                   //
+  Result := WafersLB.Items.Count > 0;   //
+end;                                    //
+//////////////////////////////////////////
+//////////////////////////////////////////
+function TMDBForm.NormsLoaded: Boolean; //
+begin                                   //
+  Result := Length(Params) > 0;         //
+end;                                    //
+//////////////////////////////////////////
+//////////////////////////////////////////
+function TMDBForm.MapLoaded: Boolean;   //
+begin                                   //
+  Result := Lot.BlankWafer.NTotal > 0;  //
+end;                                    //
+//////////////////////////////////////////
+
+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+function TMDBForm.GetEnableProcess: Boolean;                                                                     //
+begin                                                                                                            //
+  Result := True;                                                                                                //
+                                                                                                                 //
+  if MDBLoaded then                                                                                              //
+  begin                                                                                                          //
+    if (NoNorms = 0) and (not NormsLoaded()) then Result := False; // Если без норм нельзя и нормы не загружены  //
+    if (NoMap   = 0) and (not MapLoaded()  ) then Result := False; // Если без обхода нельзя и обход не загружен //
+  end                                                                                                            //
+  else Result := False;                                                                                          //
+end;                                                                                                             //
+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+
+/////////////////////////////////////////////////////////////////////////////
+procedure TMDBForm.OnEvent(const EvenType: TEventType; const Str: string); //
+begin                                                                      //
+  case EvenType of                                                         //
+    evError : Print_Result('  '+Str, clRed);                               //
+    evOK    : Print_Result('  '+Str, clTeal);                              //
+    evInfo  : Print_Result('  '+Str, clBlack);                             //
+    evSave  : Print_Result('  '+Str, clNavy);                              //
+    evCreate: Print_Result('  '+Str, clBlue);                              //
+  end;                                                                     //
+end;                                                                       //
+/////////////////////////////////////////////////////////////////////////////
+
+/////////////////////////////////////////////////////////////////////////////////
+procedure TMDBForm.Print_Result(const Str: string; const Col: TColor=clBlack); //
+begin                                                                          //
+  with ResultRE do                                                             //
+  begin                                                                        //
+    SelStart := Length(Text);                                                  //
+    SelAttributes.Color := Col;                                                //
+    SelAttributes.Style := [fsBold];                                           //
+    Lines.Add(Str);                                                            //
+    Perform(EM_SCROLLCARET, 0, 0);                                             //
+    Repaint;                                                                   //
+  end;                                                                         //
+end;                                                                           //
+/////////////////////////////////////////////////////////////////////////////////
+
+////////////////////////////////////////
+procedure TMDBForm.StartTime();       //
+begin                                 //
+  QueryPerformanceCounter(BegTime);   //
+end;                                  //
+////////////////////////////////////////
+////////////////////////////////////////
+function TMDBForm.StopTime(): Double; //
+var                                   //
+  Freq, EndTime: Int64;               //
+begin                                 //
+  QueryPerformanceCounter(EndTime);   //
+  QueryPerformanceFrequency(Freq);    //
+  Result := (EndTime-BegTime)/Freq;   //
+end;                                  //
+////////////////////////////////////////
+
+
+
+
+
+procedure TMDBForm.WafersLBDrawItem(Control: TWinControl; Index: Integer; Rect: TRect; State: TOwnerDrawState);
+begin
+{
+  with WafersLB.Canvas do
+    if Odd(Index) then
+    begin
+      Brush.Color := clRed;
+      FillRect(Rect);
+    end
+    else
+    begin
+      Brush.Color := clYellow;
+      FillRect(Rect);
+    end;
+}
+end;
+
+
+
+
+end.
