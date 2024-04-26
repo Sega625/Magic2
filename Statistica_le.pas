@@ -3698,7 +3698,7 @@ begin                                                                           
 //////////////////////////// * Лист "Карта обхода" * ///////////////////////////
 ////////////////////////////////////////////////////////////////////////////////
 
-//  if BlankWafer.NTotal <> 0 then // Если есть карта обхода
+  if BlankWafer.NTotal <> 0 then // Если есть карты годности
   begin
     try
       Workbook1.Sheets['Карты обхода'].Activate;
@@ -3709,48 +3709,83 @@ begin                                                                           
 
     if Assigned(OnEvent) then OnEvent(evInfo, '... Идёт запись в файл!');
 
-    for i := 1 to Length(Wafer[0].TestsParams)-1 do
-    begin
-      WorkBook1.ActiveSheet.Cells[i+1, 1].Interior.Color := GetColorByStatus(i+1999);
-      WorkBook1.ActiveSheet.Cells[i+1, 1].BorderAround(xlContinuous, xlThin, xlAutomatic, xlAutomatic);
-      WorkBook1.ActiveSheet.Cells[i+1, 2] := 'Брак по '+Wafer[0].TestsParams[i].Name;
-    end;
-
     StX := 11; // Положение
     StY := 2;  // 1-й пластины
 
-//    if MapByParams then // Если
-    if BlankWafer.NTotal = 0 then // Если нет карты обхода
+    if MapByParams then // Если карты годности по параметрам
     begin
+      WorkBook1.ActiveSheet.Cells[2, 1].Interior.Color := clRed;
+      WorkBook1.ActiveSheet.Cells[2, 1].BorderAround(xlContinuous, xlThin, xlAutomatic, xlAutomatic);
+      WorkBook1.ActiveSheet.Cells[2, 2] := 'Параметр выше нормы';
+      WorkBook1.ActiveSheet.Cells[3, 1].Interior.Color := clYellow;
+      WorkBook1.ActiveSheet.Cells[3, 1].BorderAround(xlContinuous, xlThin, xlAutomatic, xlAutomatic);
+      WorkBook1.ActiveSheet.Cells[3, 2] := 'Параметр ниже нормы';
+      WorkBook1.ActiveSheet.Cells[4, 1].Interior.Color := clWhite;
+      WorkBook1.ActiveSheet.Cells[4, 1].BorderAround(xlContinuous, xlThin, xlAutomatic, xlAutomatic);
+      WorkBook1.ActiveSheet.Cells[4, 2] := 'Параметр не измерялся';
+
+      Str := 'неизвестно';
+      case BlankWafer.CutSide of
+        1: Str := 'вверху';
+        2: Str := 'слева';
+        3: Str := 'внизу';
+        4: Str := 'справа';
+      end;
+      WorkBook1.ActiveSheet.Cells[6, 1] := 'Срез пластины: '+Str;
+
       for n := 0 to Length(Wafer)-1 do
         with Wafer[n] do
         begin
-          for Y := 0 to Length(Chip)-1 do
-          begin
-            WorkBook1.ActiveSheet.Cells[StY-1, StX+3] := 'Пластина №: '+Num;
+          if NTotal > BlankWafer.NTotal then
+            if Assigned(OnEvent) then OnEvent(evError, ' Пластина №: '+Num+' - кристаллов больше, чем в обходе!');
+          if NTotal < BlankWafer.NTotal then
+            if Assigned(OnEvent) then OnEvent(evError, ' Пластина №: '+Num+' - кристаллов меньше, чем в обходе!');
 
-            for X := 0 to Length(Chip[0])-1 do
-              if Chip[Y, X].ID <> 0 then
-              begin
-                WorkBook1.ActiveSheet.Cells[Y+StY, X+StX] := Chip[Y, X].ID;
-                WorkBook1.ActiveSheet.Cells[Y+StY, X+StX].Interior.Color := GetColorByStatus(Chip[Y, X].Status);
-                WorkBook1.ActiveSheet.Cells[Y+StY, X+StX].BorderAround(xlContinuous, xlThin, xlAutomatic, xlAutomatic);
+          for Nm := 0 to NTotal-1 do
+          begin
+            if Nm > BlankWafer.NTotal-1 then Break;
+
+            X := BlankWafer.ChipN[Nm].X;
+            Y := BlankWafer.ChipN[Nm].Y;
+            X1 := ChipN[Nm].X;
+            Y1 := ChipN[Nm].Y;
+
+            for i := 0 to Length(TestsParams)-1 do
+            begin
+ //             WorkBook1.ActiveSheet.Cells[StY-1, StX+5] := TestsParams[0].Name;
+
+              case Chip[Y1, X1].ChipParams[i].Stat of
+                0: Col := clWhite;
+                1: Col := clLime;
+                2: Col := clYellow;
+                3: Col := clRed;
               end;
+
+//              Col := clYellow;
+              WorkBook1.ActiveSheet.Cells[Y+StY, X+StX+i*Length(BlankWafer.Chip[0])] := Nm+1;
+              WorkBook1.ActiveSheet.Cells[Y+StY, X+StX+i*Length(BlankWafer.Chip[0])].Interior.Color := Col;
+              WorkBook1.ActiveSheet.Cells[Y+StY, X+StX+i*Length(BlankWafer.Chip[0])].BorderAround(xlContinuous, xlThin, xlAutomatic, xlAutomatic);
+            end;
+
+
           end;
 
-          if ((n+1) mod 5) <> 0 then
-          begin
-            StX := StX+Length(Chip[0])+2;
-          end
-          else
-          begin
-            StX := 10;
-            StY := StY+Length(Chip)+2;
-          end;
+          StX := 11;
+          StY := StY+Length(BlankWafer.Chip)+2;
+
+
+
         end;
     end
-    else                          // Если есть карта обхода
+    else               // Если карты годности по Г/Б
     begin
+      for i := 1 to Length(Wafer[0].TestsParams)-1 do
+      begin
+        WorkBook1.ActiveSheet.Cells[i+1, 1].Interior.Color := GetColorByStatus(i+1999);
+        WorkBook1.ActiveSheet.Cells[i+1, 1].BorderAround(xlContinuous, xlThin, xlAutomatic, xlAutomatic);
+        WorkBook1.ActiveSheet.Cells[i+1, 2] := 'Брак по '+Wafer[0].TestsParams[i].Name;
+      end;
+
       Str := 'неизвестно';
       case BlankWafer.CutSide of
         1: Str := 'вверху';
@@ -3788,17 +3823,17 @@ begin                                                                           
           end
           else
           begin
-            StX := 10;
+            StX := 11;
             StY := StY+Length(BlankWafer.Chip)+2;
           end;
         end;
     end;
+  end
+  else // Если нет карты обхода
+  try
+    Workbook1.Sheets['Карты обхода'].Delete; // Удалим лист <Карты обхода>
+  except
   end;
-//  else // Если нет карты обхода
-//  try
-//    Workbook1.Sheets['Карты обхода'].Delete; // Удалим лист <Карты обхода>
-//  except
-//  end;
 
 /////////////////////////////////                                                                                    //
                                                                                                                      //

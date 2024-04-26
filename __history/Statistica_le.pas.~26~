@@ -109,7 +109,7 @@ type
     destructor  Destroy(); override;
 
     procedure Init();
-    function  SaveXLS(const ToFirstFail: Boolean): Boolean;
+    function  SaveXLS(const ToFirstFail, MapByParams: Boolean): Boolean;
     function  GetColorByStatus(const Stat: WORD): TColor;
   published
     property OnEvent: TOnEvent read fOnEvent write fOnEvent;
@@ -1368,9 +1368,9 @@ begin                                                                      //
                                    else Chip[Y, X].Status := 1;            //
                                                                            //
           Chip[Y, X].ID := n+1;      // Порядок измерения                  //
-          ChipN[n] := Point(X, Y);
-//          ChipN[n].X := X;         //                                      //
-//          ChipN[n].Y := Y;         //                                      //
+          ChipN[n].X := X;                                                 //
+          ChipN[n].Y := Y;                                                 //
+//          ChipN[n] := Point(X, Y);                                         //
                                                                            //
           for i := 3 to Fields.Count-1 do // Пропустим 3 колонки           //
           begin                                                            //
@@ -1403,6 +1403,8 @@ begin                                                                      //
   end;                                                                     //
                                                                            //
   CalcChips;                                                               //
+                                                                           //
+  Direct := 2; // Зададим обход на Гамме по умолчанию                      //
                                                                            //
   ADOQuery.Free();                                                         //
                                                                            //
@@ -2088,27 +2090,25 @@ begin                                                                           
     Free;                                                                                            //
   end;                                                                                               //
                                                                                                      //
-
-
   FS := TFileStream.Create(tmpfName, fmOpenWrite+fmShareDenyNone);                                   //
   FS.Position := FS.Size;                                                                            //
-  FS.Write(CR, 2);                                                                               //
+  FS.Write(CR, 2);                                                                                   //
   Str := '[StatusNames]';                                                                            //
   FS.Write(Pointer(Str)^, Length(Str));                                                              //
-  FS.Write(CR, 2);                                                                               //
+  FS.Write(CR, 2);                                                                                   //
   if StatusNamesSL.Count > 0 then                                                                    //
     for n := 0 to StatusNamesSL.Count-1 do                                                           //
     begin                                                                                            //
       FS.Write(Pointer(StatusNamesSL.Strings[n])^, Length(StatusNamesSL.Strings[n]));                //
-      FS.Write(CR, 2);                                                                           //
+      FS.Write(CR, 2);                                                                               //
     end;                                                                                             //
                                                                                                      //
   if Length(TestsParams) > 0 then                                                                    //
   begin                                                                                              //
-    FS.Write(CR, 2);                                                                             //
+    FS.Write(CR, 2);                                                                                 //
     Str := '[TestsParams]';                                                                          //
     FS.Write(Pointer(Str)^, Length(Str));                                                            //
-    FS.Write(CR, 2);                                                                             //
+    FS.Write(CR, 2);                                                                                 //
     for n := 0 to Length(TestsParams)-1 do                                                           //
     begin                                                                                            //
       if TestsParams[n].Norma.Min <> -NotSpec then                                                   //
@@ -2119,14 +2119,14 @@ begin                                                                           
       else Str := Str+'N;';                                                                          //
       Str := Str+IntToStr(TestsParams[n].Status);                                                    //
       FS.Write(Pointer(Str)^, Length(Str));                                                          //
-      FS.Write(CR, 2);                                                                           //
+      FS.Write(CR, 2);                                                                               //
     end;                                                                                             //
   end;                                                                                               //
                                                                                                      //
-  FS.Write(CR, 2);                                                                               //
+  FS.Write(CR, 2);                                                                                   //
   Str := '[ChipsParams]';                                                                            //
   FS.Write(Pointer(Str)^, Length(Str));                                                              //
-  FS.Write(CR, 2);                                                                               //
+  FS.Write(CR, 2);                                                                                   //
   if Length(TestsParams) > 0 then                                                                    //
     for n := 0 to Length(TestsParams)-1 do                                                           //
     begin                                                                                            //
@@ -2137,7 +2137,7 @@ begin                                                                           
   FS.Write(Pointer(Str)^, Length(Str));                                                              //
   Str := 'X'+#9;                                                                                     //
   FS.Write(Pointer(Str)^, Length(Str));                                                              //
-  Str := 'Y'+CR;                                                                                 //
+  Str := 'Y'+CR;                                                                                     //
   FS.Write(Pointer(Str)^, Length(Str));                                                              //
                                                                                                      //
   for Y := 0 to Length(Chip)-1 do                                                                    //
@@ -2153,7 +2153,7 @@ begin                                                                           
               for n := 0 to Length(TestsParams)-1 do Str := Str+FormatFloat('0.000', 0.0)+#9;        //
           Str := Str+IntToStr(Status)+#9+IntToStr(X)+#9+IntToStr(Y);                                 //
           FS.Write(Pointer(Str)^, Length(Str));                                                      //
-          FS.Write(CR, 2);                                                                       //
+          FS.Write(CR, 2);                                                                           //
         end;                                                                                         //
                                                                                                      //
   FS.Free;                                                                                           //
@@ -2532,7 +2532,7 @@ begin                                                                           
   Num  := tmpWafer.Num;
 
   SetChipsID;                                                                                           //
-//  CalcChips; // Проанализировать!!!!                                                                                           //
+//  CalcChips; // Проанализировать!!!!
                                                                                                               //
   tmpWafer.Free;                                                                                              //
   tmpWafer := nil;                                                                                            //
@@ -3151,19 +3151,20 @@ begin
 
   for Y := 0 to Length(Chip)-1 do
     for X := 0 to Length(Chip[0])-1 do
-    begin
-      if Chip[Y, X].Status = 2000 then Chip[Y, X].Status := 2; // Очистим статус
-
-      for n := 0 to Length(TestsParams)-1 do
+      if Chip[Y, X].Status <> 2 then
       begin
-        Chip[Y, X].ChipParams[n].Stat := GetChipParamsStat(Chip[Y, X].ChipParams[n].Value,
-                                                           TestsParams[n].Norma.Min,
-                                                           TestsParams[n].Norma.Max);
-        if Chip[Y, X].Status < 2000 then
-          if Chip[Y, X].ChipParams[n].Stat <> 1 then Chip[Y, X].Status := 2000+n
-                                                else Chip[Y, X].Status := 1;
+        if Chip[Y, X].Status = 2000 then Chip[Y, X].Status := 2; // Очистим статус
+
+        for n := 0 to Length(TestsParams)-1 do
+        begin
+          Chip[Y, X].ChipParams[n].Stat := GetChipParamsStat(Chip[Y, X].ChipParams[n].Value,
+                                                             TestsParams[n].Norma.Min,
+                                                             TestsParams[n].Norma.Max);
+          if Chip[Y, X].Status < 2000 then
+            if Chip[Y, X].ChipParams[n].Stat <> 1 then Chip[Y, X].Status := 2000+n
+                                                  else Chip[Y, X].Status := 1;
+        end;
       end;
-    end;
 
   Result := True;
 end;
@@ -3235,7 +3236,7 @@ end;                                                  //
 ////////////////////////////////////////////////////////
 
 /////////////////////////////////////////////////////////////////////////////////////////////////////////
-function TLot.SaveXLS(const ToFirstFail: Boolean): Boolean;                                            //
+function TLot.SaveXLS(const ToFirstFail, MapByParams: Boolean): Boolean;                               //
 var                                                                                                    //
   Buffer: array[0..MAX_PATH] of Char;                                                                  //
   tmpfName: TFileName; // файл шаблона                                                                 //
@@ -3244,11 +3245,11 @@ var                                                                             
   VarMass1, VarMass2: OleVariant;                                                                      //
   XLSfName: TFileName;                                                                                 //
   ClassID: TCLSID;                                                                                     //
-  AvrSum, MinSum, MaxSum, StdSum: array of Single;                                                     //
+  AvrSum, MinSum, MaxSum, StdSum, Qrt1Sum, MedSum, Qrt3Sum: array of Single;                           //
   QuantSum, OKSum, FailsSum, MeasSum: array of DWORD;                                                  //
   Col: TColor;                                                                                         //
   Str: string;                                                                                         //
-  StX, StY: WORD;
+  StX, StY: WORD;                                                                                      //
 begin                                                                                                  //
   Result := False;                                                                                     //
                                                                                                        //
@@ -3273,7 +3274,7 @@ begin                                                                           
   Excel.DisplayAlerts := False; // Запретим вывод предупреждений                                       //
                                                                                                        //
   GetModuleFileName(0, Buffer, MAX_PATH);                                                              //
-  tmpfName := ExtractFilePath(Buffer)+'Templates\TmpX1.xltm';                                          //
+  tmpfName := ExtractFilePath(Buffer)+'Templates\TmpX3.xlsx';                                          //
   if not FileExists(tmpfName) then                                                                     //
   begin                                                                                                //
     if Assigned(OnEvent) then OnEvent(evError, 'Не найден файл шаблона!');                             //
@@ -3301,8 +3302,8 @@ begin                                                                           
 
   if Assigned(OnEvent) then OnEvent(evInfo, '...Идёт обработка');
 
-  Range1 := WorkBook1.ActiveSheet.Range['D1', 'D1']; // Запомним шаблон пластины
-  Range2 := WorkBook1.ActiveSheet.Range['D4', 'D9']; //
+  Range1 := WorkBook1.ActiveSheet.Range['D1', 'D1' ]; // Запомним шаблон пластины
+  Range2 := WorkBook1.ActiveSheet.Range['D4', 'D12']; //
 
   for n := 0 to Length(Wafer)-1 do
     with Wafer[n] do
@@ -3321,7 +3322,7 @@ begin                                                                           
           WorkBook1.ActiveSheet.Cells[1, i+4] := TestsParams[i].Name;  //
           WorkBook1.ActiveSheet.Cells[1, i+4].Columns.Autofit;         // Копируем
                                                                        // названия
-          WorkBook1.ActiveSheet.Cells[10, i+4] := TestsParams[i].Name; // тестов
+          WorkBook1.ActiveSheet.Cells[13, i+4] := TestsParams[i].Name; // тестов
         end;
 
         tmpRange := WorkBook1.ActiveSheet; // Запомним лист для копирования
@@ -3333,32 +3334,36 @@ begin                                                                           
       WorkBook1.ActiveSheet.Name := Wafer[n].Num;
 
       Cell1 := WorkBook1.ActiveSheet.Cells[3, 1];                      //
-      Cell2 := WorkBook1.ActiveSheet.Cells[14, 3+Length(TestsParams)]; // Перенесём
+      Cell2 := WorkBook1.ActiveSheet.Cells[17, 3+Length(TestsParams)]; // Перенесём
       Range1 := WorkBook1.ActiveSheet.Range[Cell1, Cell2];             // вниз
       Range1.Copy(WorkBook1.ActiveSheet.Cells[2+NTotal, 1]);           // результаты
       Range1.Clear;                                                    //
 
       Chart1 := Workbook1.ActiveSheet.ChartObjects(1);         // Перенесём график
-      Chart1.Top := WorkBook1.ActiveSheet.Rows[NTotal+14].Top; // вниз
-      Cell1 := WorkBook1.ActiveSheet.Cells[10+NTotal-1, 3];                     // Зададим
-      Cell2 := WorkBook1.ActiveSheet.Cells[12+NTotal-1, 3+Length(TestsParams)]; // диапазон
+      Chart1.Top := WorkBook1.ActiveSheet.Rows[NTotal+17].Top; // вниз
+      Cell1 := WorkBook1.ActiveSheet.Cells[13+NTotal-1, 3];                     // Зададим
+      Cell2 := WorkBook1.ActiveSheet.Cells[15+NTotal-1, 3+Length(TestsParams)]; // диапазон
       Range2 := WorkBook1.ActiveSheet.Range[Cell1, Cell2];                      // значений
       Chart1.Chart.SetSourceData(Range2);                                       // для графика
 
 
       SetLength(CalcsParams, Length(TestsParams));
-
       for i := 0 to Length(TestsParams)-1 do
+        with CalcsParams[i] do
       begin
-        CalcsParams[i].AvrVal := 0.0;
-        CalcsParams[i].MinVal := MaxSingle;
-        CalcsParams[i].MaxVal := -MaxSingle;
-        CalcsParams[i].StdVal := 0.0;
-        CalcsParams[i].ASum   := 0.0;
-        CalcsParams[i].QSum   := 0.0;
-        CalcsParams[i].NOKVal    := 0;
-        CalcsParams[i].NFailsVal := 0;
-        CalcsParams[i].SumCount  := 0;
+        AvrVal    := 0.0;
+        MinVal    :=  MaxSingle;
+        MaxVal    := -MaxSingle;
+        StdVal    := 0.0;
+        ASum      := 0.0;
+        QSum      := 0.0;
+        ValCount  := 0;
+        Qrt1Val   := 0.0;
+        MedVal    := 0.0;
+        Qrt3Val   := 0.0;
+        NOKVal    := 0;
+        NFailsVal := 0;
+        SetLength(ValMass, NTotal);
       end;
 
 // Запишем в variant массивы
@@ -3393,9 +3398,11 @@ begin                                                                           
                 ASum := ASum+Chip[Y, X].ChipParams[i].Value;                                              // Среднее
                 QSum := QSum+Sqr(Chip[Y, X].ChipParams[i].Value);                                         // Сигма
 
+                ValMass[ValCount] := Chip[Y, X].ChipParams[i].Value;                                      // Для Медиан, Квартилей
+
                 Inc(NOKVal);                                                                              // Кол-во годных
 
-                Inc(SumCount);
+                Inc(ValCount);
               end;
             end;
           end
@@ -3414,9 +3421,11 @@ begin                                                                           
                   ASum := ASum+Chip[Y, X].ChipParams[i].Value;                                              // Среднее
                   QSum := QSum+Sqr(Chip[Y, X].ChipParams[i].Value);                                         // Сигма
 
+                  ValMass[ValCount] := Chip[Y, X].ChipParams[i].Value;                                      // Для Медиан, Квартилей
+
                   if Chip[Y, X].ChipParams[i].Stat = 1 then Inc(NOKVal)                                     // Кол-во годных
                                                        else Inc(NFailsVal);                                 // Кол-во брака
-                  Inc(SumCount);
+                  Inc(ValCount);
                 end;
               end
             else                    // Если до 1-го брака
@@ -3435,7 +3444,9 @@ begin                                                                           
                       ASum := ASum+Chip[Y, X].ChipParams[i].Value;                                              // Среднее
                       QSum := QSum+Sqr(Chip[Y, X].ChipParams[i].Value);                                         // Сигма
 
-                      Inc(SumCount);
+                      ValMass[ValCount] := Chip[Y, X].ChipParams[i].Value;                                      // Для Медиан, Квартилей
+
+                      Inc(ValCount);
                     end;
 
                     if Chip[Y, X].ChipParams[i].Stat = 1 then Inc(CalcsParams[i].NOKVal)                        // Кол-во годных
@@ -3448,11 +3459,29 @@ begin                                                                           
       end; // for Nm to Total
 
       for i := 0 to Length(TestsParams)-1 do
+      begin
         with CalcsParams[i] do
         begin
-          StdVal := Sqrt((SumCount*QSum-Sqr(ASum))/(SumCount*(SumCount-1))); // стандартное отклонение
-          AvrVal := ASum/SumCount;                                           // среднее значение
+          StdVal := Sqrt((ValCount*QSum-Sqr(ASum))/(ValCount*(ValCount-1))); // стандартное отклонение
+          AvrVal := ASum/ValCount;                                           // среднее значение
+
+          SetLength(ValMass, ValCount);
+          SortMassByValue(ValMass); // Отсортируем массивы для Медиан ...
+          if Odd(ValCount) then MedVal :=  ValMass[ValCount div 2]                                 // Найдём
+                           else MedVal := (ValMass[(ValCount div 2)-1]+ValMass[ValCount div 2])/2; // медиану
+
+          if Odd(ValCount div 2) then                                                   //
+          begin                                                                         //
+            Qrt1Val := ValMass[ValCount div 4];                                         // Найдём
+            Qrt3Val := ValMass[3*(ValCount div 4)];                                     //
+          end                                                                           // 1-й и 3-й
+          else                                                                          //
+          begin                                                                         // квартили
+            Qrt1Val := (ValMass[(ValCount div 4)-1]+ValMass[ValCount div 4])/2;         //
+            Qrt3Val := (ValMass[(3*(ValCount div 4))-1]+ValMass[3*(ValCount div 4)])/2; //
+          end;                                                                          //
         end;
+      end;
 
       Cell1 := WorkBook1.ActiveSheet.Cells[2, 4];                            // Внесём
       Cell2 := WorkBook1.ActiveSheet.Cells[NTotal+1, 3+Length(TestsParams)]; // результаты
@@ -3465,37 +3494,39 @@ begin                                                                           
       Range2 := WorkBook1.ActiveSheet.Range[Cell1, Cell2]; // на новый
       Range2.Value := VarMass2;                            // лист
 
-
       Cell1 := WorkBook1.ActiveSheet.Cells[NTotal+3, 4];                     // Формат для ячеек
-      Cell2 := WorkBook1.ActiveSheet.Cells[NTotal+6, 3+Length(TestsParams)]; // Среднее,
-      Range2 := WorkBook1.ActiveSheet.Range[Cell1, Cell2];                   // Мин., Макс.,
-      Range2.NumberFormat := '0,000';                                        // Сигма
-
-      Cell1 := WorkBook1.ActiveSheet.Cells[NTotal+7, 4];                     // Формат для ячеек
-      Cell2 := WorkBook1.ActiveSheet.Cells[NTotal+8, 3+Length(TestsParams)]; // Счёт,
-      Range2 := WorkBook1.ActiveSheet.Range[Cell1, Cell2];                   // %Годных
-      Range2.NumberFormat := '0';                                            //
+      Cell2 := WorkBook1.ActiveSheet.Cells[NTotal+9, 3+Length(TestsParams)]; // Среднее, 1-й квартиль,
+      Range2 := WorkBook1.ActiveSheet.Range[Cell1, Cell2];                   // Медиана, 3-й квартиль,
+      Range2.NumberFormat := '0,000';                                        // Мин., Макс., Сигма
 
       Cell1 := WorkBook1.ActiveSheet.Cells[NTotal+10, 4];                     // Формат для ячеек
-      Cell2 := WorkBook1.ActiveSheet.Cells[NTotal+13, 3+Length(TestsParams)]; // Годных, брак,
+      Cell2 := WorkBook1.ActiveSheet.Cells[NTotal+11, 3+Length(TestsParams)]; // Счёт,
+      Range2 := WorkBook1.ActiveSheet.Range[Cell1, Cell2];                    // %Годных
+      Range2.NumberFormat := '0';                                             //
+
+      Cell1 := WorkBook1.ActiveSheet.Cells[NTotal+13, 4];                     // Формат для ячеек
+      Cell2 := WorkBook1.ActiveSheet.Cells[NTotal+14, 3+Length(TestsParams)]; // Годных, брак,
       Range2 := WorkBook1.ActiveSheet.Range[Cell1, Cell2];                    // Всего измерено,
       Range2.NumberFormat := '0';                                             // Количество годных
 
       for i := 0 to Length(TestsParams)-1 do
       begin
-        WorkBook1.ActiveSheet.Cells[NTotal+3, 4+i] := CalcsParams[i].AvrVal; // Среднее
-        WorkBook1.ActiveSheet.Cells[NTotal+4, 4+i] := CalcsParams[i].MinVal; // Мин.
-        WorkBook1.ActiveSheet.Cells[NTotal+5, 4+i] := CalcsParams[i].MaxVal; // Мах.
-        WorkBook1.ActiveSheet.Cells[NTotal+6, 4+i] := CalcsParams[i].StdVal; // Сигма
-        WorkBook1.ActiveSheet.Cells[NTotal+7, 4+i] := Wafer[n].NOK; // Счёт ???????????????????
+        WorkBook1.ActiveSheet.Cells[NTotal+3,  4+i] := CalcsParams[i].AvrVal;  // Среднее
+        WorkBook1.ActiveSheet.Cells[NTotal+4,  4+i] := CalcsParams[i].Qrt1Val; // 1-й квартиль
+        WorkBook1.ActiveSheet.Cells[NTotal+5,  4+i] := CalcsParams[i].MedVal;  // Медиана
+        WorkBook1.ActiveSheet.Cells[NTotal+6,  4+i] := CalcsParams[i].Qrt3Val; // 3-й квартиль
+        WorkBook1.ActiveSheet.Cells[NTotal+7,  4+i] := CalcsParams[i].MinVal;  // Мин.
+        WorkBook1.ActiveSheet.Cells[NTotal+8,  4+i] := CalcsParams[i].MaxVal;  // Мах.
+        WorkBook1.ActiveSheet.Cells[NTotal+9,  4+i] := CalcsParams[i].StdVal;  // Сигма
+        WorkBook1.ActiveSheet.Cells[NTotal+10, 4+i] := Wafer[n].NOK;           // Счёт ???????????????????
 
-        WorkBook1.ActiveSheet.Cells[NTotal+8,  4+i] := (Wafer[n].NOK*100)/NMeased; // %Годных ??????????????
-        WorkBook1.ActiveSheet.Cells[NTotal+10, 4+i] := CalcsParams[i].NOKVal;      // Годных
-        WorkBook1.ActiveSheet.Cells[NTotal+11, 4+i] := CalcsParams[i].NFailsVal;   // Брак
+        WorkBook1.ActiveSheet.Cells[NTotal+11, 4+i] := (Wafer[n].NOK*100)/NMeased; // %Годных ??????????????
+        WorkBook1.ActiveSheet.Cells[NTotal+13, 4+i] := CalcsParams[i].NOKVal;      // Годных
+        WorkBook1.ActiveSheet.Cells[NTotal+14, 4+i] := CalcsParams[i].NFailsVal;   // Брак
       end;
 
-      WorkBook1.ActiveSheet.Cells[NTotal+12, 4] := Wafer[n].NMeased; // Всего измерено
-      WorkBook1.ActiveSheet.Cells[NTotal+13, 4] := Wafer[n].NOK;     // Всего годных
+      WorkBook1.ActiveSheet.Cells[NTotal+15, 4] := Wafer[n].NMeased; // Всего измерено
+      WorkBook1.ActiveSheet.Cells[NTotal+16, 4] := Wafer[n].NOK;     // Всего годных
 
       if Assigned(OnEvent) then OnEvent(evOK, 'Обработана пластина №: '+Num);
     end; // for Wafer[n]
@@ -3522,68 +3553,77 @@ begin                                                                           
     begin
       if n = 0 then
       begin
-        tmpRange := WorkBook1.ActiveSheet.Range['C1', 'C19']; // Запомним шаблон пластины
+        tmpRange := WorkBook1.ActiveSheet.Range['C1', 'C25']; // Запомним шаблон пластины
 
         for i := 0 to Length(TestsParams)-1 do
         begin
           if i > 0 then // Расширяем шаблон на кол-во тестов и заносим их имена
             tmpRange.Copy(WorkBook1.ActiveSheet.Cells[1, i+3]); // Копируем все кроме 1-й ячейки
 
-          WorkBook1.ActiveSheet.Cells[3, i+3] := TestsParams[i].Name;  //
-          WorkBook1.ActiveSheet.Cells[3, i+3].Columns.Autofit;         // Копируем
-                                                                       // названия
-          WorkBook1.ActiveSheet.Cells[16, i+3] := TestsParams[i].Name; // тестов
+          WorkBook1.ActiveSheet.Cells[3, i+3] := TestsParams[i].Name;  // Копируем
+          WorkBook1.ActiveSheet.Cells[3, i+3].Columns.Autofit;         // названия
+                                                                       //
+          WorkBook1.ActiveSheet.Cells[22, i+3] := TestsParams[i].Name; // тестов
         end;
 
-        Cell1 := WorkBook1.ActiveSheet.Cells[16+6*(Length(Wafer)-1), 2];                     // Зададим
-        Cell2 := WorkBook1.ActiveSheet.Cells[18+6*(Length(Wafer)-1), 2+Length(TestsParams)]; // диапазон
+        Cell1 := WorkBook1.ActiveSheet.Cells[22+9*(Length(Wafer)-1), 2];                     // Зададим
+        Cell2 := WorkBook1.ActiveSheet.Cells[24+9*(Length(Wafer)-1), 2+Length(TestsParams)]; // диапазон
         Range2 := WorkBook1.ActiveSheet.Range[Cell1, Cell2];                                 // значений
-        Chart1 := Workbook1.ActiveSheet.ChartObjects(1);                                     //
-        Chart1.Chart.SetSourceData(Range2);                                                  // для графика
+        Chart1 := Workbook1.ActiveSheet.ChartObjects(1);                                     // для графика
+        Chart1.Chart.SetSourceData(Range2);                                                  //
 
         if Length(Wafer) > 1 then // Копируем, если больше 1-й пластины
         begin
-          Cell1 := WorkBook1.ActiveSheet.Cells[10, 1];                         //
-          Cell2 := WorkBook1.ActiveSheet.Cells[19, 2+Length(TestsParams)];     //
-          Range1 := WorkBook1.ActiveSheet.Range[Cell1, Cell2];                 // 
+          Cell1 := WorkBook1.ActiveSheet.Cells[13, 1];                     //
+          Cell2 := WorkBook1.ActiveSheet.Cells[25, 2+Length(TestsParams)]; // Концовка
+          Range1 := WorkBook1.ActiveSheet.Range[Cell1, Cell2];             //
           if Length(Wafer) = 2 then
           begin                                                              // Если сразу
-            Range1.Copy(WorkBook1.ActiveSheet.Cells[26, 1]);                 // перенести
+            Range1.Copy(WorkBook1.ActiveSheet.Cells[35, 1]);                 // перенести
             Range1.Clear;                                                    // в нужное место
-            Cell1 := WorkBook1.ActiveSheet.Cells[26, 1];                     // будет
-            Cell2 := WorkBook1.ActiveSheet.Cells[35, 2+Length(TestsParams)]; // ошибка копирования
+            Cell1 := WorkBook1.ActiveSheet.Cells[35, 1];                     // будет
+            Cell2 := WorkBook1.ActiveSheet.Cells[47, 2+Length(TestsParams)]; // ошибка копирования
             Range1 := WorkBook1.ActiveSheet.Range[Cell1, Cell2];             // (объединённые ячейки)
           end;
-          Range1.Copy(WorkBook1.ActiveSheet.Cells[10+6*(Length(Wafer)-1), 1]); // Перенесём
+          Range1.Copy(WorkBook1.ActiveSheet.Cells[13+9*(Length(Wafer)-1), 1]); // Перенесём
           Range1.Clear;                                                        // в конец
 
-          Chart1.Top := WorkBook1.ActiveSheet.Rows[21+6*(Length(Wafer)-1)].Top; // Перенесём график вниз
+          Chart1.Top := WorkBook1.ActiveSheet.Rows[27+9*(Length(Wafer)-1)].Top; // Перенесём график вниз
 
-          Cell1 := WorkBook1.ActiveSheet.Cells[4, 1];                     // Запомним
-          Cell2 := WorkBook1.ActiveSheet.Cells[9, 2+Length(TestsParams)]; // ячейки
-          Range1 := WorkBook1.ActiveSheet.Range[Cell1, Cell2];            // для копирования
+          Cell1 := WorkBook1.ActiveSheet.Cells[4,  1];                     // Запомним
+          Cell2 := WorkBook1.ActiveSheet.Cells[12, 2+Length(TestsParams)]; // ячейки
+          Range1 := WorkBook1.ActiveSheet.Range[Cell1, Cell2];             // для копирования
 
           for i := 0 to Length(Wafer)-2 do                       // Скопируем
-            Range1.Copy(WorkBook1.ActiveSheet.Cells[10+6*i, 1]); // для всех пластин
+            Range1.Copy(WorkBook1.ActiveSheet.Cells[13+9*i, 1]); // для всех пластин
         end;
       end;
 
-      WorkBook1.ActiveSheet.Cells[4+6*n, 1] := Wafer[n].Num;
+      WorkBook1.ActiveSheet.Cells[4+9*n, 1] := Wafer[n].Num;
       for i := 0 to Length(TestsParams)-1 do
       begin
-        WorkBook1.ActiveSheet.Cells[4+6*n, i+3] := Wafer[n].CalcsParams[i].AvrVal; // Среднее
-        WorkBook1.ActiveSheet.Cells[5+6*n, i+3] := Wafer[n].CalcsParams[i].MinVal; // Мин.
-        WorkBook1.ActiveSheet.Cells[6+6*n, i+3] := Wafer[n].CalcsParams[i].MaxVal; // Макс.
-        WorkBook1.ActiveSheet.Cells[7+6*n, i+3] := Wafer[n].CalcsParams[i].StdVal; // Сигма
+        WorkBook1.ActiveSheet.Cells[4+ 9*n, i+3] := Wafer[n].CalcsParams[i].AvrVal;  // Среднее
+        WorkBook1.ActiveSheet.Cells[5+ 9*n, i+3] := Wafer[n].CalcsParams[i].Qrt1Val; // 1-й квартиль
+        WorkBook1.ActiveSheet.Cells[6+ 9*n, i+3] := Wafer[n].CalcsParams[i].MedVal;  // Медиана
+        WorkBook1.ActiveSheet.Cells[7+ 9*n, i+3] := Wafer[n].CalcsParams[i].Qrt3Val; // 3-й квартиль
+        WorkBook1.ActiveSheet.Cells[8+ 9*n, i+3] := Wafer[n].CalcsParams[i].MinVal;  // Мин.
+        WorkBook1.ActiveSheet.Cells[9+ 9*n, i+3] := Wafer[n].CalcsParams[i].MaxVal;  // Макс.
+        WorkBook1.ActiveSheet.Cells[10+9*n, i+3] := Wafer[n].CalcsParams[i].StdVal;  // Сигма
 
-        WorkBook1.ActiveSheet.Cells[8+6*n, i+3] := Wafer[n].NOK; // Счёт ??????
-        WorkBook1.ActiveSheet.Cells[9+6*n, i+3] := (NOK*100)/NMeased; // %Годных ??????????????
+        WorkBook1.ActiveSheet.Cells[11+9*n, i+3] := Wafer[n].NOK;      // Счёт ??????
+        WorkBook1.ActiveSheet.Cells[12+9*n, i+3] := (NOK*100)/NMeased; // %Годных ??????????????
       end;
 
     end;
 
   SetLength(AvrSum,   0);
   SetLength(AvrSum,   Length(Wafer[0].TestsParams));
+  SetLength(Qrt1Sum,  0);
+  SetLength(Qrt1Sum,  Length(Wafer[0].TestsParams));
+  SetLength(MedSum,   0);
+  SetLength(MedSum,   Length(Wafer[0].TestsParams));
+  SetLength(Qrt3Sum,  0);
+  SetLength(Qrt3Sum,  Length(Wafer[0].TestsParams));
   SetLength(MinSum,   0);
   SetLength(MinSum,   Length(Wafer[0].TestsParams));
   SetLength(MaxSum,   0);
@@ -3601,6 +3641,9 @@ begin                                                                           
   for i := 0 to Length(Wafer[0].TestsParams)-1 do
   begin
     AvrSum[i]   := 0.0;
+    Qrt1Sum[i]  := 0.0;
+    MedSum[i]   := 0.0;
+    Qrt3Sum[i]  := 0.0;
     MinSum[i]   := 0.0;
     MaxSum[i]   := 0.0;
     StdSum [i]  := 0.0;
@@ -3614,11 +3657,14 @@ begin                                                                           
     for n := 0 to Length(Wafer)-1 do
       with Wafer[n] do
       begin
-        AvrSum[i]   := AvrSum[i]+CalcsParams[i].AvrVal;
-        MinSum[i]   := MinSum[i]+CalcsParams[i].MinVal;
-        MaxSum[i]   := MaxSum[i]+CalcsParams[i].MaxVal;
-        StdSum[i]   := StdSum[i]+CalcsParams[i].StdVal;
-        QuantSum[i] := QuantSum[i]+NOK;                // Счёт ???????????????
+        AvrSum[i]   := AvrSum[i]+ CalcsParams[i].AvrVal;
+        Qrt1Sum[i]  := Qrt1Sum[i]+CalcsParams[i].Qrt1Val;
+        MedSum[i]   := MedSum[i]+ CalcsParams[i].MedVal;
+        Qrt3Sum[i]  := Qrt3Sum[i]+CalcsParams[i].Qrt3Val;
+        MinSum[i]   := MinSum[i]+ CalcsParams[i].MinVal;
+        MaxSum[i]   := MaxSum[i]+ CalcsParams[i].MaxVal;
+        StdSum[i]   := StdSum[i]+ CalcsParams[i].StdVal;
+        QuantSum[i] := QuantSum[i]+NOK;                  // Счёт ???????????????
         OKSum[i]    := OKSum[i]+CalcsParams[i].NOKVal;
         FailsSum[i] := FailsSum[i]+CalcsParams[i].NFailsVal;
         MeasSum[i]  := MeasSum[i]+NMeased;
@@ -3628,19 +3674,22 @@ begin                                                                           
   begin
 //////////////////////////////// * Среднее * ///////////////////////////////////
 
-    X := 4+6*Length(Wafer);
+    X := 4+9*Length(Wafer);
     WorkBook1.ActiveSheet.Cells[0+X, i+3] := AvrSum[i]/Length(Wafer);      // Среднее
-    WorkBook1.ActiveSheet.Cells[1+X, i+3] := MinSum[i]/Length(Wafer);      // Мин.
-    WorkBook1.ActiveSheet.Cells[2+X, i+3] := MaxSum[i]/Length(Wafer);      // Макс.
-    WorkBook1.ActiveSheet.Cells[3+X, i+3] := StdSum[i]/Length(Wafer);      // Сигма
-    WorkBook1.ActiveSheet.Cells[4+X, i+3] := QuantSum[i]/Length(Wafer);    // Счёт ??????????
-    WorkBook1.ActiveSheet.Cells[5+X, i+3] := (QuantSum[i]*100)/MeasSum[i]; // %Годных ??????????????
+    WorkBook1.ActiveSheet.Cells[1+X, i+3] := Qrt1Sum[i]/Length(Wafer);     // 1-й квартиль
+    WorkBook1.ActiveSheet.Cells[2+X, i+3] := MedSum[i]/Length(Wafer);      // Медиана
+    WorkBook1.ActiveSheet.Cells[3+X, i+3] := Qrt3Sum[i]/Length(Wafer);     // 1-й квартиль
+    WorkBook1.ActiveSheet.Cells[4+X, i+3] := MinSum[i]/Length(Wafer);      // Мин.
+    WorkBook1.ActiveSheet.Cells[5+X, i+3] := MaxSum[i]/Length(Wafer);      // Макс.
+    WorkBook1.ActiveSheet.Cells[6+X, i+3] := StdSum[i]/Length(Wafer);      // Сигма
+    WorkBook1.ActiveSheet.Cells[7+X, i+3] := QuantSum[i]/Length(Wafer);    // Счёт ??????????
+    WorkBook1.ActiveSheet.Cells[8+X, i+3] := (QuantSum[i]*100)/MeasSum[i]; // %Годных ???????
 
 /////////////////////////////// * По тестам * //////////////////////////////////
 
-    WorkBook1.ActiveSheet.Cells[7+X, i+3] := OKSum[i];             // Годных
-    WorkBook1.ActiveSheet.Cells[8+X, i+3] := FailsSum[i];          // Брак
-    WorkBook1.ActiveSheet.Cells[9+X, i+3] := OKSum[i]+FailsSum[i]; // Всего
+    WorkBook1.ActiveSheet.Cells[10+X, i+3] := OKSum[i];             // Годных
+    WorkBook1.ActiveSheet.Cells[11+X, i+3] := FailsSum[i];          // Брак
+    WorkBook1.ActiveSheet.Cells[12+X, i+3] := OKSum[i]+FailsSum[i]; // Всего
   end;
 
   if Assigned(OnEvent) then OnEvent(evOK, '>>> Обработаны все пластины!');
@@ -3649,96 +3698,105 @@ begin                                                                           
 //////////////////////////// * Лист "Карта обхода" * ///////////////////////////
 ////////////////////////////////////////////////////////////////////////////////
 
-  try
-    Workbook1.Sheets['Карты обхода'].Activate;
-  except
-    if Assigned(OnEvent) then OnEvent(evError, 'В шаблоне отсутствует лист <Карты обхода>');
-
-  end;
-
-  if Assigned(OnEvent) then OnEvent(evInfo, '... Идёт запись в файл!');
-
-  for i := 1 to Length(Wafer[0].TestsParams)-1 do
+  if BlankWafer.NTotal <> 0 then // Если есть карты годности
   begin
-    WorkBook1.ActiveSheet.Cells[i+1, 1].Interior.Color := GetColorByStatus(i+1999);
-    WorkBook1.ActiveSheet.Cells[i+1, 1].BorderAround(xlContinuous, xlThin, xlAutomatic, xlAutomatic);
-    WorkBook1.ActiveSheet.Cells[i+1, 2] := 'Брак по '+Wafer[0].TestsParams[i].Name;
-  end;
+    try
+      Workbook1.Sheets['Карты обхода'].Activate;
+    except
+      if Assigned(OnEvent) then OnEvent(evError, 'В шаблоне отсутствует лист <Карты обхода>');
 
-  StX := 11; // Положение
-  StY := 2;  // 1-й пластины
-  if BlankWafer.NTotal = 0 then // Если нет карты обхода
-  begin
-    for n := 0 to Length(Wafer)-1 do
-      with Wafer[n] do
-      begin
-        for Y := 0 to Length(Chip)-1 do
-        begin
-          WorkBook1.ActiveSheet.Cells[StY-1, StX+3] := 'Пластина №: '+Num;
-
-          for X := 0 to Length(Chip[0])-1 do
-            if Chip[Y, X].ID <> 0 then
-            begin
-              WorkBook1.ActiveSheet.Cells[Y+StY, X+StX] := Chip[Y, X].ID;
-              WorkBook1.ActiveSheet.Cells[Y+StY, X+StX].Interior.Color := GetColorByStatus(Chip[Y, X].Status);
-              WorkBook1.ActiveSheet.Cells[Y+StY, X+StX].BorderAround(xlContinuous, xlThin, xlAutomatic, xlAutomatic);
-            end;
-        end;
-
-        if ((n+1) mod 5) <> 0 then
-        begin
-          StX := StX+Length(Chip[0])+2;
-        end
-        else
-        begin
-          StX := 10;
-          StY := StY+Length(Chip)+2;
-        end;
-      end;
-  end
-  else                          // Если есть карта обхода
-  begin
-    Str := 'неизвестно';
-    case BlankWafer.CutSide of
-      1: Str := 'вверху';
-      2: Str := 'слева';
-      3: Str := 'внизу';
-      4: Str := 'справа';
     end;
-    WorkBook1.ActiveSheet.Cells[Length(Wafer[0].TestsParams)+2, 1] := 'Срез пластины: '+Str;
 
-    for n := 0 to Length(Wafer)-1 do
-      with Wafer[n] do
-      begin
-        if NTotal > BlankWafer.NTotal then
-          if Assigned(OnEvent) then OnEvent(evError, ' Пластина №: '+Num+' - кристаллов больше, чем в обходе!');
-        if NTotal < BlankWafer.NTotal then
-          if Assigned(OnEvent) then OnEvent(evError, ' Пластина №: '+Num+' - кристаллов меньше, чем в обходе!');
+    if Assigned(OnEvent) then OnEvent(evInfo, '... Идёт запись в файл!');
 
-        WorkBook1.ActiveSheet.Cells[StY-1, StX+5] := 'Пластина №: '+Num;
-        for Nm := 0 to NTotal-1 do
+    for i := 1 to Length(Wafer[0].TestsParams)-1 do
+    begin
+      WorkBook1.ActiveSheet.Cells[i+1, 1].Interior.Color := GetColorByStatus(i+1999);
+      WorkBook1.ActiveSheet.Cells[i+1, 1].BorderAround(xlContinuous, xlThin, xlAutomatic, xlAutomatic);
+      WorkBook1.ActiveSheet.Cells[i+1, 2] := 'Брак по '+Wafer[0].TestsParams[i].Name;
+    end;
+
+    StX := 11; // Положение
+    StY := 2;  // 1-й пластины
+
+    if MapByParams then // Если карты годности по параметрам
+    begin
+      for n := 0 to Length(Wafer)-1 do
+        with Wafer[n] do
         begin
-          if Nm > BlankWafer.NTotal-1 then Break;
+          for Y := 0 to Length(Chip)-1 do
+          begin
+            WorkBook1.ActiveSheet.Cells[StY-1, StX+3] := 'Пластина №: '+Num;
 
-          X := BlankWafer.ChipN[Nm].X;
-          Y := BlankWafer.ChipN[Nm].Y;
-          X1 := ChipN[Nm].X;
-          Y1 := ChipN[Nm].Y;
-          WorkBook1.ActiveSheet.Cells[Y+StY, X+StX] := Nm+1;
-          WorkBook1.ActiveSheet.Cells[Y+StY, X+StX].Interior.Color := GetColorByStatus(Chip[Y1, X1].Status);
-          WorkBook1.ActiveSheet.Cells[Y+StY, X+StX].BorderAround(xlContinuous, xlThin, xlAutomatic, xlAutomatic);
+            for X := 0 to Length(Chip[0])-1 do
+              if Chip[Y, X].ID <> 0 then
+              begin
+                WorkBook1.ActiveSheet.Cells[Y+StY, X+StX] := Chip[Y, X].ID;
+                WorkBook1.ActiveSheet.Cells[Y+StY, X+StX].Interior.Color := GetColorByStatus(Chip[Y, X].Status);
+                WorkBook1.ActiveSheet.Cells[Y+StY, X+StX].BorderAround(xlContinuous, xlThin, xlAutomatic, xlAutomatic);
+              end;
+          end;
+
+          if ((n+1) mod 5) <> 0 then
+          begin
+            StX := StX+Length(Chip[0])+2;
+          end
+          else
+          begin
+            StX := 10;
+            StY := StY+Length(Chip)+2;
+          end;
         end;
-
-        if ((n+1) mod 5) <> 0 then
-        begin
-          StX := StX+Length(BlankWafer.Chip[0])+2;
-        end
-        else
-        begin
-          StX := 10;
-          StY := StY+Length(BlankWafer.Chip)+2;
-        end;
+    end
+    else               // Если карты годности по Г/Б
+    begin
+      Str := 'неизвестно';
+      case BlankWafer.CutSide of
+        1: Str := 'вверху';
+        2: Str := 'слева';
+        3: Str := 'внизу';
+        4: Str := 'справа';
       end;
+      WorkBook1.ActiveSheet.Cells[Length(Wafer[0].TestsParams)+2, 1] := 'Срез пластины: '+Str;
+
+      for n := 0 to Length(Wafer)-1 do
+        with Wafer[n] do
+        begin
+          if NTotal > BlankWafer.NTotal then
+            if Assigned(OnEvent) then OnEvent(evError, ' Пластина №: '+Num+' - кристаллов больше, чем в обходе!');
+          if NTotal < BlankWafer.NTotal then
+            if Assigned(OnEvent) then OnEvent(evError, ' Пластина №: '+Num+' - кристаллов меньше, чем в обходе!');
+
+          WorkBook1.ActiveSheet.Cells[StY-1, StX+5] := 'Пластина №: '+Num;
+          for Nm := 0 to NTotal-1 do
+          begin
+            if Nm > BlankWafer.NTotal-1 then Break;
+
+            X := BlankWafer.ChipN[Nm].X;
+            Y := BlankWafer.ChipN[Nm].Y;
+            X1 := ChipN[Nm].X;
+            Y1 := ChipN[Nm].Y;
+            WorkBook1.ActiveSheet.Cells[Y+StY, X+StX] := Nm+1;
+            WorkBook1.ActiveSheet.Cells[Y+StY, X+StX].Interior.Color := GetColorByStatus(Chip[Y1, X1].Status);
+            WorkBook1.ActiveSheet.Cells[Y+StY, X+StX].BorderAround(xlContinuous, xlThin, xlAutomatic, xlAutomatic);
+          end;
+
+          if ((n+1) mod 5) <> 0 then
+          begin
+            StX := StX+Length(BlankWafer.Chip[0])+2;
+          end
+          else
+          begin
+            StX := 10;
+            StY := StY+Length(BlankWafer.Chip)+2;
+          end;
+        end;
+    end;
+  end
+  else // Если нет карты обхода
+  try
+    Workbook1.Sheets['Карты обхода'].Delete; // Удалим лист <Карты обхода>
+  except
   end;
 
 /////////////////////////////////                                                                                    //
