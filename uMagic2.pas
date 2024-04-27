@@ -429,6 +429,7 @@ begin                                                                           
         P := Pos('№', Str);                                                           //
         if P <> 0 then Str := Copy(Items[n], P+2, Length(Items[n]));                  //
                                                                                       //
+                                                                                      //
         if not Lot.Wafer[nWf].LoadGammaMDB(MDBfName, Str) then                        //
         begin                                                                         //
           Print_Result('Ошибка загрузки пластины!', clRed);                           //
@@ -535,7 +536,7 @@ end;
 function TMDBForm.LoadNorms(const fName: string): Boolean;            //
 var                                                                   //
   n, Cnt: WORD;                                                       //
-  P: byte;                                                            //
+  P, P1, P2: byte;                                                    //
   SL: TStringList;                                                    //
   Str: string;                                                        //
 begin                                                                 //
@@ -559,6 +560,10 @@ begin                                                                 //
       P := Pos('"', Str);                                             //
       Params[Cnt].Name := Trim(Copy(Str, 1, P-1));                    //
                                                                       //
+      P1 := Pos('(', Str);                                            //
+      P2 := Pos(')', Str);                                            //
+      Params[Cnt].PMode := Trim(Copy(Str, P1+1, P2-P1-1));            //
+                                                                      //
       Delete(Str, 1, P+1);                                            //
       P := Pos(',', Str);                                             //
       try                                                             //
@@ -577,7 +582,7 @@ begin                                                                 //
                                                                       //
       Delete(Str, 1, P+2);                                            //
       P := Pos('"', Str);                                             //
-      Params[Cnt].MUnit := Trim(Copy(Str, 1, P-1));                   //
+      Params[Cnt].PUnit := Trim(Copy(Str, 1, P-1));                   //
     end;                                                              //
   end;                                                                //
                                                                       //

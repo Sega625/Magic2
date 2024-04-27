@@ -3156,43 +3156,45 @@ begin
 
         for n := 0 to Length(TestsParams)-1 do
         begin
-          if Chip[Y, X].ChipParams[n].Stat <> 4 then
-            Chip[Y, X].ChipParams[n].Stat := GetChipParamsStat(Chip[Y, X].ChipParams[n].Value,
-                                                               TestsParams[n].Norma.Min,
-                                                               TestsParams[n].Norma.Max);
+          Chip[Y, X].ChipParams[n].Stat := GetChipParamsStat(Chip[Y, X].ChipParams[n].Value,
+                                                             TestsParams[n].Norma.Min,
+                                                             TestsParams[n].Norma.Max);
           if Chip[Y, X].Status < 2000 then
             if Chip[Y, X].ChipParams[n].Stat <> 1 then Chip[Y, X].Status := 2000+n
                                                   else Chip[Y, X].Status := 1;
         end;
       end;
 
-  CalcChips();
-
   Result := True;
 end;
 
 
 
-//////////////////////////////////////////////////////////////////
-function TWafer.GetChipParamsStat(Val, Min, Max: Single): byte; //
-begin                                                           //
-  Result := 1;                                                  //
-                                                                //
-  if (Min = NotSpec)  and (Max = NotSpec) then Result := 0;     //
-                                                                //
-  if (Min = NotSpec)  and (Max <> NotSpec) then                 //
-    if Val > Max then Result := 3;                              //
-                                                                //
-  if (Min <> NotSpec) and (Max = NotSpec)  then                 //
-    if Val < Min then Result := 2;                              //
-                                                                //
-  if (Min <> NotSpec) and (Max <> NotSpec) then                 //
-  begin                                                         //
-    if Val < Min then Result := 2;                              //
-    if Val > Max then Result := 3;                              //
-  end;                                                          //
-end;                                                            //
-//////////////////////////////////////////////////////////////////
+///////////////////////////////////////////////////////////////////////
+function TWafer.GetChipParamsStat(Val, Min, Max: Single): byte;      //
+begin                                                                //
+//  Result := 0;                                                       //
+                                                                     //
+//  if Val <> NotSpec then                                             //
+  begin                                                              //
+    Result := 1;                                                     //
+                                                                     //
+    if (Min = NotSpec)  and (Max = NotSpec) then Result := 0;        //
+                                                                     //
+    if (Min = NotSpec)  and (Max <> NotSpec) then                    //
+      if Val > Max then Result := 3;                                 //
+                                                                     //
+    if (Min <> NotSpec) and (Max = NotSpec)  then                    //
+      if Val < Min then Result := 2;                                 //
+                                                                     //
+    if (Min <> NotSpec) and (Max <> NotSpec) then                    //
+    begin                                                            //
+      if Val < Min then Result := 2;                                 //
+      if Val > Max then Result := 3;                                 //
+    end;                                                             //
+  end                                                                //
+end;                                                                 //
+///////////////////////////////////////////////////////////////////////
 
 
 { TLot }
@@ -3299,22 +3301,12 @@ begin                                                                           
 
   for i := 0 to Length(Wafer[0].TestsParams)-1 do
   begin
-    WorkBook1.ActiveSheet.Cells[1, 2+i] := Wafer[0].TestsParams[i].Name;
-    WorkBook1.ActiveSheet.Cells[1, 2+i].Columns.Autofit;
-    WorkBook1.ActiveSheet.Cells[1, 2+i].Interior.Color := clSkyBlue;
-    WorkBook1.ActiveSheet.Cells[1, 2+i].BorderAround(xlContinuous, xlThin, xlAutomatic, xlAutomatic);
-
-    WorkBook1.ActiveSheet.Cells[2, 2+i] := Wafer[0].TestsParams[i].Norma.Min;
-    WorkBook1.ActiveSheet.Cells[2, 2+i].BorderAround(xlContinuous, xlThin, xlAutomatic, xlAutomatic);
-
-    WorkBook1.ActiveSheet.Cells[3, 2+i] := Wafer[0].TestsParams[i].Norma.Max;
-    WorkBook1.ActiveSheet.Cells[3, 2+i].BorderAround(xlContinuous, xlThin, xlAutomatic, xlAutomatic);
-
-    WorkBook1.ActiveSheet.Cells[4, 2+i] := Wafer[0].TestsParams[i].PUnit;
-    WorkBook1.ActiveSheet.Cells[4, 2+i].BorderAround(xlContinuous, xlThin, xlAutomatic, xlAutomatic);
-
-    WorkBook1.ActiveSheet.Cells[6, 2+i] := Wafer[0].TestsParams[i].PMode;
-    WorkBook1.ActiveSheet.Cells[6, 2+i].BorderAround(xlContinuous, xlThin, xlAutomatic, xlAutomatic);
+    WorkBook1.ActiveSheet.Cells[1,  2+i] := Wafer[0].TestsParams[i].Name;
+    WorkBook1.ActiveSheet.Cells[1,  2+i].Columns.Autofit;
+    WorkBook1.ActiveSheet.Cells[2,  2+i] := Wafer[0].TestsParams[i].Norma.Min;
+    WorkBook1.ActiveSheet.Cells[3,  2+i] := Wafer[0].TestsParams[i].Norma.Max;
+    WorkBook1.ActiveSheet.Cells[4,  2+i] := Wafer[0].TestsParams[i].PUnit;
+    WorkBook1.ActiveSheet.Cells[6,  2+i] := Wafer[0].TestsParams[i].PMode;
   end;
 
 
@@ -3483,10 +3475,7 @@ begin                                                                           
                   end;
                 end
                 else
-                begin
                   VarMass1[Nm+1, i+1] := '';
-                  Chip[Y, X].ChipParams[i].Stat := 4; // Параметр не измерялся
-                end;
           end;
       end; // for Nm to Total
 
@@ -3765,8 +3754,6 @@ begin                                                                           
       end;
       WorkBook1.ActiveSheet.Cells[6, 1] := 'Срез пластины: '+Str;
 
-      StX := 13;
-
       for n := 0 to Length(Wafer)-1 do
         with Wafer[n] do
         begin
@@ -3784,20 +3771,16 @@ begin                                                                           
             X1 := ChipN[Nm].X;
             Y1 := ChipN[Nm].Y;
 
-            WorkBook1.ActiveSheet.Cells[Y+StY, X+StX] := '';
-
             for i := 0 to Length(TestsParams)-1 do
             begin
+ //             WorkBook1.ActiveSheet.Cells[StY-1, StX+5] := TestsParams[0].Name;
+
               case Chip[Y1, X1].ChipParams[i].Stat of
-                0: Col := clBlack;
+                0: Col := clWhite;
                 1: Col := clLime;
                 2: Col := clYellow;
                 3: Col := clRed;
-                4: Col := clWhite;
               end;
-
-              if n = 0 then                                                                                                   // Названия
-                if NM = 0 then WorkBook1.ActiveSheet.Cells[StY-1, StX+5+i*Length(BlankWafer.Chip[0])] := TestsParams[i].Name; // тестов
 
               WorkBook1.ActiveSheet.Cells[Y+StY, X+StX+i*Length(BlankWafer.Chip[0])] := Nm+1;
               WorkBook1.ActiveSheet.Cells[Y+StY, X+StX+i*Length(BlankWafer.Chip[0])].Interior.Color := Col;
@@ -3807,8 +3790,11 @@ begin                                                                           
 
           end;
 
-          StX := 13;
+          StX := 11;
           StY := StY+Length(BlankWafer.Chip)+2;
+
+
+
         end;
     end
     else               // Если карты годности по Г/Б

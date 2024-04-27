@@ -12,17 +12,17 @@ type
 
   TWafer = class
   public
-    Condition : String[10]; // Условия измерения (НУ, Т+, Т-)
+    Condition : String[10]; // РЈСЃР»РѕРІРёСЏ РёР·РјРµСЂРµРЅРёСЏ (РќРЈ, Рў+, Рў-)
     Direct    : byte;
-    CutSide   : byte; // 1: 'вверху'  2: 'слева' 3: 'внизу' 4: 'справа'
-    OKR       : String[25]; // Название ОКРа
-    Code      : String[20]; // Номер кристалла
+    CutSide   : byte; // 1: 'РІРІРµСЂС…Сѓ'  2: 'СЃР»РµРІР°' 3: 'РІРЅРёР·Сѓ' 4: 'СЃРїСЂР°РІР°'
+    OKR       : String[25]; // РќР°Р·РІР°РЅРёРµ РћРљР Р°
+    Code      : String[20]; // РќРѕРјРµСЂ РєСЂРёСЃС‚Р°Р»Р»Р°
     MPW       : String[20]; // MPW
-    MPWPos    : String[20]; // Позиция в MPW
+    MPWPos    : String[20]; // РџРѕР·РёС†РёСЏ РІ MPW
     Device    : String[20];
-    DscrDev   : String[20]; // Описание изделия
-    MeasSystem: String[25]; // Измерительная система
-    Prober    : String[20]; // Зондовая установка
+    DscrDev   : String[20]; // РћРїРёСЃР°РЅРёРµ РёР·РґРµР»РёСЏ
+    MeasSystem: String[25]; // РР·РјРµСЂРёС‚РµР»СЊРЅР°СЏ СЃРёСЃС‚РµРјР°
+    Prober    : String[20]; // Р—РѕРЅРґРѕРІР°СЏ СѓСЃС‚Р°РЅРѕРІРєР°
     Info      : String[20];
     NWPlace   : WORD;
     NOperator : String[20];
@@ -49,7 +49,7 @@ type
     HLChip  : TPoint;
 
     Chip : TChips;
-    ChipN: array of TPoint; // Координаты чипов в порядке измерения
+    ChipN: array of TPoint; // РљРѕРѕСЂРґРёРЅР°С‚С‹ С‡РёРїРѕРІ РІ РїРѕСЂСЏРґРєРµ РёР·РјРµСЂРµРЅРёСЏ
 
     TestsParams  : TTestsParams;
     CalcsParams  : TCalcsParams;
@@ -82,11 +82,11 @@ type
 
     function  AddNorms(tParams: TTestsParams): Boolean;
 
-    procedure Normalize(); // Обрезка лишних(не значащих) ячеек(чипов)
+    procedure Normalize(); // РћР±СЂРµР·РєР° Р»РёС€РЅРёС…(РЅРµ Р·РЅР°С‡Р°С‰РёС…) СЏС‡РµРµРє(С‡РёРїРѕРІ)
     procedure Rotate();
     procedure CalcChips();
     procedure SetChipsID();
-    function  IsWafer(): Boolean; // Пластина или корпус?
+    function  IsWafer(): Boolean; // РџР»Р°СЃС‚РёРЅР° РёР»Рё РєРѕСЂРїСѓСЃ?
 
     function GetChipParamsStat(Val, Min, Max: Single): byte;
     function GetStatusName(const Status: WORD): String;
@@ -109,7 +109,7 @@ type
     destructor  Destroy(); override;
 
     procedure Init();
-    function  SaveXLS(const ToFirstFail: Boolean): Boolean;
+    function  SaveXLS(const ToFirstFail, MapByParams: Boolean): Boolean;
     function  GetColorByStatus(const Stat: WORD): TColor;
   published
     property OnEvent: TOnEvent read fOnEvent write fOnEvent;
@@ -198,8 +198,8 @@ begin                                                       //
                                                             //
     SetLength(Chip, 0, 0);                                  //
     SetLength(Chip, Y, X);                                  //
-    for Y := 0 to Length(Chip)-1 do      // Очистим         //
-      for X := 0 to Length(Chip[0])-1 do // массив          //
+    for Y := 0 to Length(Chip)-1 do      // РћС‡РёСЃС‚РёРј         //
+      for X := 0 to Length(Chip[0])-1 do // РјР°СЃСЃРёРІ          //
       begin                              //                 //
         Chip[Y, X].Status := 2;          //                 //
         Chip[Y, X].ID     := 0;          //                 //
@@ -329,8 +329,8 @@ begin                                                       //
                                                             //
     SetLength(Chip, 0, 0);                                  //
     SetLength(Chip, Y, X);                                  //
-    for Y := 0 to Length(Chip)-1 do      // Очистим         //
-      for X := 0 to Length(Chip[0])-1 do // массив          //
+    for Y := 0 to Length(Chip)-1 do      // РћС‡РёСЃС‚РёРј         //
+      for X := 0 to Length(Chip[0])-1 do // РјР°СЃСЃРёРІ          //
       begin                              //                 //
         Chip[Y, X].Status := 2;          //                 //
         Chip[Y, X].ID     := 0;          //                 //
@@ -378,12 +378,12 @@ begin
     except
       begin
         P := Pos('=', SL.Strings[n]);
-        if Pos('Изделие',       SL.Strings[n]) <> 0 then Device   := Trim(Copy(SL.Strings[n], P+1, Length((SL.Strings[n]))));
-        if Pos('Дата',          SL.Strings[n]) <> 0 then TimeDate := Trim(Copy(SL.Strings[n], P+1, Length((SL.Strings[n]))));
-  //      if Pos('Время', SL.Strings[n])         <> 0 then TimeDate := Trim(Copy(SL.Strings[n], P+1, Length((SL.Strings[n]))));
-        if Pos('Вид испытаний', SL.Strings[n]) <> 0 then info := Trim(Copy(SL.Strings[n], P+1, Length((SL.Strings[n]))))+' ';
-        if Pos('Условия',       SL.Strings[n]) <> 0 then Condition := Trim(Copy(SL.Strings[n], P+1, Length((SL.Strings[n]))))+' ';
-        if Pos('Оператор', SL.Strings[n])      <> 0 then NOperator := Trim(Copy(SL.Strings[n], P+1, Length((SL.Strings[n]))));
+        if Pos('РР·РґРµР»РёРµ',       SL.Strings[n]) <> 0 then Device   := Trim(Copy(SL.Strings[n], P+1, Length((SL.Strings[n]))));
+        if Pos('Р”Р°С‚Р°',          SL.Strings[n]) <> 0 then TimeDate := Trim(Copy(SL.Strings[n], P+1, Length((SL.Strings[n]))));
+  //      if Pos('Р’СЂРµРјСЏ', SL.Strings[n])         <> 0 then TimeDate := Trim(Copy(SL.Strings[n], P+1, Length((SL.Strings[n]))));
+        if Pos('Р’РёРґ РёСЃРїС‹С‚Р°РЅРёР№', SL.Strings[n]) <> 0 then info := Trim(Copy(SL.Strings[n], P+1, Length((SL.Strings[n]))))+' ';
+        if Pos('РЈСЃР»РѕРІРёСЏ',       SL.Strings[n]) <> 0 then Condition := Trim(Copy(SL.Strings[n], P+1, Length((SL.Strings[n]))))+' ';
+        if Pos('РћРїРµСЂР°С‚РѕСЂ', SL.Strings[n])      <> 0 then NOperator := Trim(Copy(SL.Strings[n], P+1, Length((SL.Strings[n]))));
 
         Continue;
       end;
@@ -407,21 +407,21 @@ begin
     end;
     if X >= Length(TestsParams) then SetLength(TestsParams, X+1);
     tmpStr := '';
-    Delete(Str, 1, Pos(#9, Str)); // Удалим номер кристалла
-    Delete(Str, 1, Pos(#9, Str)); // Удалим номер теста
-    tmpStr := Trim(Copy(Str, 1, Pos(#9, Str))); // Запомним имя параметра
-    Delete(Str, 1, Pos(#9, Str)); // Удалим название параметра
-    Delete(Str, 1, Pos(#9, Str)); // Удалим параметр
-    tmpStr := tmpStr+' ('+Trim(Copy(Str, 1, Pos(#9, Str)))+')'; // Запомним полное имя параметра
+    Delete(Str, 1, Pos(#9, Str)); // РЈРґР°Р»РёРј РЅРѕРјРµСЂ РєСЂРёСЃС‚Р°Р»Р»Р°
+    Delete(Str, 1, Pos(#9, Str)); // РЈРґР°Р»РёРј РЅРѕРјРµСЂ С‚РµСЃС‚Р°
+    tmpStr := Trim(Copy(Str, 1, Pos(#9, Str))); // Р—Р°РїРѕРјРЅРёРј РёРјСЏ РїР°СЂР°РјРµС‚СЂР°
+    Delete(Str, 1, Pos(#9, Str)); // РЈРґР°Р»РёРј РЅР°Р·РІР°РЅРёРµ РїР°СЂР°РјРµС‚СЂР°
+    Delete(Str, 1, Pos(#9, Str)); // РЈРґР°Р»РёРј РїР°СЂР°РјРµС‚СЂ
+    tmpStr := tmpStr+' ('+Trim(Copy(Str, 1, Pos(#9, Str)))+')'; // Р—Р°РїРѕРјРЅРёРј РїРѕР»РЅРѕРµ РёРјСЏ РїР°СЂР°РјРµС‚СЂР°
     TestsParams[X].Name := tmpStr;
-    Delete(Str, 1, Pos(#9, Str)); // Удалим параметр
-    Delete(Str, 1, Pos(#9, Str)); // Удалим метку брака
+    Delete(Str, 1, Pos(#9, Str)); // РЈРґР°Р»РёРј РїР°СЂР°РјРµС‚СЂ
+    Delete(Str, 1, Pos(#9, Str)); // РЈРґР°Р»РёРј РјРµС‚РєСѓ Р±СЂР°РєР°
 
-    tmpStr := Trim(Copy(Str, 1, Pos(#9, Str))); // Выделим нижний предел
+    tmpStr := Trim(Copy(Str, 1, Pos(#9, Str))); // Р’С‹РґРµР»РёРј РЅРёР¶РЅРёР№ РїСЂРµРґРµР»
     if Pos('.', tmpStr) <> 0 then FormatSettings.DecimalSeparator := '.'
                              else FormatSettings.DecimalSeparator := ',';
     try
-      TestsParams[X].Norma.Min := StrToFloat(tmpStr); // Запишем нижний предел
+      TestsParams[X].Norma.Min := StrToFloat(tmpStr); // Р—Р°РїРёС€РµРј РЅРёР¶РЅРёР№ РїСЂРµРґРµР»
 //      DecimalSeparator := ',';
       tmpStr := FormatFloat('0.000', TestsParams[X].Norma.Min);
 //      DecimalSeparator := '.';
@@ -429,11 +429,11 @@ begin
       TestsParams[X].Norma.Min := -NotSpec;
       tmpStr := tmpStr+'N';
     end;
-    Delete(Str, 1, Pos(#9, Str)); // Удалим мин. норму
-    Delete(Str, 1, Pos(#9, Str)); // Удалим мин. норму
+    Delete(Str, 1, Pos(#9, Str)); // РЈРґР°Р»РёРј РјРёРЅ. РЅРѕСЂРјСѓ
+    Delete(Str, 1, Pos(#9, Str)); // РЈРґР°Р»РёРј РјРёРЅ. РЅРѕСЂРјСѓ
 
     try
-      TestsParams[X].Norma.Max := StrToFloat(Trim(Copy(Str, 1, Pos(#9, Str)))); // Запишем верхний предел
+      TestsParams[X].Norma.Max := StrToFloat(Trim(Copy(Str, 1, Pos(#9, Str)))); // Р—Р°РїРёС€РµРј РІРµСЂС…РЅРёР№ РїСЂРµРґРµР»
 //      DecimalSeparator := ',';
       tmpStr := tmpStr+';'+FormatFloat('0.000', TestsParams[X].Norma.Max);
 //      DecimalSeparator := '.';
@@ -456,8 +456,8 @@ begin
 
   SetLength(Chip, 0, 0);
   SetLength(Chip, Y, X);
-    for Y := 0 to Length(Chip)-1 do      // Очистим
-      for X := 0 to Length(Chip[0])-1 do // массив
+    for Y := 0 to Length(Chip)-1 do      // РћС‡РёСЃС‚РёРј
+      for X := 0 to Length(Chip[0])-1 do // РјР°СЃСЃРёРІ
       begin                              //
         Chip[Y, X].Status := 2;          //
         Chip[Y, X].ID     := 0;          //
@@ -512,13 +512,13 @@ begin                                                       //
       Continue;
     end;
 
-    if Str[1] = '1' then // Если параметр
+    if Str[1] = '1' then // Р•СЃР»Рё РїР°СЂР°РјРµС‚СЂ
     begin
-      Delete(Str, 1, Pos('`', Str)); // Удалим номер сайта
+      Delete(Str, 1, Pos('`', Str)); // РЈРґР°Р»РёРј РЅРѕРјРµСЂ СЃР°Р№С‚Р°
       P := Pos('`', Str);
       eP := PosEx('`', Str, P+1);
-      tmpStr1 := Trim(Copy(Str, 1, P-1));      // Запомним имя параметра
-      tmpStr2 := Trim(Copy(Str, P+1, eP-P-1)); // Запомним другое имя параметра
+      tmpStr1 := Trim(Copy(Str, 1, P-1));      // Р—Р°РїРѕРјРЅРёРј РёРјСЏ РїР°СЂР°РјРµС‚СЂР°
+      tmpStr2 := Trim(Copy(Str, P+1, eP-P-1)); // Р—Р°РїРѕРјРЅРёРј РґСЂСѓРіРѕРµ РёРјСЏ РїР°СЂР°РјРµС‚СЂР°
 
       if (Pos('CONTINUITY', UpperCase(Str)) <> 0) or
          (Pos('CONTAKT',    UpperCase(Str)) <> 0) or
@@ -544,19 +544,19 @@ begin                                                       //
       end;
 
       Inc(X);
-      if X > Length(TestsParams) then // Если не полный список параметров - дополним
+      if X > Length(TestsParams) then // Р•СЃР»Рё РЅРµ РїРѕР»РЅС‹Р№ СЃРїРёСЃРѕРє РїР°СЂР°РјРµС‚СЂРѕРІ - РґРѕРїРѕР»РЅРёРј
       begin
         SetLength(TestsParams, X);
-        Delete(Str, 1, Pos('`', Str)); // Удалим название параметра
-        //tmpStr := tmpStr+' - '+Trim(Copy(Str, 1, Pos('`', Str)-1)); // Запомним полное имя параметра
+        Delete(Str, 1, Pos('`', Str)); // РЈРґР°Р»РёРј РЅР°Р·РІР°РЅРёРµ РїР°СЂР°РјРµС‚СЂР°
+        //tmpStr := tmpStr+' - '+Trim(Copy(Str, 1, Pos('`', Str)-1)); // Р—Р°РїРѕРјРЅРёРј РїРѕР»РЅРѕРµ РёРјСЏ РїР°СЂР°РјРµС‚СЂР°
         StatusNamesSL.Add(IntToStr(2000+X-1)+'='+Trim(Copy(Str, 1, Pos('`', Str)-1)));
-        Delete(Str, 1, Pos('`', Str)); // Удалим полное имя параметра
-        TestsParams[X-1].Name := tmpStr1+' - '+tmpStr2; // Запишем полное имя параметра
+        Delete(Str, 1, Pos('`', Str)); // РЈРґР°Р»РёРј РїРѕР»РЅРѕРµ РёРјСЏ РїР°СЂР°РјРµС‚СЂР°
+        TestsParams[X-1].Name := tmpStr1+' - '+tmpStr2; // Р—Р°РїРёС€РµРј РїРѕР»РЅРѕРµ РёРјСЏ РїР°СЂР°РјРµС‚СЂР°
 
-        Delete(Str, 1, Pos('`', Str)); // Удалим passed/FAILED
+        Delete(Str, 1, Pos('`', Str)); // РЈРґР°Р»РёРј passed/FAILED
         Str := Trim(Str);
         try
-          TestsParams[X-1].Norma.Min := StrToFloat(Trim(Copy(Str, 1, Pos(' ', Str)-1))); // Запишем нижний предел
+          TestsParams[X-1].Norma.Min := StrToFloat(Trim(Copy(Str, 1, Pos(' ', Str)-1))); // Р—Р°РїРёС€РµРј РЅРёР¶РЅРёР№ РїСЂРµРґРµР»
           FormatSettings.DecimalSeparator := ',';
           tmpStr1 := FormatFloat('0.000', TestsParams[X-1].Norma.Min);
           FormatSettings.DecimalSeparator := '.';
@@ -564,15 +564,15 @@ begin                                                       //
           TestsParams[X-1].Norma.Min := -NotSpec;
           tmpStr1 := tmpStr1+'N';
         end;
-        Delete(Str, 1, Pos(' ', Str)); // Удалим нижний предел
-        TestsParams[X-1].Name := TestsParams[X-1].Name+' ('+Trim(Copy(Str, 1, Pos(' ', Str)-1)+')'); // Добавим единицу измерения
-        Delete(Str, 1, Pos('`', Str)); // Удалим единицу измерения и остальное
-        Delete(Str, 1, Pos('`', Str)); // Удалим значение
+        Delete(Str, 1, Pos(' ', Str)); // РЈРґР°Р»РёРј РЅРёР¶РЅРёР№ РїСЂРµРґРµР»
+        TestsParams[X-1].Name := TestsParams[X-1].Name+' ('+Trim(Copy(Str, 1, Pos(' ', Str)-1)+')'); // Р”РѕР±Р°РІРёРј РµРґРёРЅРёС†Сѓ РёР·РјРµСЂРµРЅРёСЏ
+        Delete(Str, 1, Pos('`', Str)); // РЈРґР°Р»РёРј РµРґРёРЅРёС†Сѓ РёР·РјРµСЂРµРЅРёСЏ Рё РѕСЃС‚Р°Р»СЊРЅРѕРµ
+        Delete(Str, 1, Pos('`', Str)); // РЈРґР°Р»РёРј Р·РЅР°С‡РµРЅРёРµ
         Str := Trim(Str);
-        Delete(Str, 1, Pos(' ', Str)); // Удалим остальное
+        Delete(Str, 1, Pos(' ', Str)); // РЈРґР°Р»РёРј РѕСЃС‚Р°Р»СЊРЅРѕРµ
         Str := Trim(Str);
         try
-          TestsParams[X-1].Norma.Max := StrToFloat(Trim(Copy(Str, 1, Pos(' ', Str)-1))); // Запишем верхний предел
+          TestsParams[X-1].Norma.Max := StrToFloat(Trim(Copy(Str, 1, Pos(' ', Str)-1))); // Р—Р°РїРёС€РµРј РІРµСЂС…РЅРёР№ РїСЂРµРґРµР»
           FormatSettings.DecimalSeparator := ',';
           tmpStr1 := tmpStr1+';'+FormatFloat('0.000', TestsParams[X-1].Norma.Max);
           FormatSettings.DecimalSeparator := '.';
@@ -595,8 +595,8 @@ begin                                                       //
 
   SetLength(Chip, 0, 0);
   SetLength(Chip, Y, X);
-    for Y := 0 to Length(Chip)-1 do      // Очистим
-      for X := 0 to Length(Chip[0])-1 do // массив
+    for Y := 0 to Length(Chip)-1 do      // РћС‡РёСЃС‚РёРј
+      for X := 0 to Length(Chip[0])-1 do // РјР°СЃСЃРёРІ
       begin                              //
         Chip[Y, X].Status := 2;          //
         Chip[Y, X].ID     := 0;          //
@@ -652,13 +652,13 @@ begin                                                       //
       Continue;
     end;
 
-    if Str[1] = '1' then // Если параметр
+    if Str[1] = '1' then // Р•СЃР»Рё РїР°СЂР°РјРµС‚СЂ
     begin
-      Delete(Str, 1, Pos('`', Str)); // Удалим номер сайта
+      Delete(Str, 1, Pos('`', Str)); // РЈРґР°Р»РёРј РЅРѕРјРµСЂ СЃР°Р№С‚Р°
       P := Pos('`', Str);
       eP := PosEx('`', Str, P+1);
-      tmpStr1 := Trim(Copy(Str, 1, P-1));      // Запомним имя параметра
-      tmpStr2 := Trim(Copy(Str, P+1, eP-P-1)); // Запомним другое имя параметра
+      tmpStr1 := Trim(Copy(Str, 1, P-1));      // Р—Р°РїРѕРјРЅРёРј РёРјСЏ РїР°СЂР°РјРµС‚СЂР°
+      tmpStr2 := Trim(Copy(Str, P+1, eP-P-1)); // Р—Р°РїРѕРјРЅРёРј РґСЂСѓРіРѕРµ РёРјСЏ РїР°СЂР°РјРµС‚СЂР°
 
       if (Pos('CONTINUITY', UpperCase(Str)) <> 0) or
          (Pos('CONTAKT',    UpperCase(Str)) <> 0) or
@@ -684,19 +684,19 @@ begin                                                       //
       end;
 
       Inc(X);
-      if X > Length(TestsParams) then // Если не полный список параметров - дополним
+      if X > Length(TestsParams) then // Р•СЃР»Рё РЅРµ РїРѕР»РЅС‹Р№ СЃРїРёСЃРѕРє РїР°СЂР°РјРµС‚СЂРѕРІ - РґРѕРїРѕР»РЅРёРј
       begin
         SetLength(TestsParams, X);
-        Delete(Str, 1, Pos('`', Str)); // Удалим название параметра
-        //tmpStr := tmpStr+' - '+Trim(Copy(Str, 1, Pos('`', Str)-1)); // Запомним полное имя параметра
+        Delete(Str, 1, Pos('`', Str)); // РЈРґР°Р»РёРј РЅР°Р·РІР°РЅРёРµ РїР°СЂР°РјРµС‚СЂР°
+        //tmpStr := tmpStr+' - '+Trim(Copy(Str, 1, Pos('`', Str)-1)); // Р—Р°РїРѕРјРЅРёРј РїРѕР»РЅРѕРµ РёРјСЏ РїР°СЂР°РјРµС‚СЂР°
         StatusNamesSL.Add(IntToStr(2000+X-1)+'='+Trim(Copy(Str, 1, Pos('`', Str)-1)));
-        Delete(Str, 1, Pos('`', Str)); // Удалим полное имя параметра
-        TestsParams[X-1].Name := tmpStr2; // Запишем полное имя параметра
+        Delete(Str, 1, Pos('`', Str)); // РЈРґР°Р»РёРј РїРѕР»РЅРѕРµ РёРјСЏ РїР°СЂР°РјРµС‚СЂР°
+        TestsParams[X-1].Name := tmpStr2; // Р—Р°РїРёС€РµРј РїРѕР»РЅРѕРµ РёРјСЏ РїР°СЂР°РјРµС‚СЂР°
 
-        Delete(Str, 1, Pos('`', Str)); // Удалим passed/FAILED
+        Delete(Str, 1, Pos('`', Str)); // РЈРґР°Р»РёРј passed/FAILED
         Str := Trim(Str);
         try
-          TestsParams[X-1].Norma.Min := StrToFloat(Trim(Copy(Str, 1, Pos(' ', Str)-1))); // Запишем нижний предел
+          TestsParams[X-1].Norma.Min := StrToFloat(Trim(Copy(Str, 1, Pos(' ', Str)-1))); // Р—Р°РїРёС€РµРј РЅРёР¶РЅРёР№ РїСЂРµРґРµР»
           FormatSettings.DecimalSeparator := ',';
           tmpStr1 := FormatFloat('0.000', TestsParams[X-1].Norma.Min);
           FormatSettings.DecimalSeparator := '.';
@@ -704,15 +704,15 @@ begin                                                       //
           TestsParams[X-1].Norma.Min := -NotSpec;
           tmpStr1 := tmpStr1+'N';
         end;
-        Delete(Str, 1, Pos(' ', Str)); // Удалим нижний предел
-        TestsParams[X-1].Name := TestsParams[X-1].Name+' ('+Trim(Copy(Str, 1, Pos(' ', Str)-1)+')'); // Добавим единицу измерения
-        Delete(Str, 1, Pos('`', Str)); // Удалим единицу измерения и остальное
-        Delete(Str, 1, Pos('`', Str)); // Удалим значение
+        Delete(Str, 1, Pos(' ', Str)); // РЈРґР°Р»РёРј РЅРёР¶РЅРёР№ РїСЂРµРґРµР»
+        TestsParams[X-1].Name := TestsParams[X-1].Name+' ('+Trim(Copy(Str, 1, Pos(' ', Str)-1)+')'); // Р”РѕР±Р°РІРёРј РµРґРёРЅРёС†Сѓ РёР·РјРµСЂРµРЅРёСЏ
+        Delete(Str, 1, Pos('`', Str)); // РЈРґР°Р»РёРј РµРґРёРЅРёС†Сѓ РёР·РјРµСЂРµРЅРёСЏ Рё РѕСЃС‚Р°Р»СЊРЅРѕРµ
+        Delete(Str, 1, Pos('`', Str)); // РЈРґР°Р»РёРј Р·РЅР°С‡РµРЅРёРµ
         Str := Trim(Str);
-        Delete(Str, 1, Pos(' ', Str)); // Удалим остальное
+        Delete(Str, 1, Pos(' ', Str)); // РЈРґР°Р»РёРј РѕСЃС‚Р°Р»СЊРЅРѕРµ
         Str := Trim(Str);
         try
-          TestsParams[X-1].Norma.Max := StrToFloat(Trim(Copy(Str, 1, Pos(' ', Str)-1))); // Запишем верхний предел
+          TestsParams[X-1].Norma.Max := StrToFloat(Trim(Copy(Str, 1, Pos(' ', Str)-1))); // Р—Р°РїРёС€РµРј РІРµСЂС…РЅРёР№ РїСЂРµРґРµР»
           FormatSettings.DecimalSeparator := ',';
           tmpStr1 := tmpStr1+';'+FormatFloat('0.000', TestsParams[X-1].Norma.Max);
           FormatSettings.DecimalSeparator := '.';
@@ -731,9 +731,9 @@ begin                                                       //
 
 //  MessageBox(0, PAnsiChar(IntToStr(Length(TestsParams))), PAnsiChar(IntToStr(Length(TestsParams))), 0);
 
-  for Y := 0 to Length(Chip)-1 do      // Очистим
-    for X := 0 to Length(Chip[0])-1 do // массив
-    begin                              // от брака
+  for Y := 0 to Length(Chip)-1 do      // РћС‡РёСЃС‚РёРј
+    for X := 0 to Length(Chip[0])-1 do // РјР°СЃСЃРёРІ
+    begin                              // РѕС‚ Р±СЂР°РєР°
       if Chip[Y, X].Status > 9 then Chip[Y, X].Status := 0;
       SetLength(Chip[Y, X].ChipParams, Length(TestsParams));
     end;
@@ -747,7 +747,7 @@ end;
 ////////////////////////////////////////////////////////////////////////
 procedure TWafer.Normalize();                                         //
 label                                                                 //
-  X0_End, X1_End, Y0_End, Y1_End; // Стыыыддннооо                     //
+  X0_End, X1_End, Y0_End, Y1_End; // РЎС‚С‹С‹С‹РґРґРЅРЅРѕРѕРѕ                     //
 var                                                                   //
   tmpChip: TChips;                                                    //
   X, Y, X0, X1, Y0, Y1: WORD;                                         //
@@ -938,13 +938,13 @@ var                                                                             
   N: DWORD;                                                                       //
   X, Y, XY: WORD;                                                                 //
   tmp: byte;                                                                      //
-  MassXY: array of WORD; // Массив не пустых строк                                //
+  MassXY: array of WORD; // РњР°СЃСЃРёРІ РЅРµ РїСѓСЃС‚С‹С… СЃС‚СЂРѕРє                                //
 begin                                                                             //
   if Length(Chip) = 0 then Exit;                                                  //
                                                                                   //
   N := 0;                                                                         //
                                                                                   //
-  if Direct in [0,1,2,3,8,9,10,11] then // Горизонтальный обход                   //
+  if Direct in [0,1,2,3,8,9,10,11] then // Р“РѕСЂРёР·РѕРЅС‚Р°Р»СЊРЅС‹Р№ РѕР±С…РѕРґ                   //
   begin                                                                           //
     SetLength(MassXY, Length(Chip));                                              //
     for Y := 0 to Length(Chip)-1 do                                               //
@@ -964,7 +964,7 @@ begin                                                                           
             end;                                                                  //
         end;                                                                      //
   end                                                                             //
-  else                                  // Вертикальный обход                     //
+  else                                  // Р’РµСЂС‚РёРєР°Р»СЊРЅС‹Р№ РѕР±С…РѕРґ                     //
   begin                                                                           //
     SetLength(MassXY, Length(Chip[0]));                                           //
     for X := 0 to Length(Chip[0])-1 do                                            //
@@ -991,7 +991,7 @@ begin                                                                           
   SetLength(ChipN, 0);                                                            //
   SetLength(ChipN, Length(Chip[0])*Length(Chip));                                 //
                                                                                   //
-////////////////////////// * Справа налево (сверху) * //////////////////////////////
+////////////////////////// * РЎРїСЂР°РІР° РЅР°Р»РµРІРѕ (СЃРІРµСЂС…Сѓ) * //////////////////////////////
                                                                                   //
   if Direct = dURightToLeft then                                                  //
     for XY := 0 to Length(MassXY)-1 do                                            //
@@ -1001,12 +1001,12 @@ begin                                                                           
         if IsChip(Chip[Y, X].Status) then                                         //
         begin                                                                     //
           Inc(N);                                                                 //
-          Chip[Y, X].ID := N; // номер кристалла                                  //
+          Chip[Y, X].ID := N; // РЅРѕРјРµСЂ РєСЂРёСЃС‚Р°Р»Р»Р°                                  //
           ChipN[N-1] := Point(X, Y);                                              //
         end;                                                                      //
     end;                                                                          //
                                                                                   //
-/////////////////////////// * Слева направо (сверху) * /////////////////////////////
+/////////////////////////// * РЎР»РµРІР° РЅР°РїСЂР°РІРѕ (СЃРІРµСЂС…Сѓ) * /////////////////////////////
                                                                                   //
   if Direct = dULeftToRight then                                                  //
     for XY := 0 to Length(MassXY)-1 do                                            //
@@ -1016,12 +1016,12 @@ begin                                                                           
         if IsChip(Chip[Y, X].Status) then                                         //
         begin                                                                     //
           Inc(N);                                                                 //
-          Chip[Y, X].ID := N; // номер кристалла                                  //
+          Chip[Y, X].ID := N; // РЅРѕРјРµСЂ РєСЂРёСЃС‚Р°Р»Р»Р°                                  //
           ChipN[N-1] := Point(X, Y);                                              //
         end;                                                                      //
     end;                                                                          //
                                                                                   //
-////////////////////// * Правая и левая змейки (сверху) * //////////////////////////
+////////////////////// * РџСЂР°РІР°СЏ Рё Р»РµРІР°СЏ Р·РјРµР№РєРё (СЃРІРµСЂС…Сѓ) * //////////////////////////
                                                                                   //
   if Direct in [dURightSnake, dULeftSnake] then                                   //
   begin                                                                           //
@@ -1036,7 +1036,7 @@ begin                                                                           
           if IsChip(Chip[Y, X].Status) then                                       //
           begin                                                                   //
             Inc(N);                                                               //
-            Chip[Y, X].ID := N; // номер кристалла                                //
+            Chip[Y, X].ID := N; // РЅРѕРјРµСЂ РєСЂРёСЃС‚Р°Р»Р»Р°                                //
             ChipN[N-1] := Point(X, Y);                                            //
           end;                                                                    //
       end                                                                         //
@@ -1045,7 +1045,7 @@ begin                                                                           
           if IsChip(Chip[Y, X].Status) then                                       //
           begin                                                                   //
             Inc(N);                                                               //
-            Chip[Y, X].ID := N; // номер кристалла                                //
+            Chip[Y, X].ID := N; // РЅРѕРјРµСЂ РєСЂРёСЃС‚Р°Р»Р»Р°                                //
             ChipN[N-1] := Point(X, Y);                                            //
           end;                                                                    //
     end;                                                                          //
@@ -1053,7 +1053,7 @@ begin                                                                           
                                                                                   //
 ////////////////////////////////////////////////////////////////////////////////////
                                                                                   //
-//////////////////////////// * Сверху вниз (слева) * ///////////////////////////////
+//////////////////////////// * РЎРІРµСЂС…Сѓ РІРЅРёР· (СЃР»РµРІР°) * ///////////////////////////////
                                                                                   //
   if Direct = dLUpToDown then                                                     //
     for XY := 0 to Length(MassXY)-1 do                                            //
@@ -1063,12 +1063,12 @@ begin                                                                           
         if IsChip(Chip[Y, X].Status) then                                         //
         begin                                                                     //
           Inc(N);                                                                 //
-          Chip[Y, X].ID := N; // номер кристалла                                  //
+          Chip[Y, X].ID := N; // РЅРѕРјРµСЂ РєСЂРёСЃС‚Р°Р»Р»Р°                                  //
           ChipN[N-1] := Point(X, Y);                                              //
         end;                                                                      //
     end;                                                                          //
                                                                                   //
-//////////////////////////// * Снизу вверх (слева) * ///////////////////////////////
+//////////////////////////// * РЎРЅРёР·Сѓ РІРІРµСЂС… (СЃР»РµРІР°) * ///////////////////////////////
                                                                                   //
   if Direct = dLDownToUp then                                                     //
     for XY := 0 to Length(MassXY)-1 do                                            //
@@ -1078,12 +1078,12 @@ begin                                                                           
         if IsChip(Chip[Y, X].Status) then                                         //
         begin                                                                     //
           Inc(N);                                                                 //
-          Chip[Y, X].ID := N; // номер кристалла                                  //
+          Chip[Y, X].ID := N; // РЅРѕРјРµСЂ РєСЂРёСЃС‚Р°Р»Р»Р°                                  //
           ChipN[N-1] := Point(X, Y);                                              //
         end;                                                                      //
     end;                                                                          //
                                                                                   //
-////////////////////// * Верхняя и нижняя змейки (слева) * /////////////////////////
+////////////////////// * Р’РµСЂС…РЅСЏСЏ Рё РЅРёР¶РЅСЏСЏ Р·РјРµР№РєРё (СЃР»РµРІР°) * /////////////////////////
                                                                                   //
   if Direct in [dLUpSnake, dLDownSnake] then                                      //
   begin                                                                           //
@@ -1098,7 +1098,7 @@ begin                                                                           
           if IsChip(Chip[Y, X].Status) then                                       //
           begin                                                                   //
             Inc(N);                                                               //
-            Chip[Y, X].ID := N; // номер кристалла                                //
+            Chip[Y, X].ID := N; // РЅРѕРјРµСЂ РєСЂРёСЃС‚Р°Р»Р»Р°                                //
             ChipN[N-1] := Point(X, Y);                                            //
           end;                                                                    //
       end                                                                         //
@@ -1107,7 +1107,7 @@ begin                                                                           
           if IsChip(Chip[Y, X].Status) then                                       //
           begin                                                                   //
             Inc(N);                                                               //
-            Chip[Y, X].ID := N; // номер кристалла                                //
+            Chip[Y, X].ID := N; // РЅРѕРјРµСЂ РєСЂРёСЃС‚Р°Р»Р»Р°                                //
             ChipN[N-1] := Point(X, Y);                                            //
           end;                                                                    //
     end;                                                                          //
@@ -1115,7 +1115,7 @@ begin                                                                           
                                                                                   //
 ////////////////////////////////////////////////////////////////////////////////////
                                                                                   //
-/////////////////////////// * Справа налево (снизу) * //////////////////////////////
+/////////////////////////// * РЎРїСЂР°РІР° РЅР°Р»РµРІРѕ (СЃРЅРёР·Сѓ) * //////////////////////////////
                                                                                   //
   if Direct = dDRightToLeft then                                                  //
     for XY := Length(MassXY)-1 downto 0 do                                        //
@@ -1125,12 +1125,12 @@ begin                                                                           
         if IsChip(Chip[Y, X].Status) then                                         //
         begin                                                                     //
           Inc(N);                                                                 //
-          Chip[Y, X].ID := N; // номер кристалла                                  //
+          Chip[Y, X].ID := N; // РЅРѕРјРµСЂ РєСЂРёСЃС‚Р°Р»Р»Р°                                  //
           ChipN[N-1] := Point(X, Y);                                              //
         end;                                                                      //
     end;                                                                          //
                                                                                   //
-/////////////////////////// * Слева направо (снизу) * //////////////////////////////
+/////////////////////////// * РЎР»РµРІР° РЅР°РїСЂР°РІРѕ (СЃРЅРёР·Сѓ) * //////////////////////////////
                                                                                   //
   if Direct = dDLeftToRight then                                                  //
     for XY := Length(MassXY)-1 downto 0 do                                        //
@@ -1140,12 +1140,12 @@ begin                                                                           
         if IsChip(Chip[Y, X].Status) then                                         //
         begin                                                                     //
           Inc(N);                                                                 //
-          Chip[Y, X].ID := N; // номер кристалла                                  //
+          Chip[Y, X].ID := N; // РЅРѕРјРµСЂ РєСЂРёСЃС‚Р°Р»Р»Р°                                  //
           ChipN[N-1] := Point(X, Y);                                              //
         end;                                                                      //
     end;                                                                          //
                                                                                   //
-/////////////////////// * Правая и левая змейки (снизу) * //////////////////////////
+/////////////////////// * РџСЂР°РІР°СЏ Рё Р»РµРІР°СЏ Р·РјРµР№РєРё (СЃРЅРёР·Сѓ) * //////////////////////////
                                                                                   //
   if Direct in [dDRightSnake, dDLeftSnake] then                                   //
   begin                                                                           //
@@ -1160,7 +1160,7 @@ begin                                                                           
           if IsChip(Chip[Y, X].Status) then                                       //
           begin                                                                   //
             Inc(N);                                                               //
-            Chip[Y, X].ID := N; // номер кристалла                                //
+            Chip[Y, X].ID := N; // РЅРѕРјРµСЂ РєСЂРёСЃС‚Р°Р»Р»Р°                                //
             ChipN[N-1] := Point(X, Y);                                            //
           end;                                                                    //
       end                                                                         //
@@ -1169,7 +1169,7 @@ begin                                                                           
           if IsChip(Chip[Y, X].Status) then                                       //
           begin                                                                   //
             Inc(N);                                                               //
-            Chip[Y, X].ID := N; // номер кристалла                                //
+            Chip[Y, X].ID := N; // РЅРѕРјРµСЂ РєСЂРёСЃС‚Р°Р»Р»Р°                                //
             ChipN[N-1] := Point(X, Y);                                            //
           end;                                                                    //
     end;                                                                          //
@@ -1177,7 +1177,7 @@ begin                                                                           
                                                                                   //
 ////////////////////////////////////////////////////////////////////////////////////
                                                                                   //
-/////////////////////////// * Сверху вниз (справа) * ///////////////////////////////
+/////////////////////////// * РЎРІРµСЂС…Сѓ РІРЅРёР· (СЃРїСЂР°РІР°) * ///////////////////////////////
                                                                                   //
   if Direct = dRUpToDown then                                                     //
     for XY := Length(MassXY)-1 downto 0 do                                        //
@@ -1187,12 +1187,12 @@ begin                                                                           
         if IsChip(Chip[Y, X].Status) then                                         //
         begin                                                                     //
           Inc(N);                                                                 //
-          Chip[Y, X].ID := N; // номер кристалла                                  //
+          Chip[Y, X].ID := N; // РЅРѕРјРµСЂ РєСЂРёСЃС‚Р°Р»Р»Р°                                  //
           ChipN[N-1] := Point(X, Y);                                              //
         end;                                                                      //
     end;                                                                          //
                                                                                   //
-//////////////////////////// * Снизу вверх (справа) * //////////////////////////////
+//////////////////////////// * РЎРЅРёР·Сѓ РІРІРµСЂС… (СЃРїСЂР°РІР°) * //////////////////////////////
                                                                                   //
   if Direct = dRDownToUp then                                                     //
     for XY := Length(MassXY)-1 downto 0 do                                        //
@@ -1202,12 +1202,12 @@ begin                                                                           
         if IsChip(Chip[Y, X].Status) then                                         //
         begin                                                                     //
           Inc(N);                                                                 //
-          Chip[Y, X].ID := N; // номер кристалла                                  //
+          Chip[Y, X].ID := N; // РЅРѕРјРµСЂ РєСЂРёСЃС‚Р°Р»Р»Р°                                  //
           ChipN[N-1] := Point(X, Y);                                              //
         end;                                                                      //
     end;                                                                          //
                                                                                   //
-////////////////////// * Верхняя и нижняя змейки (справа) * ////////////////////////
+////////////////////// * Р’РµСЂС…РЅСЏСЏ Рё РЅРёР¶РЅСЏСЏ Р·РјРµР№РєРё (СЃРїСЂР°РІР°) * ////////////////////////
                                                                                   //
   if Direct in [dRUpSnake, dRDownSnake] then                                      //
   begin                                                                           //
@@ -1222,7 +1222,7 @@ begin                                                                           
           if IsChip(Chip[Y, X].Status) then                                       //
           begin                                                                   //
             Inc(N);                                                               //
-            Chip[Y, X].ID := N; // номер кристалла                                //
+            Chip[Y, X].ID := N; // РЅРѕРјРµСЂ РєСЂРёСЃС‚Р°Р»Р»Р°                                //
             ChipN[N-1] := Point(X, Y);                                            //
           end;                                                                    //
       end                                                                         //
@@ -1231,7 +1231,7 @@ begin                                                                           
           if IsChip(Chip[Y, X].Status) then                                       //
           begin                                                                   //
             Inc(N);                                                               //
-            Chip[Y, X].ID := N; // номер кристалла                                //
+            Chip[Y, X].ID := N; // РЅРѕРјРµСЂ РєСЂРёСЃС‚Р°Р»Р»Р°                                //
             ChipN[N-1] := Point(X, Y);                                            //
           end;                                                                    //
     end;                                                                          //
@@ -1321,7 +1321,7 @@ begin                                                                      //
     try                                                                    //
       Open;                                                                //
     except                                                                 //
-      ErrMess(Handle, 'ошибка формата таблицы!');                          //
+      ErrMess(Handle, 'РѕС€РёР±РєР° С„РѕСЂРјР°С‚Р° С‚Р°Р±Р»РёС†С‹!');                          //
       ADOQuery.Free();                                                     //
     end;                                                                   //
                                                                            //
@@ -1330,7 +1330,7 @@ begin                                                                      //
     if SL.Count > 0 then                                                   //
     begin                                                                  //
       if Length(TestsParams) = 0 then SetLength(TestsParams, SL.Count-3);  //
-      for n := 3 to SL.Count-1 do         // Пропустим 3 колонки           //
+      for n := 3 to SL.Count-1 do         // РџСЂРѕРїСѓСЃС‚РёРј 3 РєРѕР»РѕРЅРєРё           //
       begin                                                                //
         TestsParams[n-3].Name := SL[n];                                    //
         TestsParams[n-3].Norma.Min := -NotSpec;                            //
@@ -1344,15 +1344,15 @@ begin                                                                      //
       begin                                                                //
         NTotal := RecordCount;                                             //
                                                                            //
-        X := Ceil(sqrt(NTotal)); // Сделаем                                //
-        Y := X;                  // пластину квадратной                    //
+        X := Ceil(sqrt(NTotal)); // РЎРґРµР»Р°РµРј                                //
+        Y := X;                  // РїР»Р°СЃС‚РёРЅСѓ РєРІР°РґСЂР°С‚РЅРѕР№                    //
                                                                            //
         SetLength(ChipN, NTotal);                                          //
         SetLength(Chip, 0, 0);                                             //
         SetLength(Chip, Y, X);                                             //
-        for Y := 0 to Length(Chip)-1 do      // Очистим                    //
-          for X := 0 to Length(Chip[0])-1 do // массив                     //
-          begin                              // чипов                      //
+        for Y := 0 to Length(Chip)-1 do      // РћС‡РёСЃС‚РёРј                    //
+          for X := 0 to Length(Chip[0])-1 do // РјР°СЃСЃРёРІ                     //
+          begin                              // С‡РёРїРѕРІ                      //
             Chip[Y, X].Status := 2;          //                            //
             Chip[Y, X].ID     := 0;          //                            //
             SetLength(Chip[Y, X].ChipParams, Length(TestsParams));         //
@@ -1364,15 +1364,15 @@ begin                                                                      //
         X := 0;                                                            //
         for n := 0 to RecordCount-1 do                                     //
         begin                                                              //
-          if Fields[1].Value = 'Б' then Chip[Y, X].Status := 2000          //
+          if Fields[1].Value = 'Р‘' then Chip[Y, X].Status := 2000          //
                                    else Chip[Y, X].Status := 1;            //
                                                                            //
-          Chip[Y, X].ID := n+1;      // Порядок измерения                  //
-          ChipN[n] := Point(X, Y);
-//          ChipN[n].X := X;         //                                      //
-//          ChipN[n].Y := Y;         //                                      //
+          Chip[Y, X].ID := n+1;      // РџРѕСЂСЏРґРѕРє РёР·РјРµСЂРµРЅРёСЏ                  //
+          ChipN[n].X := X;                                                 //
+          ChipN[n].Y := Y;                                                 //
+//          ChipN[n] := Point(X, Y);                                         //
                                                                            //
-          for i := 3 to Fields.Count-1 do // Пропустим 3 колонки           //
+          for i := 3 to Fields.Count-1 do // РџСЂРѕРїСѓСЃС‚РёРј 3 РєРѕР»РѕРЅРєРё           //
           begin                                                            //
             try                                                            //
               Chip[Y, X].ChipParams[i-3].Value := Single(Fields[i].Value); //
@@ -1393,7 +1393,8 @@ begin                                                                      //
       end                                                                  //
       else                                                                 //
       begin                                                                //
-        ErrMess(Handle, 'Пустая пластина!');                               //
+        ErrMess(Handle, 'РџСѓСЃС‚Р°СЏ РїР»Р°СЃС‚РёРЅР°!');                               //
+//        if Assigned(OnEvent) then OnEvent(evError, 'РџСѓСЃС‚Р°СЏ РїР»Р°СЃС‚РёРЅР°!');    //
         Close;                                                             //
         ADOQuery.Free();                                                   //
         FormatSettings.DecimalSeparator := '.';                            //
@@ -1403,6 +1404,8 @@ begin                                                                      //
   end;                                                                     //
                                                                            //
   CalcChips;                                                               //
+                                                                           //
+  Direct := 2; // Р—Р°РґР°РґРёРј РѕР±С…РѕРґ РЅР° Р“Р°РјРјРµ РїРѕ СѓРјРѕР»С‡Р°РЅРёСЋ                      //
                                                                            //
   ADOQuery.Free();                                                         //
                                                                            //
@@ -1432,16 +1435,16 @@ begin                                                                           
     Init;                                                                                            //
     Exit;                                                                                            //
   end;                                                                                               //
-  if Res > 0 then // Если пластина не единственная                                                   //
+  if Res > 0 then // Р•СЃР»Рё РїР»Р°СЃС‚РёРЅР° РЅРµ РµРґРёРЅСЃС‚РІРµРЅРЅР°СЏ                                                   //
   begin                                                                                              //
-    Res := SelectDlg.ShowModal; // Получим ID нужной                                                 //
+    Res := SelectDlg.ShowModal; // РџРѕР»СѓС‡РёРј ID РЅСѓР¶РЅРѕР№                                                 //
     SelectDlg.Free;                                                                                  //
-    if Res = -99999 then Exit; // Если нажата отмена                                                 //
+    if Res = -99999 then Exit; // Р•СЃР»Рё РЅР°Р¶Р°С‚Р° РѕС‚РјРµРЅР°                                                 //
   end                                                                                                //
   else                                                                                               //
   begin                                                                                              //
     SelectDlg.Free;                                                                                  //
-    Res := 0-Res; // Получим ID                                                                      //
+    Res := 0-Res; // РџРѕР»СѓС‡РёРј ID                                                                      //
   end;                                                                                               //
                                                                                                      //
   tmpWafer := TWafer.Create;                                                                         //
@@ -1450,25 +1453,25 @@ begin                                                                           
                                                                                                      //
   if not tmpWafer.LoadDBWaferData(Res) then                                                          //
   begin                                                                                              //
-    ErrMess(Handle, 'Ошибка загрузки пластины!');                                                    //
+    ErrMess(Handle, 'РћС€РёР±РєР° Р·Р°РіСЂСѓР·РєРё РїР»Р°СЃС‚РёРЅС‹!');                                                    //
     tmpWafer.Free;                                                                                   //
     Exit;                                                                                            //
   end;                                                                                               //
   if tmpWafer.Code <> Wafer.Code then                                                                //
   begin                                                                                              //
-    ErrMess(Handle, 'Несовпадают коды!');                                                            //
+    ErrMess(Handle, 'РќРµСЃРѕРІРїР°РґР°СЋС‚ РєРѕРґС‹!');                                                            //
     tmpWafer.Free;                                                                                   //
     Exit;                                                                                            //
   end;                                                                                               //
   if tmpWafer.NLot <> Wafer.NLot then                                                                //
   begin                                                                                              //
-    ErrMess(Handle, 'Несовпадают партии!');                                                          //
+    ErrMess(Handle, 'РќРµСЃРѕРІРїР°РґР°СЋС‚ РїР°СЂС‚РёРё!');                                                          //
     tmpWafer.Free;                                                                                   //
     Exit;                                                                                            //
   end;                                                                                               //
 //  if tmpWafer.Num <> Wafer.Num then                                                                  //
 //  begin                                                                                              //
-//    ErrMess(Handle, 'Несовпадают номера пластин!');                                                  //
+//    ErrMess(Handle, 'РќРµСЃРѕРІРїР°РґР°СЋС‚ РЅРѕРјРµСЂР° РїР»Р°СЃС‚РёРЅ!');                                                  //
 //    tmpWafer.Free;                                                                                   //
 //    Exit;                                                                                            //
 //  end;                                                                                               //
@@ -1476,23 +1479,23 @@ begin                                                                           
   if Params then                                                                                     //
     if not Wafer.LoadDBChipsData then                                                                //
     begin                                                                                            //
-      ErrMess(Handle, 'Ошибка загрузки параметров кристаллов!');                                     //
+      ErrMess(Handle, 'РћС€РёР±РєР° Р·Р°РіСЂСѓР·РєРё РїР°СЂР°РјРµС‚СЂРѕРІ РєСЂРёСЃС‚Р°Р»Р»РѕРІ!');                                     //
       tmpWafer.Free;                                                                                 //
       Exit;                                                                                          //
     end;                                                                                             //
                                                                                                      //
-  if Wafer.CutSide <> 0 then                                     // Подгоним                         //
-     while tmpWafer.CutSide <> Wafer.CutSide do tmpWafer.Rotate; // срез пластины                    //
+  if Wafer.CutSide <> 0 then                                     // РџРѕРґРіРѕРЅРёРј                         //
+     while tmpWafer.CutSide <> Wafer.CutSide do tmpWafer.Rotate; // СЃСЂРµР· РїР»Р°СЃС‚РёРЅС‹                    //
   if (Length(tmpWafer.Chip[0]) <> Length(Wafer.Chip[0])) and                                         //
      (Length(tmpWafer.Chip)    <> Length(Wafer.Chip))    then                                        //
   begin                                                                                              //
-    ErrMess(Handle, 'Несовпадает размерность пластин!');                                             //
+    ErrMess(Handle, 'РќРµСЃРѕРІРїР°РґР°РµС‚ СЂР°Р·РјРµСЂРЅРѕСЃС‚СЊ РїР»Р°СЃС‚РёРЅ!');                                             //
     tmpWafer.Free;                                                                                   //
     Exit;                                                                                            //
   end;                                                                                               //
   if Length(tmpWafer.TestsParams) <> Length(Wafer.TestsParams) then                                  //
   begin                                                                                              //
-    ErrMess(Handle, 'Несовпадает количество параметров!');                                           //
+    ErrMess(Handle, 'РќРµСЃРѕРІРїР°РґР°РµС‚ РєРѕР»РёС‡РµСЃС‚РІРѕ РїР°СЂР°РјРµС‚СЂРѕРІ!');                                           //
     tmpWafer.Free;                                                                                   //
     Exit;                                                                                            //
   end;                                                                                               //
@@ -1552,7 +1555,7 @@ begin                                                                           
                                                                                                      //
   if not LoadSTSHeader then                                                                          //
   begin                                                                                              //
-    ErrMess(Handle, 'Ошибка загрузки заголовка!');                                                   //
+    ErrMess(Handle, 'РћС€РёР±РєР° Р·Р°РіСЂСѓР·РєРё Р·Р°РіРѕР»РѕРІРєР°!');                                                   //
 //    Init;                                                                                            //
     Exit;                                                                                            //
   end;                                                                                               //
@@ -1566,7 +1569,7 @@ begin                                                                           
   begin                                                                                              //
     if SL.Count = 1 then                                                                             //
     begin                                                                                            //
-      ErrMess(Handle, 'Не найдено поле [ChipsParams]!');                                             //
+      ErrMess(Handle, 'РќРµ РЅР°Р№РґРµРЅРѕ РїРѕР»Рµ [ChipsParams]!');                                             //
 //      Init;                                                                                          //
       SL.Free;                                                                                       //
       Exit;                                                                                          //
@@ -1576,13 +1579,13 @@ begin                                                                           
   end;                                                                                               //
   SL.Delete(0);         //                                                                           //
   Inc(Count);           //                                                                           //
-  Str := SL.Strings[0]; // Удалим поле [ChipsParams]                                                 //
+  Str := SL.Strings[0]; // РЈРґР°Р»РёРј РїРѕР»Рµ [ChipsParams]                                                 //
   SL.Delete(0);         //                                                                           //
   Inc(Count);           //                                                                           //
                                                                                                      //
   if SL.Count = 0 then                                                                               //
   begin                                                                                              //
-    ErrMess(Handle, 'Обход пустой!');                                                                //
+    ErrMess(Handle, 'РћР±С…РѕРґ РїСѓСЃС‚РѕР№!');                                                                //
 //    Init;                                                                                            //
     SL.Free;                                                                                         //
     Exit;                                                                                            //
@@ -1595,13 +1598,13 @@ begin                                                                           
     while Trim(S) <> 'Status' do                        //                                           //
     begin                                               //                                           //
       TestsParams[n].Name := S;                         //                                           //
-      Inc(n);                                           // Считываем                                 //
-      Delete(Str, 1, P);                                // название                                  //
-      P := Pos(#9, Str);                                // столбцов,                                 //
+      Inc(n);                                           // РЎС‡РёС‚С‹РІР°РµРј                                 //
+      Delete(Str, 1, P);                                // РЅР°Р·РІР°РЅРёРµ                                  //
+      P := Pos(#9, Str);                                // СЃС‚РѕР»Р±С†РѕРІ,                                 //
       S := Copy(Str, 1, P-1);                           //                                           //
       if S = '' then                                    //                                           //
       begin                                             //                                           //
-        ErrMess(Handle, 'Не найден столбец статуса !'); //                                           //
+        ErrMess(Handle, 'РќРµ РЅР°Р№РґРµРЅ СЃС‚РѕР»Р±РµС† СЃС‚Р°С‚СѓСЃР° !'); //                                           //
         SL.Free;                                        //                                           //
         Exit;                                           //                                           //
       end;                                              //                                           //
@@ -1614,7 +1617,7 @@ begin                                                                           
       for n := 0 to SL.Count-1 do                                                                    //
       begin                                                                                          //
         Str := SL.Strings[n];                                                                        //
-        if Trim(Str) = '' then Continue; // Пропустим пустую строку                                  //
+        if Trim(Str) = '' then Continue; // РџСЂРѕРїСѓСЃС‚РёРј РїСѓСЃС‚СѓСЋ СЃС‚СЂРѕРєСѓ                                  //
         if Length(TestsParams) > 0 then                                                              //
           for i := 0 to Length(TestsParams)-1 do                                                     //
           begin                                                                                      //
@@ -1655,7 +1658,7 @@ begin                                                                           
       FormatSettings.DecimalSeparator := '.';                                                        //
                                                                                                      //
   except                                                                                             //
-    ErrMess(Handle, 'Ошибка в строке '+IntToStr(n+Count+1));                                         //
+    ErrMess(Handle, 'РћС€РёР±РєР° РІ СЃС‚СЂРѕРєРµ '+IntToStr(n+Count+1));                                         //
 //    Init;                                                                                            //
     SL.Free;                                                                                         //
     FormatSettings.DecimalSeparator := '.';                                                          //
@@ -1691,28 +1694,28 @@ begin                                                                           
                                                                                                      //
   if not tmpWafer.LoadSTSHeader then                                                                 //
   begin                                                                                              //
-    ErrMess(Handle, 'Ошибка загрузки заголовка!');                                                   //
+    ErrMess(Handle, 'РћС€РёР±РєР° Р·Р°РіСЂСѓР·РєРё Р·Р°РіРѕР»РѕРІРєР°!');                                                   //
     tmpWafer.Free;                                                                                   //
     Exit;                                                                                            //
   end;                                                                                               //
 
   if tmpWafer.Code <> Code then                                                                      //
   begin                                                                                              //
-    ErrMess(Handle, 'Несовпадают коды!');                                                            //
+    ErrMess(Handle, 'РќРµСЃРѕРІРїР°РґР°СЋС‚ РєРѕРґС‹!');                                                            //
     tmpWafer.Free;                                                                                   //
     Exit;                                                                                            //
   end;                                                                                               //
 
   if tmpWafer.NLot <> NLot then                                                                      //
   begin                                                                                              //
-    ErrMess(Handle, 'Несовпадают партии!');                                                          //
+    ErrMess(Handle, 'РќРµСЃРѕРІРїР°РґР°СЋС‚ РїР°СЂС‚РёРё!');                                                          //
     tmpWafer.Free;                                                                                   //
     Exit;                                                                                            //
   end;                                                                                               //
 
 //  if tmpWafer.Num <> Wafer.Num then                                                                  //
 //  begin                                                                                              //
-//    ErrMess(Handle, 'Несовпадают номера пластин!');                                                  //
+//    ErrMess(Handle, 'РќРµСЃРѕРІРїР°РґР°СЋС‚ РЅРѕРјРµСЂР° РїР»Р°СЃС‚РёРЅ!');                                                  //
 //    tmpWafer.Free;                                                                                   //
 //    Exit;                                                                                            //
 //  end;                                                                                               //
@@ -1727,7 +1730,7 @@ begin                                                                           
   begin                                                                                              //
     if SL.Count = 1 then                                                                             //
     begin                                                                                            //
-      ErrMess(Handle, 'Не найдено поле [ChipsParams]!');                                             //
+      ErrMess(Handle, 'РќРµ РЅР°Р№РґРµРЅРѕ РїРѕР»Рµ [ChipsParams]!');                                             //
       tmpWafer.Free;                                                                                 //
       SL.Free;                                                                                       //
       Exit;                                                                                          //
@@ -1737,7 +1740,7 @@ begin                                                                           
   end;                                                                                               //
   SL.Delete(0);         //                                                                           //
   Inc(Count);           //                                                                           //
-  Str := SL.Strings[0]; // Удалим поле [ChipsParams]                                                 //
+  Str := SL.Strings[0]; // РЈРґР°Р»РёРј РїРѕР»Рµ [ChipsParams]                                                 //
   SL.Delete(0);         //                                                                           //
   Inc(Count);           //                                                                           //
                                                                                                      //
@@ -1748,13 +1751,13 @@ begin                                                                           
     while Trim(S) <> 'Status' do                                                                     //
     begin                                                                                            //
       tmpWafer.TestsParams[n].Name := S;                //                                           //
-      Inc(n);                                           // Считываем                                 //
-      Delete(Str, 1, P);                                // название                                  //
-      P := Pos(#9, Str);                                // столбцов                                  //
+      Inc(n);                                           // РЎС‡РёС‚С‹РІР°РµРј                                 //
+      Delete(Str, 1, P);                                // РЅР°Р·РІР°РЅРёРµ                                  //
+      P := Pos(#9, Str);                                // СЃС‚РѕР»Р±С†РѕРІ                                  //
       S := Copy(Str, 1, P-1);                           //                                           //
       if S = '' then                                    //                                           //
       begin                                             //                                           //
-        ErrMess(Handle, 'Не найден столбец статуса !'); //                                           //
+        ErrMess(Handle, 'РќРµ РЅР°Р№РґРµРЅ СЃС‚РѕР»Р±РµС† СЃС‚Р°С‚СѓСЃР° !'); //                                           //
         tmpWafer.Free;                                  //                                           //
         SL.Free;                                        //                                           //
         Exit;                                           //                                           //
@@ -1767,7 +1770,7 @@ begin                                                                           
       begin                                                                                          //
         Str := SL.Strings[n];                                                                        //
         if Trim(Str) = '' then Continue;                                                             //
-        if Length(tmpWafer.TestsParams) > 0 then // Пропустим пустую строку                          //
+        if Length(tmpWafer.TestsParams) > 0 then // РџСЂРѕРїСѓСЃС‚РёРј РїСѓСЃС‚СѓСЋ СЃС‚СЂРѕРєСѓ                          //
           for i := 0 to Length(tmpWafer.TestsParams)-1 do                                            //
           begin                                                                                      //
             P := Pos(#9, Str);                                                                       //
@@ -1808,26 +1811,26 @@ begin                                                                           
                                                                                                      //
       FormatSettings.DecimalSeparator := '.';                                                        //
   except                                                                                             //
-    ErrMess(Handle, 'Ошибка в строке '+IntToStr(n+Count+1));                                         //
+    ErrMess(Handle, 'РћС€РёР±РєР° РІ СЃС‚СЂРѕРєРµ '+IntToStr(n+Count+1));                                         //
     tmpWafer.Free;                                                                                   //
     SL.Free;                                                                                         //
     FormatSettings.DecimalSeparator := '.';                                                          //
     Exit;                                                                                            //
   end;                                                                                               //
                                                                                                      //
-  if CutSide <> 0 then                                           // Подгоним                         //
-     while tmpWafer.CutSide <> CutSide do tmpWafer.Rotate; // срез пластины                          //
+  if CutSide <> 0 then                                           // РџРѕРґРіРѕРЅРёРј                         //
+     while tmpWafer.CutSide <> CutSide do tmpWafer.Rotate; // СЃСЂРµР· РїР»Р°СЃС‚РёРЅС‹                          //
   if (Length(tmpWafer.Chip[0]) <> Length(Chip[0])) and                                               //
      (Length(tmpWafer.Chip)    <> Length(Chip))    then                                              //
   begin                                                                                              //
-    ErrMess(Handle, 'Несовпадает размерность пластин!     '+IntToStr(Length(tmpWafer.Chip))+' ..... '+IntToStr(Length(Chip)));
+    ErrMess(Handle, 'РќРµСЃРѕРІРїР°РґР°РµС‚ СЂР°Р·РјРµСЂРЅРѕСЃС‚СЊ РїР»Р°СЃС‚РёРЅ!     '+IntToStr(Length(tmpWafer.Chip))+' ..... '+IntToStr(Length(Chip)));
 //    tmpWafer.Free;                                                                                   //
 //    Exit;                                                                                            //
   end;                                                                                               //
 {
   if Length(tmpWafer.TestsParams) <> Length(TestsParams) then                                        //
   begin                                                                                              //
-    ErrMess(Handle, 'Несовпадает количество параметров!');                                           //
+    ErrMess(Handle, 'РќРµСЃРѕРІРїР°РґР°РµС‚ РєРѕР»РёС‡РµСЃС‚РІРѕ РїР°СЂР°РјРµС‚СЂРѕРІ!');                                           //
 //    tmpWafer.Free;                                                                                   //
 //    Exit;                                                                                            //
   end;                                                                                               //
@@ -1876,7 +1879,7 @@ begin                                                                           
                                                                                                      //
   if not LoadBlankSTSHeader then                                                                     //
   begin                                                                                              //
-    ErrMess(Handle, 'Ошибка загрузки заголовка map!');                                               //
+    ErrMess(Handle, 'РћС€РёР±РєР° Р·Р°РіСЂСѓР·РєРё Р·Р°РіРѕР»РѕРІРєР° map!');                                               //
     Exit;                                                                                            //
   end;                                                                                               //
                                                                                                      //
@@ -1890,7 +1893,7 @@ begin                                                                           
   begin                                                                                              //
     if SL.Count = 1 then                                                                             //
     begin                                                                                            //
-      ErrMess(Handle, 'Не найдено поле [ChipsParams]!');                                             //
+      ErrMess(Handle, 'РќРµ РЅР°Р№РґРµРЅРѕ РїРѕР»Рµ [ChipsParams]!');                                             //
       SL.Free;                                                                                       //
       Exit;                                                                                          //
     end;                                                                                             //
@@ -1899,7 +1902,7 @@ begin                                                                           
   end;                                                                                               //
   SL.Delete(0);         //                                                                           //
   Inc(Count);           //                                                                           //
-  Str := SL.Strings[0]; // Удалим поле [ChipsParams]                                                 //
+  Str := SL.Strings[0]; // РЈРґР°Р»РёРј РїРѕР»Рµ [ChipsParams]                                                 //
   SL.Delete(0);         //                                                                           //
   Inc(Count);           //                                                                           //
                                                                                                      //
@@ -1910,13 +1913,13 @@ begin                                                                           
     while Trim(S) <> 'Status' do                                                                     //
     begin                                                                                            //
 //      TestsParams[n].Name := S;                         //                                           //
-//      Inc(n);                                           // Считываем                                 //
-      Delete(Str, 1, P);                                // название                                  //
-      P := Pos(#9, Str);                                // столбцов                                  //
+//      Inc(n);                                           // РЎС‡РёС‚С‹РІР°РµРј                                 //
+      Delete(Str, 1, P);                                // РЅР°Р·РІР°РЅРёРµ                                  //
+      P := Pos(#9, Str);                                // СЃС‚РѕР»Р±С†РѕРІ                                  //
       S := Copy(Str, 1, P-1);                           //                                           //
       if S = '' then                                    //                                           //
       begin                                             //                                           //
-        ErrMess(Handle, 'Не найден столбец статуса !'); //                                           //
+        ErrMess(Handle, 'РќРµ РЅР°Р№РґРµРЅ СЃС‚РѕР»Р±РµС† СЃС‚Р°С‚СѓСЃР° !'); //                                           //
         SL.Free;                                        //                                           //
         Exit;                                           //                                           //
       end;                                              //                                           //
@@ -1929,7 +1932,7 @@ begin                                                                           
       begin                                                                                          //
         Str := SL.Strings[n];                                                                        //
         if Trim(Str) = '' then Continue;                                                             //
-//        if Length(tmpWafer.TestsParams) > 0 then // Пропустим пустую строку                          //
+//        if Length(tmpWafer.TestsParams) > 0 then // РџСЂРѕРїСѓСЃС‚РёРј РїСѓСЃС‚СѓСЋ СЃС‚СЂРѕРєСѓ                          //
 //          for i := 0 to Length(tmpWafer.TestsParams)-1 do                                            //
 //          begin                                                                                      //
 //            P := Pos(#9, Str);                                                                       //
@@ -1970,18 +1973,18 @@ begin                                                                           
                                                                                                      //
       FormatSettings.DecimalSeparator := '.';                                                        //
   except                                                                                             //
-    ErrMess(Handle, 'Ошибка в строке '+IntToStr(n+Count+1));                                         //
+    ErrMess(Handle, 'РћС€РёР±РєР° РІ СЃС‚СЂРѕРєРµ '+IntToStr(n+Count+1));                                         //
     SL.Free;                                                                                         //
     FormatSettings.DecimalSeparator := '.';                                                          //
     Exit;                                                                                            //
   end;                                                                                               //
 {                                                                                                     //
-  if CutSide <> 0 then                                           // Подгоним                         //
-     while tmpWafer.CutSide <> CutSide do tmpWafer.Rotate; // срез пластины                          //
+  if CutSide <> 0 then                                           // РџРѕРґРіРѕРЅРёРј                         //
+     while tmpWafer.CutSide <> CutSide do tmpWafer.Rotate; // СЃСЂРµР· РїР»Р°СЃС‚РёРЅС‹                          //
   if (Length(tmpWafer.Chip[0]) <> Length(Chip[0])) and                                               //
      (Length(tmpWafer.Chip)    <> Length(Chip))    then                                              //
   begin                                                                                              //
-    ErrMess(Handle, 'Несовпадает размерность пластин!     '+IntToStr(Length(tmpWafer.Chip))+' ..... '+IntToStr(Length(Chip)));
+    ErrMess(Handle, 'РќРµСЃРѕРІРїР°РґР°РµС‚ СЂР°Р·РјРµСЂРЅРѕСЃС‚СЊ РїР»Р°СЃС‚РёРЅ!     '+IntToStr(Length(tmpWafer.Chip))+' ..... '+IntToStr(Length(Chip)));
 //    tmpWafer.Free;                                                                                   //
 //    Exit;                                                                                            //
   end;                                                                                               //
@@ -1989,7 +1992,7 @@ begin                                                                           
 {
   if Length(tmpWafer.TestsParams) <> Length(TestsParams) then                                        //
   begin                                                                                              //
-    ErrMess(Handle, 'Несовпадает количество параметров!');                                           //
+    ErrMess(Handle, 'РќРµСЃРѕРІРїР°РґР°РµС‚ РєРѕР»РёС‡РµСЃС‚РІРѕ РїР°СЂР°РјРµС‚СЂРѕРІ!');                                           //
 //    tmpWafer.Free;                                                                                   //
 //    Exit;                                                                                            //
   end;                                                                                               //
@@ -2090,23 +2093,23 @@ begin                                                                           
                                                                                                      //
   FS := TFileStream.Create(tmpfName, fmOpenWrite+fmShareDenyNone);                                   //
   FS.Position := FS.Size;                                                                            //
-  FS.Write(CR, 2);                                                                               //
+  FS.Write(CR, 2);                                                                                   //
   Str := '[StatusNames]';                                                                            //
   FS.Write(Pointer(Str)^, Length(Str));                                                              //
-  FS.Write(CR, 2);                                                                               //
+  FS.Write(CR, 2);                                                                                   //
   if StatusNamesSL.Count > 0 then                                                                    //
     for n := 0 to StatusNamesSL.Count-1 do                                                           //
     begin                                                                                            //
       FS.Write(Pointer(StatusNamesSL.Strings[n])^, Length(StatusNamesSL.Strings[n]));                //
-      FS.Write(CR, 2);                                                                           //
+      FS.Write(CR, 2);                                                                               //
     end;                                                                                             //
                                                                                                      //
   if Length(TestsParams) > 0 then                                                                    //
   begin                                                                                              //
-    FS.Write(CR, 2);                                                                             //
+    FS.Write(CR, 2);                                                                                 //
     Str := '[TestsParams]';                                                                          //
     FS.Write(Pointer(Str)^, Length(Str));                                                            //
-    FS.Write(CR, 2);                                                                             //
+    FS.Write(CR, 2);                                                                                 //
     for n := 0 to Length(TestsParams)-1 do                                                           //
     begin                                                                                            //
       if TestsParams[n].Norma.Min <> -NotSpec then                                                   //
@@ -2117,14 +2120,14 @@ begin                                                                           
       else Str := Str+'N;';                                                                          //
       Str := Str+IntToStr(TestsParams[n].Status);                                                    //
       FS.Write(Pointer(Str)^, Length(Str));                                                          //
-      FS.Write(CR, 2);                                                                           //
+      FS.Write(CR, 2);                                                                               //
     end;                                                                                             //
   end;                                                                                               //
                                                                                                      //
-  FS.Write(CR, 2);                                                                               //
+  FS.Write(CR, 2);                                                                                   //
   Str := '[ChipsParams]';                                                                            //
   FS.Write(Pointer(Str)^, Length(Str));                                                              //
-  FS.Write(CR, 2);                                                                               //
+  FS.Write(CR, 2);                                                                                   //
   if Length(TestsParams) > 0 then                                                                    //
     for n := 0 to Length(TestsParams)-1 do                                                           //
     begin                                                                                            //
@@ -2135,7 +2138,7 @@ begin                                                                           
   FS.Write(Pointer(Str)^, Length(Str));                                                              //
   Str := 'X'+#9;                                                                                     //
   FS.Write(Pointer(Str)^, Length(Str));                                                              //
-  Str := 'Y'+CR;                                                                                 //
+  Str := 'Y'+CR;                                                                                     //
   FS.Write(Pointer(Str)^, Length(Str));                                                              //
                                                                                                      //
   for Y := 0 to Length(Chip)-1 do                                                                    //
@@ -2151,7 +2154,7 @@ begin                                                                           
               for n := 0 to Length(TestsParams)-1 do Str := Str+FormatFloat('0.000', 0.0)+#9;        //
           Str := Str+IntToStr(Status)+#9+IntToStr(X)+#9+IntToStr(Y);                                 //
           FS.Write(Pointer(Str)^, Length(Str));                                                      //
-          FS.Write(CR, 2);                                                                       //
+          FS.Write(CR, 2);                                                                           //
         end;                                                                                         //
                                                                                                      //
   FS.Free;                                                                                           //
@@ -2179,7 +2182,7 @@ begin                                                                           
   HeaderCount := LoadNIHeader;                                                                       //
   if HeaderCount = 0 then                                                                            //
   begin                                                                                              //
-    ErrMess(Handle, 'Ошибка загрузки заголовка!');                                                   //
+    ErrMess(Handle, 'РћС€РёР±РєР° Р·Р°РіСЂСѓР·РєРё Р·Р°РіРѕР»РѕРІРєР°!');                                                   //
 //    Init;                                                                                            //
     Exit;                                                                                            //
   end;                                                                                               //
@@ -2187,7 +2190,7 @@ begin                                                                           
   SL := TStringList.Create;                                                                          //
   SL.LoadFromFile(fName);                                                                            //
                                                                                                      //
-  for n := 0 to HeaderCount-1 do SL.Delete(0); // Удалим заголовок                                   //
+  for n := 0 to HeaderCount-1 do SL.Delete(0); // РЈРґР°Р»РёРј Р·Р°РіРѕР»РѕРІРѕРє                                   //
                                                                                                      //
   FirstTime := True;                                                                                 //
   m := 0;                                                                                            //
@@ -2201,9 +2204,9 @@ begin                                                                           
         if Str = '' then Continue;                                                                   //
                                                                                                      //
         NumChip := Copy(Str, 1, Pos(#9, Str)-1);                                                     //
-        Delete(Str, 1, Pos(#9, Str)); // Удалим номер кристалла                                      //
-        Delete(Str, 1, Pos(#9, Str)); // Удалим номер теста                                          //
-        Delete(Str, 1, Pos(#9, Str)); // Удалим название параметра                                   //
+        Delete(Str, 1, Pos(#9, Str)); // РЈРґР°Р»РёРј РЅРѕРјРµСЂ РєСЂРёСЃС‚Р°Р»Р»Р°                                      //
+        Delete(Str, 1, Pos(#9, Str)); // РЈРґР°Р»РёРј РЅРѕРјРµСЂ С‚РµСЃС‚Р°                                          //
+        Delete(Str, 1, Pos(#9, Str)); // РЈРґР°Р»РёРј РЅР°Р·РІР°РЅРёРµ РїР°СЂР°РјРµС‚СЂР°                                   //
                                                                                                      //
         if FirstTime then                                                                            //
         begin                                                                                        //
@@ -2321,7 +2324,7 @@ begin                                                                           
     P3 := PosEx(' ', Str, P2+1);                                                                              //
     TimeDate := Copy(Str, P2+1, P3-P2-1)+TimeDate;                                                            //
     Prober := Trim(XMLDoc1.DocumentElement.ChildNodes['HEADER'].ChildNodes['PROBE_DEVICE_NAME'].Text);        //
-    Direct := 2; // Для зонда 6290                                                                            //
+    Direct := 2; // Р”Р»СЏ Р·РѕРЅРґР° 6290                                                                            //
     Str := XMLDoc1.DocumentElement.ChildNodes['WAFER_MAP'].Text;                                              //
     SetLength(TestsParams, 0);                                                                                //
                                                                                                               //
@@ -2341,7 +2344,7 @@ begin                                                                           
           '-': Chip[Y, X].Status := 4;                                                                        //
           '/': Chip[Y, X].Status := 4;                                                                        //
           'a': begin                                                                                          //
-                 Chip[Y, X].Status := 10; // Базовый будет неконтакт                                          //
+                 Chip[Y, X].Status := 10; // Р‘Р°Р·РѕРІС‹Р№ Р±СѓРґРµС‚ РЅРµРєРѕРЅС‚Р°РєС‚                                          //
                  BaseChip.X := X;                                                                             //
                  BaseChip.Y := Y;                                                                             //
                end;                                                                                           //
@@ -2357,7 +2360,7 @@ begin                                                                           
   except                                                                                                      //
     XMLDoc1.Active := False;                                                                                  //
     SL.Free;                                                                                                  //
-    ErrMess(Handle, 'Ошибка загрузки файла!');                                                                //
+    ErrMess(Handle, 'РћС€РёР±РєР° Р·Р°РіСЂСѓР·РєРё С„Р°Р№Р»Р°!');                                                                //
 //    Init;                                                                                                     //
     Exit;                                                                                                     //
   end;                                                                                                        //
@@ -2441,7 +2444,7 @@ begin                                                                           
       TimeDate := '.'+Copy(Str, P1+1, P2-P1-1)+TimeDate;                                                      //
       P3 := PosEx(' ', Str, P2+1);                                                                            //
       TimeDate := Copy(Str, P2+1, P3-P2-1)+TimeDate;                                                          //
-      Direct := 2; // Для зонда 6510                                                                          //
+      Direct := 2; // Р”Р»СЏ Р·РѕРЅРґР° 6510                                                                          //
       Str := XMLDoc1.DocumentElement.ChildNodes['WAFER_MAP'].Text;                                            //
       SetLength(TestsParams, 0);                                                                              //
                                                                                                               //
@@ -2478,7 +2481,7 @@ begin                                                                           
   except                                                                                                      //
     XMLDoc1.Active := False;                                                                                  //
     SL.Free;                                                                                                  //
-    ErrMess(Handle, 'Ошибка загрузки файла!');                                                                //
+    ErrMess(Handle, 'РћС€РёР±РєР° Р·Р°РіСЂСѓР·РєРё С„Р°Р№Р»Р°!');                                                                //
 //    Init;                                                                                                     //
     Exit;                                                                                                     //
   end;                                                                                                        //
@@ -2490,7 +2493,7 @@ begin                                                                           
   tmpWafer.CalcChips;                                                                                         //
                                                                                                               //
   if tmpWafer.NMeased <> NMeased then                                                                         //
-    if QuestMess(Handle, 'Нужно '+IntToStr(NTotal)+' кристаллов, получено '+IntToStr(tmpWafer.NMeased)+#13#10+'Все равно продолжить?') = IDNO then
+    if QuestMess(Handle, 'РќСѓР¶РЅРѕ '+IntToStr(NTotal)+' РєСЂРёСЃС‚Р°Р»Р»РѕРІ, РїРѕР»СѓС‡РµРЅРѕ '+IntToStr(tmpWafer.NMeased)+#13#10+'Р’СЃРµ СЂР°РІРЅРѕ РїСЂРѕРґРѕР»Р¶РёС‚СЊ?') = IDNO then
     begin
       tmpWafer.Free;
       Exit;
@@ -2508,7 +2511,7 @@ begin                                                                           
       tmpWafer.Chip[tmpWafer.ChipN[n].Y, tmpWafer.ChipN[n].X].Status := Chip[ChipN[n].Y, ChipN[n].X].Status;
       tmpWafer.Chip[Y, X].ChipParams := Chip[ChipN[n].Y,  ChipN[n].X].ChipParams;
     end;
-  if ErrCount > 0 then ErrMess(Handle, IntToStr(ErrCount)+' несовпадений!');
+  if ErrCount > 0 then ErrMess(Handle, IntToStr(ErrCount)+' РЅРµСЃРѕРІРїР°РґРµРЅРёР№!');
 
   Chip := tmpWafer.Chip;                                                                                //
   Diameter  := tmpWafer.Diameter;                                                                       //
@@ -2530,7 +2533,7 @@ begin                                                                           
   Num  := tmpWafer.Num;
 
   SetChipsID;                                                                                           //
-//  CalcChips; // Проанализировать!!!!
+//  CalcChips; // РџСЂРѕР°РЅР°Р»РёР·РёСЂРѕРІР°С‚СЊ!!!!
                                                                                                               //
   tmpWafer.Free;                                                                                              //
   tmpWafer := nil;                                                                                            //
@@ -2551,7 +2554,7 @@ begin                                                                           
                                                                                               //
   if not LoadAGLHeader then                                                                   //
   begin                                                                                       //
-    ErrMess(Handle, 'Ошибка загрузки файла!');                                                //
+    ErrMess(Handle, 'РћС€РёР±РєР° Р·Р°РіСЂСѓР·РєРё С„Р°Р№Р»Р°!');                                                //
 //    Init;                                                                                     //
     Exit;                                                                                     //
   end;                                                                                        //
@@ -2586,8 +2589,8 @@ begin                                                                           
                                                                                               //
         if Str[1] = '1' then                                                                  //
         begin                                                                                 //
-          if Pos('FAILED', UpperCase(Str)) <> 0 then OK_param := False // Параметр годный     //
-                                                else OK_param := True; // Параметр брак       //
+          if Pos('FAILED', UpperCase(Str)) <> 0 then OK_param := False // РџР°СЂР°РјРµС‚СЂ РіРѕРґРЅС‹Р№     //
+                                                else OK_param := True; // РџР°СЂР°РјРµС‚СЂ Р±СЂР°Рє       //
                                                                                               //
           if (Pos('CONTINUITY', UpperCase(Str)) <> 0) or                                      //
              (Pos('CONTAKT',    UpperCase(Str)) <> 0) or                                      //
@@ -2603,17 +2606,17 @@ begin                                                                           
           begin                                                                               //
             if not OK_param then Chip[Y, X].Status := 3500+NFC;                               //
             Inc(NFC);                                                                         //
-            Continue; // Наверно здесь убрать, чтобы внести ФК в статистику
+            Continue; // РќР°РІРµСЂРЅРѕ Р·РґРµСЃСЊ СѓР±СЂР°С‚СЊ, С‡С‚РѕР±С‹ РІРЅРµСЃС‚Рё Р¤Рљ РІ СЃС‚Р°С‚РёСЃС‚РёРєСѓ
           end;                                                                                //
                                                                                               //
           if n < Length(Chip[Y, X].ChipParams) then                                           //
           begin                                                                               //
-            Delete(Str, 1, Pos('`', Str)); // Удалим номер сайта                              //
-            Delete(Str, 1, Pos('`', Str)); // Удалим название параметра                       //
-            Delete(Str, 1, Pos('`', Str)); // Удалим полное имя параметра                     //
+            Delete(Str, 1, Pos('`', Str)); // РЈРґР°Р»РёРј РЅРѕРјРµСЂ СЃР°Р№С‚Р°                              //
+            Delete(Str, 1, Pos('`', Str)); // РЈРґР°Р»РёРј РЅР°Р·РІР°РЅРёРµ РїР°СЂР°РјРµС‚СЂР°                       //
+            Delete(Str, 1, Pos('`', Str)); // РЈРґР°Р»РёРј РїРѕР»РЅРѕРµ РёРјСЏ РїР°СЂР°РјРµС‚СЂР°                     //
                                                                                               //
-            Delete(Str, 1, Pos('`', Str)); // Удалим passed/FAILED                            //
-            Delete(Str, 1, Pos('`', Str)); // Удалим нижний предел                            //
+            Delete(Str, 1, Pos('`', Str)); // РЈРґР°Р»РёРј passed/FAILED                            //
+            Delete(Str, 1, Pos('`', Str)); // РЈРґР°Р»РёРј РЅРёР¶РЅРёР№ РїСЂРµРґРµР»                            //
             Str := Trim(Str);                                                                 //
             Str := Trim(Copy(Str, 1, Pos(' ', Str)-1));                                       //
             try                                                                               //
@@ -2624,7 +2627,7 @@ begin                                                                           
                                                                                               //
             if Chip[Y, X].ChipParams[n].Value <> NotSpec then                                 //
             begin                                                                             //
-              if Chip[Y, X].Status < 10 then // Если не брак NK и FK                          //
+              if Chip[Y, X].Status < 10 then // Р•СЃР»Рё РЅРµ Р±СЂР°Рє NK Рё FK                          //
                 if (Chip[Y, X].ChipParams[n].Value < TestsParams[n].Norma.Min) or             //
                    (Chip[Y, X].ChipParams[n].Value > TestsParams[n].Norma.Max)                //
                 then Chip[Y, X].Status := 2000+n                                              //
@@ -2643,7 +2646,7 @@ begin                                                                           
                   (TestsParams[n].Norma.Min = -NotSpec) and
                   (TestsParams[n].Norma.Max = NotSpec)) then
               begin
-                Chip[Y, X].Status := 3500+NFC; // считаем, что это брак ФК
+                Chip[Y, X].Status := 3500+NFC; // СЃС‡РёС‚Р°РµРј, С‡С‚Рѕ СЌС‚Рѕ Р±СЂР°Рє Р¤Рљ
                 Inc(NFC);
                 Continue;// ?
               end;
@@ -2676,7 +2679,7 @@ begin                                                                           
                                                                                               //
   if not AddAGLHeader then                                                                    //
   begin                                                                                       //
-    ErrMess(Handle, 'Ошибка загрузки файла!');                                                //
+    ErrMess(Handle, 'РћС€РёР±РєР° Р·Р°РіСЂСѓР·РєРё С„Р°Р№Р»Р°!');                                                //
 //    Init;                                                                                     //
     Exit;                                                                                     //
   end;                                                                                        //
@@ -2733,12 +2736,12 @@ begin                                                                           
                                                                                               //
         if n < Length(Chip[Y, X].ChipParams) then                                             //
         begin                                                                                 //
-          Delete(Str, 1, Pos('`', Str)); // Удалим номер сайта                                //
-          Delete(Str, 1, Pos('`', Str)); // Удалим название параметра                         //
-          Delete(Str, 1, Pos('`', Str)); // Удалим полное имя параметра                       //
+          Delete(Str, 1, Pos('`', Str)); // РЈРґР°Р»РёРј РЅРѕРјРµСЂ СЃР°Р№С‚Р°                                //
+          Delete(Str, 1, Pos('`', Str)); // РЈРґР°Р»РёРј РЅР°Р·РІР°РЅРёРµ РїР°СЂР°РјРµС‚СЂР°                         //
+          Delete(Str, 1, Pos('`', Str)); // РЈРґР°Р»РёРј РїРѕР»РЅРѕРµ РёРјСЏ РїР°СЂР°РјРµС‚СЂР°                       //
                                                                                               //
-          Delete(Str, 1, Pos('`', Str)); // Удалим passed/FAILED                              //
-          Delete(Str, 1, Pos('`', Str)); // Удалим нижний предел                              //
+          Delete(Str, 1, Pos('`', Str)); // РЈРґР°Р»РёРј passed/FAILED                              //
+          Delete(Str, 1, Pos('`', Str)); // РЈРґР°Р»РёРј РЅРёР¶РЅРёР№ РїСЂРµРґРµР»                              //
           Str := Trim(Str);                                                                   //
           Str := Trim(Copy(Str, 1, Pos(' ', Str)-1));                                         //
           try                                                                                 //
@@ -2749,7 +2752,7 @@ begin                                                                           
                                                                                               //
           if Chip[Y, X].ChipParams[n].Value <> NotSpec then                                   //
           begin                                                                               //
-            if Chip[Y, X].Status < 10 then // Если не брак NK и FK                            //
+            if Chip[Y, X].Status < 10 then // Р•СЃР»Рё РЅРµ Р±СЂР°Рє NK Рё FK                            //
               if (Chip[Y, X].ChipParams[n].Value < TestsParams[n].Norma.Min) or               //
                  (Chip[Y, X].ChipParams[n].Value > TestsParams[n].Norma.Max)                  //
               then Chip[Y, X].Status := 2000+n                                                //
@@ -2783,7 +2786,7 @@ begin                                                                           
   try                                                                                                                       //
     Ap := CreateOleObject('Excel.Application');                                                                             //
   except                                                                                                                    //
-    ErrMess(Handle, 'Не удалось запустить MS Excel.');                                                                      //
+    ErrMess(Handle, 'РќРµ СѓРґР°Р»РѕСЃСЊ Р·Р°РїСѓСЃС‚РёС‚СЊ MS Excel.');                                                                      //
     Exit;                                                                                                                   //
   end;                                                                                                                      //
                                                                                                                             //
@@ -2792,8 +2795,8 @@ begin                                                                           
                                                                                                                             //
   if AnsiLowerCase(Ap.Workbooks[1].Sheets[1].UsedRange.Cells[1, 1].Value) = 'pixan' then Result := 6                        //
   else                                                                                                                      //
-    if (AnsiLowerCase(Ap.Workbooks[1].Sheets[1].UsedRange.Cells[1, 2].Value) = 'контакт') and                               //
-       (AnsiLowerCase(Ap.Workbooks[1].Sheets[1].UsedRange.Cells[1, 8].Value) = 'параметр') then Result := 5; // Formula HF3 //
+    if (AnsiLowerCase(Ap.Workbooks[1].Sheets[1].UsedRange.Cells[1, 2].Value) = 'РєРѕРЅС‚Р°РєС‚') and                               //
+       (AnsiLowerCase(Ap.Workbooks[1].Sheets[1].UsedRange.Cells[1, 8].Value) = 'РїР°СЂР°РјРµС‚СЂ') then Result := 5; // Formula HF3 //
                                                                                                                             //
   Ap.Quit;                                                                                                                  //
 end;                                                                                                                        //
@@ -2811,7 +2814,7 @@ begin
   try
     Ap := CreateOleObject('Excel.Application');
   except
-    ErrMess(Handle, 'Не удалось запустить MS Excel!');
+    ErrMess(Handle, 'РќРµ СѓРґР°Р»РѕСЃСЊ Р·Р°РїСѓСЃС‚РёС‚СЊ MS Excel!');
     Exit;
   end;
 
@@ -2825,12 +2828,12 @@ begin
   X := 0;
   Y := 0;
   StrCount := 0;
-  SheetsCount := Ap.Workbooks[1].Sheets.Count; // Кол-во листов
+  SheetsCount := Ap.Workbooks[1].Sheets.Count; // РљРѕР»-РІРѕ Р»РёСЃС‚РѕРІ
   for i := 0 to SheetsCount-1 do
   begin
     ActSheet := Ap.Workbooks[1].Sheets[i+1];
-    aRows := ActSheet.UsedRange.Rows.Count;  // Кол-во строк
-    FData := ActSheet.UsedRange.Value; // Считаем лист в массив
+    aRows := ActSheet.UsedRange.Rows.Count;  // РљРѕР»-РІРѕ СЃС‚СЂРѕРє
+    FData := ActSheet.UsedRange.Value; // РЎС‡РёС‚Р°РµРј Р»РёСЃС‚ РІ РјР°СЃСЃРёРІ
 
     Device   := FData[2, 13];
     NLot     := FData[2, 15];
@@ -2845,26 +2848,26 @@ begin
     ChipsCount := 0;
     for m := 2 to aRows do
     begin
-      if Pos('контакт', AnsiLowerCase(FData[m, 3])) <> 0 then Inc(n); // Подсчет контактирований
-      Inc(k); // Подсчет параметров
+      if Pos('РєРѕРЅС‚Р°РєС‚', AnsiLowerCase(FData[m, 3])) <> 0 then Inc(n); // РџРѕРґСЃС‡РµС‚ РєРѕРЅС‚Р°РєС‚РёСЂРѕРІР°РЅРёР№
+      Inc(k); // РџРѕРґСЃС‡РµС‚ РїР°СЂР°РјРµС‚СЂРѕРІ
 
       if FData[m, 1] = '1' then
       begin
-        if n > ContCount then ContCount := n; // Найдем макс. кол-во
-        n := 0;                               // контактирований
+        if n > ContCount then ContCount := n; // РќР°Р№РґРµРј РјР°РєСЃ. РєРѕР»-РІРѕ
+        n := 0;                               // РєРѕРЅС‚Р°РєС‚РёСЂРѕРІР°РЅРёР№
 
-        Inc(ChipsCount); // Найдем кол-во чипов
+        Inc(ChipsCount); // РќР°Р№РґРµРј РєРѕР»-РІРѕ С‡РёРїРѕРІ
 
         if k > StrCount then
         begin
-          StrCount := k; // Найдем макс. кол-во параметров
-          nStr := m; // и номер строки с которой их считать
+          StrCount := k; // РќР°Р№РґРµРј РјР°РєСЃ. РєРѕР»-РІРѕ РїР°СЂР°РјРµС‚СЂРѕРІ
+          nStr := m; // Рё РЅРѕРјРµСЂ СЃС‚СЂРѕРєРё СЃ РєРѕС‚РѕСЂРѕР№ РёС… СЃС‡РёС‚Р°С‚СЊ
         end;
         k := 0;
       end;
     end;
 
-    NTotal := ChipsCount; // Кол-во чипов
+    NTotal := ChipsCount; // РљРѕР»-РІРѕ С‡РёРїРѕРІ
 
     SetLength(TestsParams, StrCount-1);
     for m := nStr-StrCount to nStr do
@@ -2883,9 +2886,9 @@ begin
     Y1 := X1;
     SetLength(Chip, 0, 0);
     SetLength(Chip, Y1, X1);
-    for Y1 := 0 to Length(Chip)-1 do      // Очистим
-      for X1 := 0 to Length(Chip[0])-1 do // массив
-      begin                                     // чипов
+    for Y1 := 0 to Length(Chip)-1 do      // РћС‡РёСЃС‚РёРј
+      for X1 := 0 to Length(Chip[0])-1 do // РјР°СЃСЃРёРІ
+      begin                                     // С‡РёРїРѕРІ
         Chip[Y1, X1].Status := 2;         //
         Chip[Y1, X1].ID     := 0;         //
 //        Chip[Y1, X1].ShowGr := 0;         //
@@ -2914,7 +2917,7 @@ begin
         else
           if Device <> FData[m, 13] then
           begin
-            ErrMess(Handle, 'Несовпадение изделия на листе №'+IntToStr(i+1));
+            ErrMess(Handle, 'РќРµСЃРѕРІРїР°РґРµРЅРёРµ РёР·РґРµР»РёСЏ РЅР° Р»РёСЃС‚Рµ в„–'+IntToStr(i+1));
 
             Ap.Quit;
 //            Init;
@@ -3004,12 +3007,12 @@ begin
   try
     Ap := CreateOleObject('Excel.Application');
   except
-    ErrMess(Handle, 'Не удалось запустить MS Excel!');
+    ErrMess(Handle, 'РќРµ СѓРґР°Р»РѕСЃСЊ Р·Р°РїСѓСЃС‚РёС‚СЊ MS Excel!');
     Exit;
   end;
 
   fName := XLSfName;
-  MeasSystem := 'Пиксан';
+  MeasSystem := 'РџРёРєСЃР°РЅ';
 //  Direct := 2;
   TimeDate := DateToStr(FileDateToDateTime(FileAge(XLSfName)));
 
@@ -3030,16 +3033,16 @@ begin
   Ap.Workbooks.Open(XLSfName, 0, True);
 
   ActSheet := Ap.Workbooks[1].Sheets[1];
-  aRows := ActSheet.UsedRange.Rows.Count; // Кол-во строк
-  FData := ActSheet.UsedRange.Value; // Считаем лист в массив
-  aColumn := ActSheet.UsedRange.Columns.Count ; // Кол-во столбцов
+  aRows := ActSheet.UsedRange.Rows.Count; // РљРѕР»-РІРѕ СЃС‚СЂРѕРє
+  FData := ActSheet.UsedRange.Value; // РЎС‡РёС‚Р°РµРј Р»РёСЃС‚ РІ РјР°СЃСЃРёРІ
+  aColumn := ActSheet.UsedRange.Columns.Count ; // РљРѕР»-РІРѕ СЃС‚РѕР»Р±С†РѕРІ
 
   SetLength(TestsParams, aColumn-3);
   MinPos := 2;
   MaxPos := 3;
   tmpStr1 := FData[2, 1];
   tmpStr2 := FData[3, 1];
-  if Pos('max', AnsiLowerCase(tmpStr1)) <> 0 then // Вверху Max
+  if Pos('max', AnsiLowerCase(tmpStr1)) <> 0 then // Р’РІРµСЂС…Сѓ Max
   begin
     MaxPos := 2;
     MinPos := 3;
@@ -3047,9 +3050,9 @@ begin
 
   for n := 0 to Length(TestsParams)-1 do
   begin
-    TestsParams[n].Name := FData[4, n+3]; // Строка с названиями параметров (x и y поменяны)
+    TestsParams[n].Name := FData[4, n+3]; // РЎС‚СЂРѕРєР° СЃ РЅР°Р·РІР°РЅРёСЏРјРё РїР°СЂР°РјРµС‚СЂРѕРІ (x Рё y РїРѕРјРµРЅСЏРЅС‹)
 
-    TmpStr1 := Trim(FData[MinPos, n+3]); // Мин. норма параметра
+    TmpStr1 := Trim(FData[MinPos, n+3]); // РњРёРЅ. РЅРѕСЂРјР° РїР°СЂР°РјРµС‚СЂР°
     try
       TestsParams[n].Norma.Min := StrToFloat(TmpStr1);
     except
@@ -3058,22 +3061,22 @@ begin
 
     TmpStr2 := Trim(FData[MaxPos, n+3]);
     try
-      TestsParams[n].Norma.Max := StrToFloat(TmpStr2); // Макс. норма параметра
+      TestsParams[n].Norma.Max := StrToFloat(TmpStr2); // РњР°РєСЃ. РЅРѕСЂРјР° РїР°СЂР°РјРµС‚СЂР°
     except
       TestsParams[n].Norma.Max := NotSpec;
     end;
   end;
 
-  NTotal := aRows-4; // Кол-во чипов
+  NTotal := aRows-4; // РљРѕР»-РІРѕ С‡РёРїРѕРІ
 
-  X := Ceil(sqrt(NTotal)); // Сделаем квадратную
-  Y := X;                        // карту обхода
+  X := Ceil(sqrt(NTotal)); // РЎРґРµР»Р°РµРј РєРІР°РґСЂР°С‚РЅСѓСЋ
+  Y := X;                        // РєР°СЂС‚Сѓ РѕР±С…РѕРґР°
   SetLength(Chip, 0, 0);
   SetLength(Chip, Y, X);
   nChip := 0;
-  for Y := 0 to Length(Chip)-1 do      // Очистим
-    for X := 0 to Length(Chip[0])-1 do // массив
-    begin                              // чипов
+  for Y := 0 to Length(Chip)-1 do      // РћС‡РёСЃС‚РёРј
+    for X := 0 to Length(Chip[0])-1 do // РјР°СЃСЃРёРІ
+    begin                              // С‡РёРїРѕРІ
       Chip[Y, X].Status := 2;          //
       Chip[Y, X].ID     := 0;          //
 //      Chip[Y, X].ShowGr := 0;          //
@@ -3127,72 +3130,69 @@ begin
 
   if Length(tParams) <> Length(TestsParams) then
   begin
-    ErrMess(Handle, 'Не совпадает кол-во тестов');
+    ErrMess(Handle, 'РќРµ СЃРѕРІРїР°РґР°РµС‚ РєРѕР»-РІРѕ С‚РµСЃС‚РѕРІ');
     Exit;
   end;
 
   for n := 0 to Length(TestsParams)-1 do
   begin
-    Str1 := Copy(TestsParams[n].Name, Pos(' ', TestsParams[n].Name), Length(TestsParams[n].Name)); // Уберём номер теста
+    Str1 := Copy(TestsParams[n].Name, Pos(' ', TestsParams[n].Name), Length(TestsParams[n].Name)); // РЈР±РµСЂС‘Рј РЅРѕРјРµСЂ С‚РµСЃС‚Р°
     Str1 := StringReplace(Str1, ' ', '', [rfReplaceAll, rfIgnoreCase]);
     Str2 := StringReplace(tParams[n].Name, ' ', '', [rfReplaceAll, rfIgnoreCase]);
     if Str1 <> Str2 then
     begin
-      ErrMess(Handle, 'Не совпадают имена тестов');
+      ErrMess(Handle, 'РќРµ СЃРѕРІРїР°РґР°СЋС‚ РёРјРµРЅР° С‚РµСЃС‚РѕРІ');
       Exit;
     end;
 
-    TestsParams[n].Name      := tParams[n].Name+' '+tParams[n].MUnit;
-    TestsParams[n].Norma.Min := tParams[n].Norma.Min;
-    TestsParams[n].Norma.Max := tParams[n].Norma.Max;
+    TestsParams[n] := tParams[n];
   end;
 
   for Y := 0 to Length(Chip)-1 do
     for X := 0 to Length(Chip[0])-1 do
-    begin
-      if Chip[Y, X].Status = 2000 then Chip[Y, X].Status := 2; // Очистим статус
-
-      for n := 0 to Length(TestsParams)-1 do
+      if Chip[Y, X].Status <> 2 then
       begin
-        Chip[Y, X].ChipParams[n].Stat := GetChipParamsStat(Chip[Y, X].ChipParams[n].Value,
-                                                           TestsParams[n].Norma.Min,
-                                                           TestsParams[n].Norma.Max);
-        if Chip[Y, X].Status < 2000 then
-          if Chip[Y, X].ChipParams[n].Stat <> 1 then Chip[Y, X].Status := 2000+n
-                                                else Chip[Y, X].Status := 1;
+        if Chip[Y, X].Status = 2000 then Chip[Y, X].Status := 2; // РћС‡РёСЃС‚РёРј СЃС‚Р°С‚СѓСЃ
+
+        for n := 0 to Length(TestsParams)-1 do
+        begin
+          if Chip[Y, X].ChipParams[n].Stat <> 4 then
+            Chip[Y, X].ChipParams[n].Stat := GetChipParamsStat(Chip[Y, X].ChipParams[n].Value,
+                                                               TestsParams[n].Norma.Min,
+                                                               TestsParams[n].Norma.Max);
+          if Chip[Y, X].Status < 2000 then
+            if Chip[Y, X].ChipParams[n].Stat <> 1 then Chip[Y, X].Status := 2000+n
+                                                  else Chip[Y, X].Status := 1;
+        end;
       end;
-    end;
+
+  CalcChips();
 
   Result := True;
 end;
 
 
 
-///////////////////////////////////////////////////////////////////////
-function TWafer.GetChipParamsStat(Val, Min, Max: Single): byte;      //
-begin                                                                //
-//  Result := 0;                                                       //
-                                                                     //
-//  if Val <> NotSpec then                                             //
-  begin                                                              //
-    Result := 1;                                                     //
-                                                                     //
-    if (Min = NotSpec)  and (Max = NotSpec) then Result := 0;        //
-                                                                     //
-    if (Min = NotSpec)  and (Max <> NotSpec) then                    //
-      if Val > Max then Result := 3;                                 //
-                                                                     //
-    if (Min <> NotSpec) and (Max = NotSpec)  then                    //
-      if Val < Min then Result := 2;                                 //
-                                                                     //
-    if (Min <> NotSpec) and (Max <> NotSpec) then                    //
-    begin                                                            //
-      if Val < Min then Result := 2;                                 //
-      if Val > Max then Result := 3;                                 //
-    end;                                                             //
-  end                                                                //
-end;                                                                 //
-///////////////////////////////////////////////////////////////////////
+//////////////////////////////////////////////////////////////////
+function TWafer.GetChipParamsStat(Val, Min, Max: Single): byte; //
+begin                                                           //
+  Result := 1;                                                  //
+                                                                //
+  if (Min = NotSpec)  and (Max = NotSpec) then Result := 0;     //
+                                                                //
+  if (Min = NotSpec)  and (Max <> NotSpec) then                 //
+    if Val > Max then Result := 3;                              //
+                                                                //
+  if (Min <> NotSpec) and (Max = NotSpec)  then                 //
+    if Val < Min then Result := 2;                              //
+                                                                //
+  if (Min <> NotSpec) and (Max <> NotSpec) then                 //
+  begin                                                         //
+    if Val < Min then Result := 2;                              //
+    if Val > Max then Result := 3;                              //
+  end;                                                          //
+end;                                                            //
+//////////////////////////////////////////////////////////////////
 
 
 { TLot }
@@ -3233,16 +3233,16 @@ end;                                                  //
 ////////////////////////////////////////////////////////
 
 /////////////////////////////////////////////////////////////////////////////////////////////////////////
-function TLot.SaveXLS(const ToFirstFail: Boolean): Boolean;                                            //
+function TLot.SaveXLS(const ToFirstFail, MapByParams: Boolean): Boolean;                               //
 var                                                                                                    //
   Buffer: array[0..MAX_PATH] of Char;                                                                  //
-  tmpfName: TFileName; // файл шаблона                                                                 //
+  tmpfName: TFileName; // С„Р°Р№Р» С€Р°Р±Р»РѕРЅР°                                                                 //
   n, m, i, Nm, X, Y, X1, Y1: DWORD;                                                                    //
   Excel, WorkBook1, Range1, Range2, tmpRange, Chart1, Sheet, Cell1, Cell2: OleVariant;                 //
   VarMass1, VarMass2: OleVariant;                                                                      //
   XLSfName: TFileName;                                                                                 //
   ClassID: TCLSID;                                                                                     //
-  AvrSum, MinSum, MaxSum, StdSum: array of Single;                                                     //
+  AvrSum, MinSum, MaxSum, StdSum, Qrt1Sum, MedSum, Qrt3Sum: array of Single;                           //
   QuantSum, OKSum, FailsSum, MeasSum: array of DWORD;                                                  //
   Col: TColor;                                                                                         //
   Str: string;                                                                                         //
@@ -3252,13 +3252,13 @@ begin                                                                           
                                                                                                        //
   if Length(Wafer) = 0 then                                                                            //
   begin                                                                                                //
-    if Assigned(OnEvent) then OnEvent(evError, 'Нет пластин!');                                        //
+    if Assigned(OnEvent) then OnEvent(evError, 'РќРµС‚ РїР»Р°СЃС‚РёРЅ!');                                        //
     Exit;                                                                                              //
   end;                                                                                                 //
                                                                                                        //
   if CLSIDFromProgID(PWideChar(WideString(GetExcelAppName2)), ClassID) <> S_OK then                    //
   begin                                                                                                //
-    if Assigned(OnEvent) then OnEvent(evError, 'Excel не найден!');                                    //
+    if Assigned(OnEvent) then OnEvent(evError, 'Excel РЅРµ РЅР°Р№РґРµРЅ!');                                    //
     Exit;                                                                                              //
   end;                                                                                                 //
                                                                                                        //
@@ -3268,13 +3268,13 @@ begin                                                                           
     Excel := CreateOleObject(GetExcelAppName2);                                                        //
   end;                                                                                                 //
 //  Excel.Visible := False;                                                                              //
-  Excel.DisplayAlerts := False; // Запретим вывод предупреждений                                       //
+  Excel.DisplayAlerts := False; // Р—Р°РїСЂРµС‚РёРј РІС‹РІРѕРґ РїСЂРµРґСѓРїСЂРµР¶РґРµРЅРёР№                                       //
                                                                                                        //
   GetModuleFileName(0, Buffer, MAX_PATH);                                                              //
   tmpfName := ExtractFilePath(Buffer)+'Templates\TmpX3.xlsx';                                          //
   if not FileExists(tmpfName) then                                                                     //
   begin                                                                                                //
-    if Assigned(OnEvent) then OnEvent(evError, 'Не найден файл шаблона!');                             //
+    if Assigned(OnEvent) then OnEvent(evError, 'РќРµ РЅР°Р№РґРµРЅ С„Р°Р№Р» С€Р°Р±Р»РѕРЅР°!');                             //
     Exit;                                                                                              //
   end;                                                                                                 //
                                                                                                        //
@@ -3287,61 +3287,93 @@ begin                                                                           
   FormatSettings.DecimalSeparator := ',';                                                              //
 
 ////////////////////////////////////////////////////////////////////////////////
-/////////////////////////////// * Листы пластин  * /////////////////////////////
+//////////////////////////// * Р›РёСЃС‚ "РќРѕСЂРјС‹ Рё СЂРµР¶РёРјС‹" * /////////////////////////
 ////////////////////////////////////////////////////////////////////////////////
 
   try
-    Workbook1.Sheets['Пластина'].Activate;
+    Workbook1.Sheets['РќРѕСЂРјС‹ Рё СЂРµР¶РёРјС‹'].Activate;
   except
-    if Assigned(OnEvent) then OnEvent(evError, 'В шаблоне отсутствует лист <Пластина>');
+    if Assigned(OnEvent) then OnEvent(evError, 'Р’ С€Р°Р±Р»РѕРЅРµ РѕС‚СЃСѓС‚СЃС‚РІСѓРµС‚ Р»РёСЃС‚ <РќРѕСЂРјС‹ Рё СЂРµР¶РёРјС‹>');
 
   end;
 
-  if Assigned(OnEvent) then OnEvent(evInfo, '...Идёт обработка');
+  for i := 0 to Length(Wafer[0].TestsParams)-1 do
+  begin
+    WorkBook1.ActiveSheet.Cells[1, 2+i] := Wafer[0].TestsParams[i].Name;
+    WorkBook1.ActiveSheet.Cells[1, 2+i].Columns.Autofit;
+    WorkBook1.ActiveSheet.Cells[1, 2+i].Interior.Color := clSkyBlue;
+    WorkBook1.ActiveSheet.Cells[1, 2+i].BorderAround(xlContinuous, xlThin, xlAutomatic, xlAutomatic);
 
-  Range1 := WorkBook1.ActiveSheet.Range['D1', 'D1' ]; // Запомним шаблон пластины
+    WorkBook1.ActiveSheet.Cells[2, 2+i] := Wafer[0].TestsParams[i].Norma.Min;
+    WorkBook1.ActiveSheet.Cells[2, 2+i].BorderAround(xlContinuous, xlThin, xlAutomatic, xlAutomatic);
+
+    WorkBook1.ActiveSheet.Cells[3, 2+i] := Wafer[0].TestsParams[i].Norma.Max;
+    WorkBook1.ActiveSheet.Cells[3, 2+i].BorderAround(xlContinuous, xlThin, xlAutomatic, xlAutomatic);
+
+    WorkBook1.ActiveSheet.Cells[4, 2+i] := Wafer[0].TestsParams[i].PUnit;
+    WorkBook1.ActiveSheet.Cells[4, 2+i].BorderAround(xlContinuous, xlThin, xlAutomatic, xlAutomatic);
+
+    WorkBook1.ActiveSheet.Cells[6, 2+i] := Wafer[0].TestsParams[i].PMode;
+    WorkBook1.ActiveSheet.Cells[6, 2+i].BorderAround(xlContinuous, xlThin, xlAutomatic, xlAutomatic);
+  end;
+
+
+////////////////////////////////////////////////////////////////////////////////
+/////////////////////////////// * Р›РёСЃС‚С‹ РїР»Р°СЃС‚РёРЅ  * /////////////////////////////
+////////////////////////////////////////////////////////////////////////////////
+
+  try
+    Workbook1.Sheets['РџР»Р°СЃС‚РёРЅР°'].Activate;
+  except
+    if Assigned(OnEvent) then OnEvent(evError, 'Р’ С€Р°Р±Р»РѕРЅРµ РѕС‚СЃСѓС‚СЃС‚РІСѓРµС‚ Р»РёСЃС‚ <РџР»Р°СЃС‚РёРЅР°>');
+
+  end;
+
+  if Assigned(OnEvent) then OnEvent(evInfo, '...РРґС‘С‚ РѕР±СЂР°Р±РѕС‚РєР°');
+
+  Range1 := WorkBook1.ActiveSheet.Range['D1', 'D1' ]; // Р—Р°РїРѕРјРЅРёРј С€Р°Р±Р»РѕРЅ РїР»Р°СЃС‚РёРЅС‹
   Range2 := WorkBook1.ActiveSheet.Range['D4', 'D12']; //
 
   for n := 0 to Length(Wafer)-1 do
     with Wafer[n] do
     begin
       if n = 0 then
-  //////////////////// * Подгоним шаблон для данного изделия * ///////////////////
+  //////////////////// * РџРѕРґРіРѕРЅРёРј С€Р°Р±Р»РѕРЅ РґР»СЏ РґР°РЅРЅРѕРіРѕ РёР·РґРµР»РёСЏ * ///////////////////
 
       begin
         for i := 0 to Length(TestsParams)-1 do
         begin
-          if i <> 0 then // Расширяем шаблон на кол-во тестов и заносим их имена
+          if i <> 0 then // Р Р°СЃС€РёСЂСЏРµРј С€Р°Р±Р»РѕРЅ РЅР° РєРѕР»-РІРѕ С‚РµСЃС‚РѕРІ Рё Р·Р°РЅРѕСЃРёРј РёС… РёРјРµРЅР°
           begin
-            Range1.Copy(WorkBook1.ActiveSheet.Cells[1, i+4]); // Копируем все кроме 1-й ячейки
-            Range2.Copy(WorkBook1.ActiveSheet.Cells[4, i+4]); // (она уже есть)
+            Range1.Copy(WorkBook1.ActiveSheet.Cells[1, i+4]); // РљРѕРїРёСЂСѓРµРј РІСЃРµ РєСЂРѕРјРµ 1-Р№ СЏС‡РµР№РєРё
+            Range2.Copy(WorkBook1.ActiveSheet.Cells[4, i+4]); // (РѕРЅР° СѓР¶Рµ РµСЃС‚СЊ)
           end;
           WorkBook1.ActiveSheet.Cells[1, i+4] := TestsParams[i].Name;  //
-          WorkBook1.ActiveSheet.Cells[1, i+4].Columns.Autofit;         // Копируем
-                                                                       // названия
-          WorkBook1.ActiveSheet.Cells[13, i+4] := TestsParams[i].Name; // тестов
+          WorkBook1.ActiveSheet.Cells[1, i+4].Columns.Autofit;         // РљРѕРїРёСЂСѓРµРј
+                                                                       // РЅР°Р·РІР°РЅРёСЏ
+          WorkBook1.ActiveSheet.Cells[13, i+4] := TestsParams[i].Name; // С‚РµСЃС‚РѕРІ
         end;
 
-        tmpRange := WorkBook1.ActiveSheet; // Запомним лист для копирования
+        tmpRange := WorkBook1.ActiveSheet; // Р—Р°РїРѕРјРЅРёРј Р»РёСЃС‚ РґР»СЏ РєРѕРїРёСЂРѕРІР°РЅРёСЏ
       end;
 
 ////////////////////////////////////////////////////////////////////////////////
 
-      tmpRange.Copy(WorkBook1.ActiveSheet); // Скопируем новый лист
+      tmpRange.Copy(WorkBook1.ActiveSheet); // РЎРєРѕРїРёСЂСѓРµРј РЅРѕРІС‹Р№ Р»РёСЃС‚
       WorkBook1.ActiveSheet.Name := Wafer[n].Num;
 
       Cell1 := WorkBook1.ActiveSheet.Cells[3, 1];                      //
-      Cell2 := WorkBook1.ActiveSheet.Cells[17, 3+Length(TestsParams)]; // Перенесём
-      Range1 := WorkBook1.ActiveSheet.Range[Cell1, Cell2];             // вниз
-      Range1.Copy(WorkBook1.ActiveSheet.Cells[2+NTotal, 1]);           // результаты
+      Cell2 := WorkBook1.ActiveSheet.Cells[17, 3+Length(TestsParams)]; // РџРµСЂРµРЅРµСЃС‘Рј
+      Range1 := WorkBook1.ActiveSheet.Range[Cell1, Cell2];             // РІРЅРёР·
+      Range1.Copy(WorkBook1.ActiveSheet.Cells[2+NTotal, 1]);           // СЂРµР·СѓР»СЊС‚Р°С‚С‹
       Range1.Clear;                                                    //
 
-      Chart1 := Workbook1.ActiveSheet.ChartObjects(1);         // Перенесём график
-      Chart1.Top := WorkBook1.ActiveSheet.Rows[NTotal+17].Top; // вниз
-      Cell1 := WorkBook1.ActiveSheet.Cells[13+NTotal-1, 3];                     // Зададим
-      Cell2 := WorkBook1.ActiveSheet.Cells[15+NTotal-1, 3+Length(TestsParams)]; // диапазон
-      Range2 := WorkBook1.ActiveSheet.Range[Cell1, Cell2];                      // значений
-      Chart1.Chart.SetSourceData(Range2);                                       // для графика
+      Chart1 := Workbook1.ActiveSheet.ChartObjects(1);         // РџРµСЂРµРЅРµСЃС‘Рј РіСЂР°С„РёРє
+      Chart1.Top := WorkBook1.ActiveSheet.Rows[NTotal+17].Top; // РІРЅРёР·
+      Cell1 := WorkBook1.ActiveSheet.Cells[13+NTotal-1, 3];                     // Р—Р°РґР°РґРёРј
+      Cell2 := WorkBook1.ActiveSheet.Cells[15+NTotal-1, 3+Length(TestsParams)]; // РґРёР°РїР°Р·РѕРЅ
+      Range2 := WorkBook1.ActiveSheet.Range[Cell1, Cell2];                      // Р·РЅР°С‡РµРЅРёР№
+      Chart1.Chart.SetSourceData(Range2);                                       // РґР»СЏ РіСЂР°С„РёРєР°
 
 
       SetLength(CalcsParams, Length(TestsParams));
@@ -3363,25 +3395,25 @@ begin                                                                           
         SetLength(ValMass, NTotal);
       end;
 
-// Запишем в variant массивы
+// Р—Р°РїРёС€РµРј РІ variant РјР°СЃСЃРёРІС‹
 
-      VarMass1 := VarArrayCreate([1, NTotal, 1, Length(TestsParams)], varVariant); // Массив для значений
-      VarMass2 := VarArrayCreate([1, NTotal, 1, 3], varVariant); // Массив для номера кристалла, группы и Г/Б
+      VarMass1 := VarArrayCreate([1, NTotal, 1, Length(TestsParams)], varVariant); // РњР°СЃСЃРёРІ РґР»СЏ Р·РЅР°С‡РµРЅРёР№
+      VarMass2 := VarArrayCreate([1, NTotal, 1, 3], varVariant); // РњР°СЃСЃРёРІ РґР»СЏ РЅРѕРјРµСЂР° РєСЂРёСЃС‚Р°Р»Р»Р°, РіСЂСѓРїРїС‹ Рё Р“/Р‘
 
       for Nm := 0 to NTotal-1 do // NTotal
       begin
         Y := ChipN[Nm].Y;
         X := ChipN[Nm].X;
 
-        VarMass2[Nm+1, 1] := Nm+1;   // Номер кристалла
+        VarMass2[Nm+1, 1] := Nm+1;   // РќРѕРјРµСЂ РєСЂРёСЃС‚Р°Р»Р»Р°
         if Chip[Y, X].Status <> 1 then
         begin
-          VarMass2[Nm+1, 2] := 'Б'; // Б/Г
-          VarMass2[Nm+1, 3] := Chip[Y, X].Status-1999; // Группа
+          VarMass2[Nm+1, 2] := 'Р‘'; // Р‘/Р“
+          VarMass2[Nm+1, 3] := Chip[Y, X].Status-1999; // Р“СЂСѓРїРїР°
         end;
 
         if Length(Chip[Y, X].ChipParams) > 0 then
-          if Chip[Y, X].Status = 1 then // Если годный кристалл //
+          if Chip[Y, X].Status = 1 then // Р•СЃР»Рё РіРѕРґРЅС‹Р№ РєСЂРёСЃС‚Р°Р»Р» //
           begin
             for i := 0 to Length(TestsParams)-1 do
             begin
@@ -3389,43 +3421,43 @@ begin                                                                           
 
               with CalcsParams[i] do                                                                      //
               begin                                                                                       //
-                if MinVal > Chip[Y, X].ChipParams[i].Value then MinVal := Chip[Y, X].ChipParams[i].Value; // Мин.
-                if MaxVal < Chip[Y, X].ChipParams[i].Value then MaxVal := Chip[Y, X].ChipParams[i].Value; // Макс.
+                if MinVal > Chip[Y, X].ChipParams[i].Value then MinVal := Chip[Y, X].ChipParams[i].Value; // РњРёРЅ.
+                if MaxVal < Chip[Y, X].ChipParams[i].Value then MaxVal := Chip[Y, X].ChipParams[i].Value; // РњР°РєСЃ.
                                                                                                           //
-                ASum := ASum+Chip[Y, X].ChipParams[i].Value;                                              // Среднее
-                QSum := QSum+Sqr(Chip[Y, X].ChipParams[i].Value);                                         // Сигма
+                ASum := ASum+Chip[Y, X].ChipParams[i].Value;                                              // РЎСЂРµРґРЅРµРµ
+                QSum := QSum+Sqr(Chip[Y, X].ChipParams[i].Value);                                         // РЎРёРіРјР°
 
-                ValMass[ValCount] := Chip[Y, X].ChipParams[i].Value;                                      // Для Медиан, Квартилей
+                ValMass[ValCount] := Chip[Y, X].ChipParams[i].Value;                                      // Р”Р»СЏ РњРµРґРёР°РЅ, РљРІР°СЂС‚РёР»РµР№
 
-                Inc(NOKVal);                                                                              // Кол-во годных
+                Inc(NOKVal);                                                                              // РљРѕР»-РІРѕ РіРѕРґРЅС‹С…
 
                 Inc(ValCount);
               end;
             end;
           end
-          else                          // Если бракованный кристалл (не по всем параметрам) //
+          else                          // Р•СЃР»Рё Р±СЂР°РєРѕРІР°РЅРЅС‹Р№ РєСЂРёСЃС‚Р°Р»Р» (РЅРµ РїРѕ РІСЃРµРј РїР°СЂР°РјРµС‚СЂР°Рј) //
           begin
-            if not ToFirstFail then // Если не до 1-го брака
+            if not ToFirstFail then // Р•СЃР»Рё РЅРµ РґРѕ 1-РіРѕ Р±СЂР°РєР°
               for i := 0 to Length(TestsParams)-1 do
               begin
                 VarMass1[Nm+1, i+1] := Chip[Y, X].ChipParams[i].Value;
 
                 with CalcsParams[i] do                                                                      //
                 begin                                                                                       //
-                  if MinVal > Chip[Y, X].ChipParams[i].Value then MinVal := Chip[Y, X].ChipParams[i].Value; // Мин.
-                  if MaxVal < Chip[Y, X].ChipParams[i].Value then MaxVal := Chip[Y, X].ChipParams[i].Value; // Макс.
+                  if MinVal > Chip[Y, X].ChipParams[i].Value then MinVal := Chip[Y, X].ChipParams[i].Value; // РњРёРЅ.
+                  if MaxVal < Chip[Y, X].ChipParams[i].Value then MaxVal := Chip[Y, X].ChipParams[i].Value; // РњР°РєСЃ.
                                                                                                             //
-                  ASum := ASum+Chip[Y, X].ChipParams[i].Value;                                              // Среднее
-                  QSum := QSum+Sqr(Chip[Y, X].ChipParams[i].Value);                                         // Сигма
+                  ASum := ASum+Chip[Y, X].ChipParams[i].Value;                                              // РЎСЂРµРґРЅРµРµ
+                  QSum := QSum+Sqr(Chip[Y, X].ChipParams[i].Value);                                         // РЎРёРіРјР°
 
-                  ValMass[ValCount] := Chip[Y, X].ChipParams[i].Value;                                      // Для Медиан, Квартилей
+                  ValMass[ValCount] := Chip[Y, X].ChipParams[i].Value;                                      // Р”Р»СЏ РњРµРґРёР°РЅ, РљРІР°СЂС‚РёР»РµР№
 
-                  if Chip[Y, X].ChipParams[i].Stat = 1 then Inc(NOKVal)                                     // Кол-во годных
-                                                       else Inc(NFailsVal);                                 // Кол-во брака
+                  if Chip[Y, X].ChipParams[i].Stat = 1 then Inc(NOKVal)                                     // РљРѕР»-РІРѕ РіРѕРґРЅС‹С…
+                                                       else Inc(NFailsVal);                                 // РљРѕР»-РІРѕ Р±СЂР°РєР°
                   Inc(ValCount);
                 end;
               end
-            else                    // Если до 1-го брака
+            else                    // Р•СЃР»Рё РґРѕ 1-РіРѕ Р±СЂР°РєР°
               for i := 0 to Length(TestsParams)-1 do
                 if i < Chip[Y, X].Status-1999 then
                 begin
@@ -3433,25 +3465,28 @@ begin                                                                           
 
                   with CalcsParams[i] do
                   begin
-                    if i < Chip[Y, X].Status-2000 then // Для бракованныч значений не вычисляем мин., макс. и средн.
+                    if i < Chip[Y, X].Status-2000 then // Р”Р»СЏ Р±СЂР°РєРѕРІР°РЅРЅС‹С‡ Р·РЅР°С‡РµРЅРёР№ РЅРµ РІС‹С‡РёСЃР»СЏРµРј РјРёРЅ., РјР°РєСЃ. Рё СЃСЂРµРґРЅ.
                     begin
-                      if MinVal > Chip[Y, X].ChipParams[i].Value then MinVal := Chip[Y, X].ChipParams[i].Value; // Мин.
-                      if MaxVal < Chip[Y, X].ChipParams[i].Value then MaxVal := Chip[Y, X].ChipParams[i].Value; // Макс.
+                      if MinVal > Chip[Y, X].ChipParams[i].Value then MinVal := Chip[Y, X].ChipParams[i].Value; // РњРёРЅ.
+                      if MaxVal < Chip[Y, X].ChipParams[i].Value then MaxVal := Chip[Y, X].ChipParams[i].Value; // РњР°РєСЃ.
                                                                                                                 //
-                      ASum := ASum+Chip[Y, X].ChipParams[i].Value;                                              // Среднее
-                      QSum := QSum+Sqr(Chip[Y, X].ChipParams[i].Value);                                         // Сигма
+                      ASum := ASum+Chip[Y, X].ChipParams[i].Value;                                              // РЎСЂРµРґРЅРµРµ
+                      QSum := QSum+Sqr(Chip[Y, X].ChipParams[i].Value);                                         // РЎРёРіРјР°
 
-                      ValMass[ValCount] := Chip[Y, X].ChipParams[i].Value;                                      // Для Медиан, Квартилей
+                      ValMass[ValCount] := Chip[Y, X].ChipParams[i].Value;                                      // Р”Р»СЏ РњРµРґРёР°РЅ, РљРІР°СЂС‚РёР»РµР№
 
                       Inc(ValCount);
                     end;
 
-                    if Chip[Y, X].ChipParams[i].Stat = 1 then Inc(CalcsParams[i].NOKVal)                        // Кол-во годных
-                                                         else Inc(CalcsParams[i].NFailsVal);                    // Кол-во брака
+                    if Chip[Y, X].ChipParams[i].Stat = 1 then Inc(CalcsParams[i].NOKVal)                        // РљРѕР»-РІРѕ РіРѕРґРЅС‹С…
+                                                         else Inc(CalcsParams[i].NFailsVal);                    // РљРѕР»-РІРѕ Р±СЂР°РєР°
                   end;
                 end
                 else
+                begin
                   VarMass1[Nm+1, i+1] := '';
+                  Chip[Y, X].ChipParams[i].Stat := 4; // РџР°СЂР°РјРµС‚СЂ РЅРµ РёР·РјРµСЂСЏР»СЃСЏ
+                end;
           end;
       end; // for Nm to Total
 
@@ -3459,159 +3494,168 @@ begin                                                                           
       begin
         with CalcsParams[i] do
         begin
-          StdVal := Sqrt((ValCount*QSum-Sqr(ASum))/(ValCount*(ValCount-1))); // стандартное отклонение
-          AvrVal := ASum/ValCount;                                           // среднее значение
+          StdVal := Sqrt((ValCount*QSum-Sqr(ASum))/(ValCount*(ValCount-1))); // СЃС‚Р°РЅРґР°СЂС‚РЅРѕРµ РѕС‚РєР»РѕРЅРµРЅРёРµ
+          AvrVal := ASum/ValCount;                                           // СЃСЂРµРґРЅРµРµ Р·РЅР°С‡РµРЅРёРµ
 
           SetLength(ValMass, ValCount);
-          SortMassByValue(ValMass); // Отсортируем массивы для Медиан ...
-          if Odd(ValCount) then MedVal :=  ValMass[ValCount div 2]                                 // Найдём
-                           else MedVal := (ValMass[(ValCount div 2)-1]+ValMass[ValCount div 2])/2; // медиану
+          SortMassByValue(ValMass); // РћС‚СЃРѕСЂС‚РёСЂСѓРµРј РјР°СЃСЃРёРІС‹ РґР»СЏ РњРµРґРёР°РЅ ...
+          if Odd(ValCount) then MedVal :=  ValMass[ValCount div 2]                                 // РќР°Р№РґС‘Рј
+                           else MedVal := (ValMass[(ValCount div 2)-1]+ValMass[ValCount div 2])/2; // РјРµРґРёР°РЅСѓ
 
           if Odd(ValCount div 2) then                                                   //
           begin                                                                         //
-            Qrt1Val := ValMass[ValCount div 4];                                         // Найдём
+            Qrt1Val := ValMass[ValCount div 4];                                         // РќР°Р№РґС‘Рј
             Qrt3Val := ValMass[3*(ValCount div 4)];                                     //
-          end                                                                           // 1-й и 3-й
+          end                                                                           // 1-Р№ Рё 3-Р№
           else                                                                          //
-          begin                                                                         // квартили
+          begin                                                                         // РєРІР°СЂС‚РёР»Рё
             Qrt1Val := (ValMass[(ValCount div 4)-1]+ValMass[ValCount div 4])/2;         //
             Qrt3Val := (ValMass[(3*(ValCount div 4))-1]+ValMass[3*(ValCount div 4)])/2; //
           end;                                                                          //
         end;
       end;
 
-      Cell1 := WorkBook1.ActiveSheet.Cells[2, 4];                            // Внесём
-      Cell2 := WorkBook1.ActiveSheet.Cells[NTotal+1, 3+Length(TestsParams)]; // результаты
-      Range2 := WorkBook1.ActiveSheet.Range[Cell1, Cell2];                   // измерений
-      Range2.NumberFormat := '0,000';                                        // на новый
-      Range2.Value := VarMass1;                                              // лист
+      Cell1 := WorkBook1.ActiveSheet.Cells[2, 4];                            // Р’РЅРµСЃС‘Рј
+      Cell2 := WorkBook1.ActiveSheet.Cells[NTotal+1, 3+Length(TestsParams)]; // СЂРµР·СѓР»СЊС‚Р°С‚С‹
+      Range2 := WorkBook1.ActiveSheet.Range[Cell1, Cell2];                   // РёР·РјРµСЂРµРЅРёР№
+      Range2.NumberFormat := '0,000';                                        // РЅР° РЅРѕРІС‹Р№
+      Range2.Value := VarMass1;                                              // Р»РёСЃС‚
 
-      Cell1 := WorkBook1.ActiveSheet.Cells[2, 1];          // Внесём
-      Cell2 := WorkBook1.ActiveSheet.Cells[NTotal+1, 3];   // номер, группу, Б/Г
-      Range2 := WorkBook1.ActiveSheet.Range[Cell1, Cell2]; // на новый
-      Range2.Value := VarMass2;                            // лист
+      Cell1 := WorkBook1.ActiveSheet.Cells[2, 1];          // Р’РЅРµСЃС‘Рј
+      Cell2 := WorkBook1.ActiveSheet.Cells[NTotal+1, 3];   // РЅРѕРјРµСЂ, РіСЂСѓРїРїСѓ, Р‘/Р“
+      Range2 := WorkBook1.ActiveSheet.Range[Cell1, Cell2]; // РЅР° РЅРѕРІС‹Р№
+      Range2.Value := VarMass2;                            // Р»РёСЃС‚
 
-      Cell1 := WorkBook1.ActiveSheet.Cells[NTotal+3, 4];                     // Формат для ячеек
-      Cell2 := WorkBook1.ActiveSheet.Cells[NTotal+9, 3+Length(TestsParams)]; // Среднее, 1-й квартиль,
-      Range2 := WorkBook1.ActiveSheet.Range[Cell1, Cell2];                   // Медиана, 3-й квартиль,
-      Range2.NumberFormat := '0,000';                                        // Мин., Макс., Сигма
+      Cell1 := WorkBook1.ActiveSheet.Cells[NTotal+3, 4];                     // Р¤РѕСЂРјР°С‚ РґР»СЏ СЏС‡РµРµРє
+      Cell2 := WorkBook1.ActiveSheet.Cells[NTotal+9, 3+Length(TestsParams)]; // РЎСЂРµРґРЅРµРµ, 1-Р№ РєРІР°СЂС‚РёР»СЊ,
+      Range2 := WorkBook1.ActiveSheet.Range[Cell1, Cell2];                   // РњРµРґРёР°РЅР°, 3-Р№ РєРІР°СЂС‚РёР»СЊ,
+      Range2.NumberFormat := '0,000';                                        // РњРёРЅ., РњР°РєСЃ., РЎРёРіРјР°
 
-      Cell1 := WorkBook1.ActiveSheet.Cells[NTotal+10, 4];                     // Формат для ячеек
-      Cell2 := WorkBook1.ActiveSheet.Cells[NTotal+11, 3+Length(TestsParams)]; // Счёт,
-      Range2 := WorkBook1.ActiveSheet.Range[Cell1, Cell2];                    // %Годных
+      Cell1 := WorkBook1.ActiveSheet.Cells[NTotal+10, 4];                     // Р¤РѕСЂРјР°С‚ РґР»СЏ СЏС‡РµРµРє
+      Cell2 := WorkBook1.ActiveSheet.Cells[NTotal+11, 3+Length(TestsParams)]; // РЎС‡С‘С‚,
+      Range2 := WorkBook1.ActiveSheet.Range[Cell1, Cell2];                    // %Р“РѕРґРЅС‹С…
       Range2.NumberFormat := '0';                                             //
 
-      Cell1 := WorkBook1.ActiveSheet.Cells[NTotal+13, 4];                     // Формат для ячеек
-      Cell2 := WorkBook1.ActiveSheet.Cells[NTotal+14, 3+Length(TestsParams)]; // Годных, брак,
-      Range2 := WorkBook1.ActiveSheet.Range[Cell1, Cell2];                    // Всего измерено,
-      Range2.NumberFormat := '0';                                             // Количество годных
+      Cell1 := WorkBook1.ActiveSheet.Cells[NTotal+13, 4];                     // Р¤РѕСЂРјР°С‚ РґР»СЏ СЏС‡РµРµРє
+      Cell2 := WorkBook1.ActiveSheet.Cells[NTotal+14, 3+Length(TestsParams)]; // Р“РѕРґРЅС‹С…, Р±СЂР°Рє,
+      Range2 := WorkBook1.ActiveSheet.Range[Cell1, Cell2];                    // Р’СЃРµРіРѕ РёР·РјРµСЂРµРЅРѕ,
+      Range2.NumberFormat := '0';                                             // РљРѕР»РёС‡РµСЃС‚РІРѕ РіРѕРґРЅС‹С…
 
       for i := 0 to Length(TestsParams)-1 do
       begin
-        WorkBook1.ActiveSheet.Cells[NTotal+3,  4+i] := CalcsParams[i].AvrVal;  // Среднее
-        WorkBook1.ActiveSheet.Cells[NTotal+4,  4+i] := CalcsParams[i].Qrt1Val; // 1-й квартиль
-        WorkBook1.ActiveSheet.Cells[NTotal+5,  4+i] := CalcsParams[i].MedVal;  // Медиана
-        WorkBook1.ActiveSheet.Cells[NTotal+6,  4+i] := CalcsParams[i].Qrt3Val; // 3-й квартиль
-        WorkBook1.ActiveSheet.Cells[NTotal+7,  4+i] := CalcsParams[i].MinVal;  // Мин.
-        WorkBook1.ActiveSheet.Cells[NTotal+8,  4+i] := CalcsParams[i].MaxVal;  // Мах.
-        WorkBook1.ActiveSheet.Cells[NTotal+9,  4+i] := CalcsParams[i].StdVal;  // Сигма
-        WorkBook1.ActiveSheet.Cells[NTotal+10, 4+i] := Wafer[n].NOK;           // Счёт ???????????????????
+        WorkBook1.ActiveSheet.Cells[NTotal+3,  4+i] := CalcsParams[i].AvrVal;  // РЎСЂРµРґРЅРµРµ
+        WorkBook1.ActiveSheet.Cells[NTotal+4,  4+i] := CalcsParams[i].Qrt1Val; // 1-Р№ РєРІР°СЂС‚РёР»СЊ
+        WorkBook1.ActiveSheet.Cells[NTotal+5,  4+i] := CalcsParams[i].MedVal;  // РњРµРґРёР°РЅР°
+        WorkBook1.ActiveSheet.Cells[NTotal+6,  4+i] := CalcsParams[i].Qrt3Val; // 3-Р№ РєРІР°СЂС‚РёР»СЊ
+        WorkBook1.ActiveSheet.Cells[NTotal+7,  4+i] := CalcsParams[i].MinVal;  // РњРёРЅ.
+        WorkBook1.ActiveSheet.Cells[NTotal+8,  4+i] := CalcsParams[i].MaxVal;  // РњР°С….
+        WorkBook1.ActiveSheet.Cells[NTotal+9,  4+i] := CalcsParams[i].StdVal;  // РЎРёРіРјР°
+        WorkBook1.ActiveSheet.Cells[NTotal+10, 4+i] := Wafer[n].NOK;           // РЎС‡С‘С‚ ???????????????????
 
-        WorkBook1.ActiveSheet.Cells[NTotal+11, 4+i] := (Wafer[n].NOK*100)/NMeased; // %Годных ??????????????
-        WorkBook1.ActiveSheet.Cells[NTotal+13, 4+i] := CalcsParams[i].NOKVal;      // Годных
-        WorkBook1.ActiveSheet.Cells[NTotal+14, 4+i] := CalcsParams[i].NFailsVal;   // Брак
+        WorkBook1.ActiveSheet.Cells[NTotal+11, 4+i] := (Wafer[n].NOK*100)/NMeased; // %Р“РѕРґРЅС‹С… ??????????????
+        WorkBook1.ActiveSheet.Cells[NTotal+13, 4+i] := CalcsParams[i].NOKVal;      // Р“РѕРґРЅС‹С…
+        WorkBook1.ActiveSheet.Cells[NTotal+14, 4+i] := CalcsParams[i].NFailsVal;   // Р‘СЂР°Рє
       end;
 
-      WorkBook1.ActiveSheet.Cells[NTotal+15, 4] := Wafer[n].NMeased; // Всего измерено
-      WorkBook1.ActiveSheet.Cells[NTotal+16, 4] := Wafer[n].NOK;     // Всего годных
+      WorkBook1.ActiveSheet.Cells[NTotal+15, 4] := Wafer[n].NMeased; // Р’СЃРµРіРѕ РёР·РјРµСЂРµРЅРѕ
+      WorkBook1.ActiveSheet.Cells[NTotal+16, 4] := Wafer[n].NOK;     // Р’СЃРµРіРѕ РіРѕРґРЅС‹С…
 
-      if Assigned(OnEvent) then OnEvent(evOK, 'Обработана пластина №: '+Num);
+      if Assigned(OnEvent) then OnEvent(evOK, 'РћР±СЂР°Р±РѕС‚Р°РЅР° РїР»Р°СЃС‚РёРЅР° в„–: '+Num);
     end; // for Wafer[n]
 
 
   try
-    Workbook1.Sheets['Пластина'].Delete; // Удалим лист шаблона
+    Workbook1.Sheets['РџР»Р°СЃС‚РёРЅР°'].Delete; // РЈРґР°Р»РёРј Р»РёСЃС‚ С€Р°Р±Р»РѕРЅР°
   except
   end;
 
 ////////////////////////////////////////////////////////////////////////////////
-//////////////////////////////// * Лист "Всего" * //////////////////////////////
+//////////////////////////////// * Р›РёСЃС‚ "Р’СЃРµРіРѕ" * //////////////////////////////
 ////////////////////////////////////////////////////////////////////////////////
 
   try
-    Workbook1.Sheets['Всего'].Activate;
+    Workbook1.Sheets['Р’СЃРµРіРѕ'].Activate;
   except
-    if Assigned(OnEvent) then OnEvent(evError, 'В шаблоне отсутствует лист <Всего>');
+    if Assigned(OnEvent) then OnEvent(evError, 'Р’ С€Р°Р±Р»РѕРЅРµ РѕС‚СЃСѓС‚СЃС‚РІСѓРµС‚ Р»РёСЃС‚ <Р’СЃРµРіРѕ>');
 
   end;
-{
+
   for n := 0 to Length(Wafer)-1 do
     with Wafer[n] do
     begin
       if n = 0 then
       begin
-        tmpRange := WorkBook1.ActiveSheet.Range['C1', 'C19']; // Запомним шаблон пластины
+        tmpRange := WorkBook1.ActiveSheet.Range['C1', 'C25']; // Р—Р°РїРѕРјРЅРёРј С€Р°Р±Р»РѕРЅ РїР»Р°СЃС‚РёРЅС‹
 
         for i := 0 to Length(TestsParams)-1 do
         begin
-          if i > 0 then // Расширяем шаблон на кол-во тестов и заносим их имена
-            tmpRange.Copy(WorkBook1.ActiveSheet.Cells[1, i+3]); // Копируем все кроме 1-й ячейки
+          if i > 0 then // Р Р°СЃС€РёСЂСЏРµРј С€Р°Р±Р»РѕРЅ РЅР° РєРѕР»-РІРѕ С‚РµСЃС‚РѕРІ Рё Р·Р°РЅРѕСЃРёРј РёС… РёРјРµРЅР°
+            tmpRange.Copy(WorkBook1.ActiveSheet.Cells[1, i+3]); // РљРѕРїРёСЂСѓРµРј РІСЃРµ РєСЂРѕРјРµ 1-Р№ СЏС‡РµР№РєРё
 
-          WorkBook1.ActiveSheet.Cells[3, i+3] := TestsParams[i].Name;  //
-          WorkBook1.ActiveSheet.Cells[3, i+3].Columns.Autofit;         // Копируем
-                                                                       // названия
-          WorkBook1.ActiveSheet.Cells[16, i+3] := TestsParams[i].Name; // тестов
+          WorkBook1.ActiveSheet.Cells[3, i+3] := TestsParams[i].Name;  // РљРѕРїРёСЂСѓРµРј
+          WorkBook1.ActiveSheet.Cells[3, i+3].Columns.Autofit;         // РЅР°Р·РІР°РЅРёСЏ
+                                                                       //
+          WorkBook1.ActiveSheet.Cells[22, i+3] := TestsParams[i].Name; // С‚РµСЃС‚РѕРІ
         end;
 
-        Cell1 := WorkBook1.ActiveSheet.Cells[16+6*(Length(Wafer)-1), 2];                     // Зададим
-        Cell2 := WorkBook1.ActiveSheet.Cells[18+6*(Length(Wafer)-1), 2+Length(TestsParams)]; // диапазон
-        Range2 := WorkBook1.ActiveSheet.Range[Cell1, Cell2];                                 // значений
-        Chart1 := Workbook1.ActiveSheet.ChartObjects(1);                                     //
-        Chart1.Chart.SetSourceData(Range2);                                                  // для графика
+        Cell1 := WorkBook1.ActiveSheet.Cells[22+9*(Length(Wafer)-1), 2];                     // Р—Р°РґР°РґРёРј
+        Cell2 := WorkBook1.ActiveSheet.Cells[24+9*(Length(Wafer)-1), 2+Length(TestsParams)]; // РґРёР°РїР°Р·РѕРЅ
+        Range2 := WorkBook1.ActiveSheet.Range[Cell1, Cell2];                                 // Р·РЅР°С‡РµРЅРёР№
+        Chart1 := Workbook1.ActiveSheet.ChartObjects(1);                                     // РґР»СЏ РіСЂР°С„РёРєР°
+        Chart1.Chart.SetSourceData(Range2);                                                  //
 
-        if Length(Wafer) > 1 then // Копируем, если больше 1-й пластины
+        if Length(Wafer) > 1 then // РљРѕРїРёСЂСѓРµРј, РµСЃР»Рё Р±РѕР»СЊС€Рµ 1-Р№ РїР»Р°СЃС‚РёРЅС‹
         begin
-          Cell1 := WorkBook1.ActiveSheet.Cells[10, 1];                         //
-          Cell2 := WorkBook1.ActiveSheet.Cells[19, 2+Length(TestsParams)];     //
-          Range1 := WorkBook1.ActiveSheet.Range[Cell1, Cell2];                 //
+          Cell1 := WorkBook1.ActiveSheet.Cells[13, 1];                     //
+          Cell2 := WorkBook1.ActiveSheet.Cells[25, 2+Length(TestsParams)]; // РљРѕРЅС†РѕРІРєР°
+          Range1 := WorkBook1.ActiveSheet.Range[Cell1, Cell2];             //
           if Length(Wafer) = 2 then
-          begin                                                              // Если сразу
-            Range1.Copy(WorkBook1.ActiveSheet.Cells[26, 1]);                 // перенести
-            Range1.Clear;                                                    // в нужное место
-            Cell1 := WorkBook1.ActiveSheet.Cells[26, 1];                     // будет
-            Cell2 := WorkBook1.ActiveSheet.Cells[35, 2+Length(TestsParams)]; // ошибка копирования
-            Range1 := WorkBook1.ActiveSheet.Range[Cell1, Cell2];             // (объединённые ячейки)
+          begin                                                              // Р•СЃР»Рё СЃСЂР°Р·Сѓ
+            Range1.Copy(WorkBook1.ActiveSheet.Cells[35, 1]);                 // РїРµСЂРµРЅРµСЃС‚Рё
+            Range1.Clear;                                                    // РІ РЅСѓР¶РЅРѕРµ РјРµСЃС‚Рѕ
+            Cell1 := WorkBook1.ActiveSheet.Cells[35, 1];                     // Р±СѓРґРµС‚
+            Cell2 := WorkBook1.ActiveSheet.Cells[47, 2+Length(TestsParams)]; // РѕС€РёР±РєР° РєРѕРїРёСЂРѕРІР°РЅРёСЏ
+            Range1 := WorkBook1.ActiveSheet.Range[Cell1, Cell2];             // (РѕР±СЉРµРґРёРЅС‘РЅРЅС‹Рµ СЏС‡РµР№РєРё)
           end;
-          Range1.Copy(WorkBook1.ActiveSheet.Cells[10+6*(Length(Wafer)-1), 1]); // Перенесём
-          Range1.Clear;                                                        // в конец
+          Range1.Copy(WorkBook1.ActiveSheet.Cells[13+9*(Length(Wafer)-1), 1]); // РџРµСЂРµРЅРµСЃС‘Рј
+          Range1.Clear;                                                        // РІ РєРѕРЅРµС†
 
-          Chart1.Top := WorkBook1.ActiveSheet.Rows[21+6*(Length(Wafer)-1)].Top; // Перенесём график вниз
+          Chart1.Top := WorkBook1.ActiveSheet.Rows[27+9*(Length(Wafer)-1)].Top; // РџРµСЂРµРЅРµСЃС‘Рј РіСЂР°С„РёРє РІРЅРёР·
 
-          Cell1 := WorkBook1.ActiveSheet.Cells[4, 1];                     // Запомним
-          Cell2 := WorkBook1.ActiveSheet.Cells[9, 2+Length(TestsParams)]; // ячейки
-          Range1 := WorkBook1.ActiveSheet.Range[Cell1, Cell2];            // для копирования
+          Cell1 := WorkBook1.ActiveSheet.Cells[4,  1];                     // Р—Р°РїРѕРјРЅРёРј
+          Cell2 := WorkBook1.ActiveSheet.Cells[12, 2+Length(TestsParams)]; // СЏС‡РµР№РєРё
+          Range1 := WorkBook1.ActiveSheet.Range[Cell1, Cell2];             // РґР»СЏ РєРѕРїРёСЂРѕРІР°РЅРёСЏ
 
-          for i := 0 to Length(Wafer)-2 do                       // Скопируем
-            Range1.Copy(WorkBook1.ActiveSheet.Cells[10+6*i, 1]); // для всех пластин
+          for i := 0 to Length(Wafer)-2 do                       // РЎРєРѕРїРёСЂСѓРµРј
+            Range1.Copy(WorkBook1.ActiveSheet.Cells[13+9*i, 1]); // РґР»СЏ РІСЃРµС… РїР»Р°СЃС‚РёРЅ
         end;
       end;
 
-      WorkBook1.ActiveSheet.Cells[4+6*n, 1] := Wafer[n].Num;
+      WorkBook1.ActiveSheet.Cells[4+9*n, 1] := Wafer[n].Num;
       for i := 0 to Length(TestsParams)-1 do
       begin
-        WorkBook1.ActiveSheet.Cells[4+6*n, i+3] := Wafer[n].CalcsParams[i].AvrVal; // Среднее
-        WorkBook1.ActiveSheet.Cells[5+6*n, i+3] := Wafer[n].CalcsParams[i].MinVal; // Мин.
-        WorkBook1.ActiveSheet.Cells[6+6*n, i+3] := Wafer[n].CalcsParams[i].MaxVal; // Макс.
-        WorkBook1.ActiveSheet.Cells[7+6*n, i+3] := Wafer[n].CalcsParams[i].StdVal; // Сигма
+        WorkBook1.ActiveSheet.Cells[4+ 9*n, i+3] := Wafer[n].CalcsParams[i].AvrVal;  // РЎСЂРµРґРЅРµРµ
+        WorkBook1.ActiveSheet.Cells[5+ 9*n, i+3] := Wafer[n].CalcsParams[i].Qrt1Val; // 1-Р№ РєРІР°СЂС‚РёР»СЊ
+        WorkBook1.ActiveSheet.Cells[6+ 9*n, i+3] := Wafer[n].CalcsParams[i].MedVal;  // РњРµРґРёР°РЅР°
+        WorkBook1.ActiveSheet.Cells[7+ 9*n, i+3] := Wafer[n].CalcsParams[i].Qrt3Val; // 3-Р№ РєРІР°СЂС‚РёР»СЊ
+        WorkBook1.ActiveSheet.Cells[8+ 9*n, i+3] := Wafer[n].CalcsParams[i].MinVal;  // РњРёРЅ.
+        WorkBook1.ActiveSheet.Cells[9+ 9*n, i+3] := Wafer[n].CalcsParams[i].MaxVal;  // РњР°РєСЃ.
+        WorkBook1.ActiveSheet.Cells[10+9*n, i+3] := Wafer[n].CalcsParams[i].StdVal;  // РЎРёРіРјР°
 
-        WorkBook1.ActiveSheet.Cells[8+6*n, i+3] := Wafer[n].NOK; // Счёт ??????
-        WorkBook1.ActiveSheet.Cells[9+6*n, i+3] := (NOK*100)/NMeased; // %Годных ??????????????
+        WorkBook1.ActiveSheet.Cells[11+9*n, i+3] := Wafer[n].NOK;      // РЎС‡С‘С‚ ??????
+        WorkBook1.ActiveSheet.Cells[12+9*n, i+3] := (NOK*100)/NMeased; // %Р“РѕРґРЅС‹С… ??????????????
       end;
 
     end;
- }
+
   SetLength(AvrSum,   0);
   SetLength(AvrSum,   Length(Wafer[0].TestsParams));
+  SetLength(Qrt1Sum,  0);
+  SetLength(Qrt1Sum,  Length(Wafer[0].TestsParams));
+  SetLength(MedSum,   0);
+  SetLength(MedSum,   Length(Wafer[0].TestsParams));
+  SetLength(Qrt3Sum,  0);
+  SetLength(Qrt3Sum,  Length(Wafer[0].TestsParams));
   SetLength(MinSum,   0);
   SetLength(MinSum,   Length(Wafer[0].TestsParams));
   SetLength(MaxSum,   0);
@@ -3629,6 +3673,9 @@ begin                                                                           
   for i := 0 to Length(Wafer[0].TestsParams)-1 do
   begin
     AvrSum[i]   := 0.0;
+    Qrt1Sum[i]  := 0.0;
+    MedSum[i]   := 0.0;
+    Qrt3Sum[i]  := 0.0;
     MinSum[i]   := 0.0;
     MaxSum[i]   := 0.0;
     StdSum [i]  := 0.0;
@@ -3642,11 +3689,14 @@ begin                                                                           
     for n := 0 to Length(Wafer)-1 do
       with Wafer[n] do
       begin
-        AvrSum[i]   := AvrSum[i]+CalcsParams[i].AvrVal;
-        MinSum[i]   := MinSum[i]+CalcsParams[i].MinVal;
-        MaxSum[i]   := MaxSum[i]+CalcsParams[i].MaxVal;
-        StdSum[i]   := StdSum[i]+CalcsParams[i].StdVal;
-        QuantSum[i] := QuantSum[i]+NOK;                // Счёт ???????????????
+        AvrSum[i]   := AvrSum[i]+ CalcsParams[i].AvrVal;
+        Qrt1Sum[i]  := Qrt1Sum[i]+CalcsParams[i].Qrt1Val;
+        MedSum[i]   := MedSum[i]+ CalcsParams[i].MedVal;
+        Qrt3Sum[i]  := Qrt3Sum[i]+CalcsParams[i].Qrt3Val;
+        MinSum[i]   := MinSum[i]+ CalcsParams[i].MinVal;
+        MaxSum[i]   := MaxSum[i]+ CalcsParams[i].MaxVal;
+        StdSum[i]   := StdSum[i]+ CalcsParams[i].StdVal;
+        QuantSum[i] := QuantSum[i]+NOK;                  // РЎС‡С‘С‚ ???????????????
         OKSum[i]    := OKSum[i]+CalcsParams[i].NOKVal;
         FailsSum[i] := FailsSum[i]+CalcsParams[i].NFailsVal;
         MeasSum[i]  := MeasSum[i]+NMeased;
@@ -3654,119 +3704,169 @@ begin                                                                           
 
   for i := 0 to Length(Wafer[0].TestsParams)-1 do
   begin
-//////////////////////////////// * Среднее * ///////////////////////////////////
+//////////////////////////////// * РЎСЂРµРґРЅРµРµ * ///////////////////////////////////
 
-    X := 4+6*Length(Wafer);
-    WorkBook1.ActiveSheet.Cells[0+X, i+3] := AvrSum[i]/Length(Wafer);      // Среднее
-    WorkBook1.ActiveSheet.Cells[1+X, i+3] := MinSum[i]/Length(Wafer);      // Мин.
-    WorkBook1.ActiveSheet.Cells[2+X, i+3] := MaxSum[i]/Length(Wafer);      // Макс.
-    WorkBook1.ActiveSheet.Cells[3+X, i+3] := StdSum[i]/Length(Wafer);      // Сигма
-    WorkBook1.ActiveSheet.Cells[4+X, i+3] := QuantSum[i]/Length(Wafer);    // Счёт ??????????
-    WorkBook1.ActiveSheet.Cells[5+X, i+3] := (QuantSum[i]*100)/MeasSum[i]; // %Годных ??????????????
+    X := 4+9*Length(Wafer);
+    WorkBook1.ActiveSheet.Cells[0+X, i+3] := AvrSum[i]/Length(Wafer);      // РЎСЂРµРґРЅРµРµ
+    WorkBook1.ActiveSheet.Cells[1+X, i+3] := Qrt1Sum[i]/Length(Wafer);     // 1-Р№ РєРІР°СЂС‚РёР»СЊ
+    WorkBook1.ActiveSheet.Cells[2+X, i+3] := MedSum[i]/Length(Wafer);      // РњРµРґРёР°РЅР°
+    WorkBook1.ActiveSheet.Cells[3+X, i+3] := Qrt3Sum[i]/Length(Wafer);     // 1-Р№ РєРІР°СЂС‚РёР»СЊ
+    WorkBook1.ActiveSheet.Cells[4+X, i+3] := MinSum[i]/Length(Wafer);      // РњРёРЅ.
+    WorkBook1.ActiveSheet.Cells[5+X, i+3] := MaxSum[i]/Length(Wafer);      // РњР°РєСЃ.
+    WorkBook1.ActiveSheet.Cells[6+X, i+3] := StdSum[i]/Length(Wafer);      // РЎРёРіРјР°
+    WorkBook1.ActiveSheet.Cells[7+X, i+3] := QuantSum[i]/Length(Wafer);    // РЎС‡С‘С‚ ??????????
+    WorkBook1.ActiveSheet.Cells[8+X, i+3] := (QuantSum[i]*100)/MeasSum[i]; // %Р“РѕРґРЅС‹С… ???????
 
-/////////////////////////////// * По тестам * //////////////////////////////////
+/////////////////////////////// * РџРѕ С‚РµСЃС‚Р°Рј * //////////////////////////////////
 
-    WorkBook1.ActiveSheet.Cells[7+X, i+3] := OKSum[i];             // Годных
-    WorkBook1.ActiveSheet.Cells[8+X, i+3] := FailsSum[i];          // Брак
-    WorkBook1.ActiveSheet.Cells[9+X, i+3] := OKSum[i]+FailsSum[i]; // Всего
+    WorkBook1.ActiveSheet.Cells[10+X, i+3] := OKSum[i];             // Р“РѕРґРЅС‹С…
+    WorkBook1.ActiveSheet.Cells[11+X, i+3] := FailsSum[i];          // Р‘СЂР°Рє
+    WorkBook1.ActiveSheet.Cells[12+X, i+3] := OKSum[i]+FailsSum[i]; // Р’СЃРµРіРѕ
   end;
 
-  if Assigned(OnEvent) then OnEvent(evOK, '>>> Обработаны все пластины!');
+  if Assigned(OnEvent) then OnEvent(evOK, '>>> РћР±СЂР°Р±РѕС‚Р°РЅС‹ РІСЃРµ РїР»Р°СЃС‚РёРЅС‹!');
 
 ////////////////////////////////////////////////////////////////////////////////
-//////////////////////////// * Лист "Карта обхода" * ///////////////////////////
+//////////////////////////// * Р›РёСЃС‚ "РљР°СЂС‚Р° РѕР±С…РѕРґР°" * ///////////////////////////
 ////////////////////////////////////////////////////////////////////////////////
 
-  try
-    Workbook1.Sheets['Карты обхода'].Activate;
-  except
-    if Assigned(OnEvent) then OnEvent(evError, 'В шаблоне отсутствует лист <Карты обхода>');
-
-  end;
-
-  if Assigned(OnEvent) then OnEvent(evInfo, '... Идёт запись в файл!');
-
-  for i := 1 to Length(Wafer[0].TestsParams)-1 do
+  if BlankWafer.NTotal <> 0 then // Р•СЃР»Рё РµСЃС‚СЊ РєР°СЂС‚С‹ РіРѕРґРЅРѕСЃС‚Рё
   begin
-    WorkBook1.ActiveSheet.Cells[i+1, 1].Interior.Color := GetColorByStatus(i+1999);
-    WorkBook1.ActiveSheet.Cells[i+1, 1].BorderAround(xlContinuous, xlThin, xlAutomatic, xlAutomatic);
-    WorkBook1.ActiveSheet.Cells[i+1, 2] := 'Брак по '+Wafer[0].TestsParams[i].Name;
-  end;
+    try
+      Workbook1.Sheets['РљР°СЂС‚С‹ РѕР±С…РѕРґР°'].Activate;
+    except
+      if Assigned(OnEvent) then OnEvent(evError, 'Р’ С€Р°Р±Р»РѕРЅРµ РѕС‚СЃСѓС‚СЃС‚РІСѓРµС‚ Р»РёСЃС‚ <РљР°СЂС‚С‹ РѕР±С…РѕРґР°>');
 
-  StX := 11; // Положение
-  StY := 2;  // 1-й пластины
-  if BlankWafer.NTotal = 0 then // Если нет карты обхода
-  begin
-    for n := 0 to Length(Wafer)-1 do
-      with Wafer[n] do
-      begin
-        for Y := 0 to Length(Chip)-1 do
-        begin
-          WorkBook1.ActiveSheet.Cells[StY-1, StX+3] := 'Пластина №: '+Num;
-
-          for X := 0 to Length(Chip[0])-1 do
-            if Chip[Y, X].ID <> 0 then
-            begin
-              WorkBook1.ActiveSheet.Cells[Y+StY, X+StX] := Chip[Y, X].ID;
-              WorkBook1.ActiveSheet.Cells[Y+StY, X+StX].Interior.Color := GetColorByStatus(Chip[Y, X].Status);
-              WorkBook1.ActiveSheet.Cells[Y+StY, X+StX].BorderAround(xlContinuous, xlThin, xlAutomatic, xlAutomatic);
-            end;
-        end;
-
-        if ((n+1) mod 5) <> 0 then
-        begin
-          StX := StX+Length(Chip[0])+2;
-        end
-        else
-        begin
-          StX := 10;
-          StY := StY+Length(Chip)+2;
-        end;
-      end;
-  end
-  else                          // Если есть карта обхода
-  begin
-    Str := 'неизвестно';
-    case BlankWafer.CutSide of
-      1: Str := 'вверху';
-      2: Str := 'слева';
-      3: Str := 'внизу';
-      4: Str := 'справа';
     end;
-    WorkBook1.ActiveSheet.Cells[Length(Wafer[0].TestsParams)+2, 1] := 'Срез пластины: '+Str;
 
-    for n := 0 to Length(Wafer)-1 do
-      with Wafer[n] do
-      begin
-        if NTotal > BlankWafer.NTotal then
-          if Assigned(OnEvent) then OnEvent(evError, ' Пластина №: '+Num+' - кристаллов больше, чем в обходе!');
-        if NTotal < BlankWafer.NTotal then
-          if Assigned(OnEvent) then OnEvent(evError, ' Пластина №: '+Num+' - кристаллов меньше, чем в обходе!');
+    if Assigned(OnEvent) then OnEvent(evInfo, '... РРґС‘С‚ Р·Р°РїРёСЃСЊ РІ С„Р°Р№Р»!');
 
-        WorkBook1.ActiveSheet.Cells[StY-1, StX+5] := 'Пластина №: '+Num;
-        for Nm := 0 to NTotal-1 do
+    StX := 11; // РџРѕР»РѕР¶РµРЅРёРµ
+    StY := 2;  // 1-Р№ РїР»Р°СЃС‚РёРЅС‹
+
+    if MapByParams then // Р•СЃР»Рё РєР°СЂС‚С‹ РіРѕРґРЅРѕСЃС‚Рё РїРѕ РїР°СЂР°РјРµС‚СЂР°Рј
+    begin
+      WorkBook1.ActiveSheet.Cells[2, 1].Interior.Color := clRed;
+      WorkBook1.ActiveSheet.Cells[2, 1].BorderAround(xlContinuous, xlThin, xlAutomatic, xlAutomatic);
+      WorkBook1.ActiveSheet.Cells[2, 2] := 'РџР°СЂР°РјРµС‚СЂ РІС‹С€Рµ РЅРѕСЂРјС‹';
+      WorkBook1.ActiveSheet.Cells[3, 1].Interior.Color := clYellow;
+      WorkBook1.ActiveSheet.Cells[3, 1].BorderAround(xlContinuous, xlThin, xlAutomatic, xlAutomatic);
+      WorkBook1.ActiveSheet.Cells[3, 2] := 'РџР°СЂР°РјРµС‚СЂ РЅРёР¶Рµ РЅРѕСЂРјС‹';
+      WorkBook1.ActiveSheet.Cells[4, 1].Interior.Color := clWhite;
+      WorkBook1.ActiveSheet.Cells[4, 1].BorderAround(xlContinuous, xlThin, xlAutomatic, xlAutomatic);
+      WorkBook1.ActiveSheet.Cells[4, 2] := 'РџР°СЂР°РјРµС‚СЂ РЅРµ РёР·РјРµСЂСЏР»СЃСЏ';
+
+      Str := 'РЅРµРёР·РІРµСЃС‚РЅРѕ';
+      case BlankWafer.CutSide of
+        1: Str := 'РІРІРµСЂС…Сѓ';
+        2: Str := 'СЃР»РµРІР°';
+        3: Str := 'РІРЅРёР·Сѓ';
+        4: Str := 'СЃРїСЂР°РІР°';
+      end;
+      WorkBook1.ActiveSheet.Cells[6, 1] := 'РЎСЂРµР· РїР»Р°СЃС‚РёРЅС‹: '+Str;
+
+      StX := 13;
+
+      for n := 0 to Length(Wafer)-1 do
+        with Wafer[n] do
         begin
-          if Nm > BlankWafer.NTotal-1 then Break;
+          if NTotal > BlankWafer.NTotal then
+            if Assigned(OnEvent) then OnEvent(evError, ' РџР»Р°СЃС‚РёРЅР° в„–: '+Num+' - РєСЂРёСЃС‚Р°Р»Р»РѕРІ Р±РѕР»СЊС€Рµ, С‡РµРј РІ РѕР±С…РѕРґРµ!');
+          if NTotal < BlankWafer.NTotal then
+            if Assigned(OnEvent) then OnEvent(evError, ' РџР»Р°СЃС‚РёРЅР° в„–: '+Num+' - РєСЂРёСЃС‚Р°Р»Р»РѕРІ РјРµРЅСЊС€Рµ, С‡РµРј РІ РѕР±С…РѕРґРµ!');
 
-          X := BlankWafer.ChipN[Nm].X;
-          Y := BlankWafer.ChipN[Nm].Y;
-          X1 := ChipN[Nm].X;
-          Y1 := ChipN[Nm].Y;
-          WorkBook1.ActiveSheet.Cells[Y+StY, X+StX] := Nm+1;
-          WorkBook1.ActiveSheet.Cells[Y+StY, X+StX].Interior.Color := GetColorByStatus(Chip[Y1, X1].Status);
-          WorkBook1.ActiveSheet.Cells[Y+StY, X+StX].BorderAround(xlContinuous, xlThin, xlAutomatic, xlAutomatic);
-        end;
+          for Nm := 0 to NTotal-1 do
+          begin
+            if Nm > BlankWafer.NTotal-1 then Break;
 
-        if ((n+1) mod 5) <> 0 then
-        begin
-          StX := StX+Length(BlankWafer.Chip[0])+2;
-        end
-        else
-        begin
-          StX := 10;
+            X := BlankWafer.ChipN[Nm].X;
+            Y := BlankWafer.ChipN[Nm].Y;
+            X1 := ChipN[Nm].X;
+            Y1 := ChipN[Nm].Y;
+
+            WorkBook1.ActiveSheet.Cells[Y+StY, X+StX] := '123';
+
+            for i := 0 to Length(TestsParams)-1 do
+            begin
+              case Chip[Y1, X1].ChipParams[i].Stat of
+                0: Col := clBlack;
+                1: Col := clLime;
+                2: Col := clYellow;
+                3: Col := clRed;
+                4: Col := clWhite;
+              end;
+
+              if n = 0 then                                                                                                   // РќР°Р·РІР°РЅРёСЏ
+                if NM = 0 then WorkBook1.ActiveSheet.Cells[StY-1, StX+5+i*Length(BlankWafer.Chip[0])] := TestsParams[i].Name; // С‚РµСЃС‚РѕРІ
+
+              WorkBook1.ActiveSheet.Cells[Y+StY, X+StX+i*Length(BlankWafer.Chip[0])] := Nm+1;
+              WorkBook1.ActiveSheet.Cells[Y+StY, X+StX+i*Length(BlankWafer.Chip[0])].Interior.Color := Col;
+              WorkBook1.ActiveSheet.Cells[Y+StY, X+StX+i*Length(BlankWafer.Chip[0])].BorderAround(xlContinuous, xlThin, xlAutomatic, xlAutomatic);
+            end;
+
+
+          end;
+
+          StX := 13;
           StY := StY+Length(BlankWafer.Chip)+2;
         end;
+    end
+    else               // Р•СЃР»Рё РєР°СЂС‚С‹ РіРѕРґРЅРѕСЃС‚Рё РїРѕ Р“/Р‘
+    begin
+      for i := 1 to Length(Wafer[0].TestsParams)-1 do
+      begin
+        WorkBook1.ActiveSheet.Cells[i+1, 1].Interior.Color := GetColorByStatus(i+1999);
+        WorkBook1.ActiveSheet.Cells[i+1, 1].BorderAround(xlContinuous, xlThin, xlAutomatic, xlAutomatic);
+        WorkBook1.ActiveSheet.Cells[i+1, 2] := 'Р‘СЂР°Рє РїРѕ '+Wafer[0].TestsParams[i].Name;
       end;
+
+      Str := 'РЅРµРёР·РІРµСЃС‚РЅРѕ';
+      case BlankWafer.CutSide of
+        1: Str := 'РІРІРµСЂС…Сѓ';
+        2: Str := 'СЃР»РµРІР°';
+        3: Str := 'РІРЅРёР·Сѓ';
+        4: Str := 'СЃРїСЂР°РІР°';
+      end;
+      WorkBook1.ActiveSheet.Cells[Length(Wafer[0].TestsParams)+2, 1] := 'РЎСЂРµР· РїР»Р°СЃС‚РёРЅС‹: '+Str;
+
+      for n := 0 to Length(Wafer)-1 do
+        with Wafer[n] do
+        begin
+          if NTotal > BlankWafer.NTotal then
+            if Assigned(OnEvent) then OnEvent(evError, ' РџР»Р°СЃС‚РёРЅР° в„–: '+Num+' - РєСЂРёСЃС‚Р°Р»Р»РѕРІ Р±РѕР»СЊС€Рµ, С‡РµРј РІ РѕР±С…РѕРґРµ!');
+          if NTotal < BlankWafer.NTotal then
+            if Assigned(OnEvent) then OnEvent(evError, ' РџР»Р°СЃС‚РёРЅР° в„–: '+Num+' - РєСЂРёСЃС‚Р°Р»Р»РѕРІ РјРµРЅСЊС€Рµ, С‡РµРј РІ РѕР±С…РѕРґРµ!');
+
+          WorkBook1.ActiveSheet.Cells[StY-1, StX+5] := 'РџР»Р°СЃС‚РёРЅР° в„–: '+Num;
+          for Nm := 0 to NTotal-1 do
+          begin
+            if Nm > BlankWafer.NTotal-1 then Break;
+
+            X := BlankWafer.ChipN[Nm].X;
+            Y := BlankWafer.ChipN[Nm].Y;
+            X1 := ChipN[Nm].X;
+            Y1 := ChipN[Nm].Y;
+            WorkBook1.ActiveSheet.Cells[Y+StY, X+StX] := Nm+1;
+            WorkBook1.ActiveSheet.Cells[Y+StY, X+StX].Interior.Color := GetColorByStatus(Chip[Y1, X1].Status);
+            WorkBook1.ActiveSheet.Cells[Y+StY, X+StX].BorderAround(xlContinuous, xlThin, xlAutomatic, xlAutomatic);
+          end;
+
+          if ((n+1) mod 5) <> 0 then
+          begin
+            StX := StX+Length(BlankWafer.Chip[0])+2;
+          end
+          else
+          begin
+            StX := 11;
+            StY := StY+Length(BlankWafer.Chip)+2;
+          end;
+        end;
+    end;
+  end
+  else // Р•СЃР»Рё РЅРµС‚ РєР°СЂС‚С‹ РѕР±С…РѕРґР°
+  try
+    Workbook1.Sheets['РљР°СЂС‚С‹ РѕР±С…РѕРґР°'].Delete; // РЈРґР°Р»РёРј Р»РёСЃС‚ <РљР°СЂС‚С‹ РѕР±С…РѕРґР°>
+  except
   end;
 
 /////////////////////////////////                                                                                    //
@@ -3785,7 +3885,7 @@ begin                                                                           
   Workbook1.SaveAs(XLSfName+'.xlsx');                                                                                //
                                                                                                                      //
   if Assigned(OnEvent) then OnEvent(evCreate, '-----------------------------');
-  if Assigned(OnEvent) then OnEvent(evCreate, 'Создан файл: '+ExtractFileName(XLSfName)+'.xlsx'); // Пошлем сообщение о создании файла
+  if Assigned(OnEvent) then OnEvent(evCreate, 'РЎРѕР·РґР°РЅ С„Р°Р№Р»: '+ExtractFileName(XLSfName)+'.xlsx'); // РџРѕС€Р»РµРј СЃРѕРѕР±С‰РµРЅРёРµ Рѕ СЃРѕР·РґР°РЅРёРё С„Р°Р№Р»Р°
                                                                                                                      //
   FormatSettings.DecimalSeparator := '.';                                                                            //
                                                                                                                      //

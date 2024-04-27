@@ -72,7 +72,7 @@ type
 
   TChipParams = record
     Value: Single;
-    Stat : byte; // 0-?; 1-Годный; 2-ниже нормы; 3-выше нормы; 4-не измерялся
+    Stat : byte; // 0-?; 1-Годный; 2-ниже нормы; 3-выше нормы
   end;
 
   TChip = record

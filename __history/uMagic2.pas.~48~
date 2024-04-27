@@ -4,7 +4,7 @@ interface
 
 uses
   Windows, Messages, SysUtils, Variants, System.Classes, Graphics, Controls, Forms, Dialogs, StdCtrls, IniFiles,
-  ADODB, ComObj, Statistica_le, ComCtrls, Menus, Structs;
+  ADODB, ComObj, Statistica_le, ComCtrls, Menus, FileCtrl, Structs;
 
 type
   TMDBForm = class(TForm)
@@ -27,8 +27,8 @@ type
     TimeLab: TLabel;
     MSystemCB: TComboBox;
     Label4: TLabel;
-    LoadTXTBtn: TButton;
-    LoadTXTLab: TLabel;
+    OpenDirBtn: TButton;
+    OpenDirLab: TLabel;
 
     procedure LoadMDBBtnClick(Sender: TObject);
     procedure FormCreate(Sender: TObject);
@@ -39,19 +39,21 @@ type
     procedure PrefMenuClick(Sender: TObject);
     procedure ExitMenuClick(Sender: TObject);
     procedure ClearBtnClick(Sender: TObject);
-    procedure LoadTXTBtnClick(Sender: TObject);
+    procedure OpenDirBtnClick(Sender: TObject);
     procedure WafersLBDrawItem(Control: TWinControl; Index: Integer;
       Rect: TRect; State: TOwnerDrawState);
+    procedure MSystemCBChange(Sender: TObject);
   private
     Lot: TLot;
     Params: TTestsParams;
     ExePath, MDBPath, MDBfName: TFileName;
-    ToFirstFail, CreateSTS, NoNorms, NoMap: byte;
+    ToFirstFail, CreateSTS, NoNorms, MapByParams: byte;
     BegTime: Int64;
 
-    function LoadMDB  (const fName: string): Boolean;
-    function LoadNorms(const fName: string): Boolean;
-    function LoadMap  (const fName: string): Boolean;
+    function LoadMDB   (const fName: string): Boolean;
+    function LoadDirectory(const dName: string): Boolean;
+    function LoadNorms (const fName: string): Boolean;
+    function LoadMap   (const fName: string): Boolean;
     function SaveSTS(const fName: TFileName; Waf: TWafer): Boolean;
 
     procedure CloneBlankWafer(sWaf, dWaf: TWafer);
@@ -140,17 +142,23 @@ begin                                                                          /
     ToFirstFail := IniFile.ReadInteger('Preference', 'ToFirstFail', 1);        //
     CreateSTS   := IniFile.ReadInteger('Preference', 'CreateSTS',   0);        //
     NoNorms     := IniFile.ReadInteger('Preference', 'NoNorms',     0);        //
-    NoMap       := IniFile.ReadInteger('Preference', 'NoMap',       0);        //
+    MapByParams := IniFile.ReadInteger('Preference', 'MapByParams', 0);        //
   finally                                                                      //
     IniFile.Free();                                                            //
   end;                                                                         //
                                                                                //
   LoadMDBLab.Font.Color   := clRed;                                            //
+  OpenDirLab.Font.Color   := clRed;                                            //
   LoadNormsLab.Font.Color := clRed;                                            //
   LoadMapLab.Font.Color   := clRed;                                            //
                                                                                //
+  OpenDirBtn.Top := LoadMDBBtn.Top;                                            //
+  OpenDirLab.Top := LoadMDBLab.Top;                                            //
+                                                                               //
   Lot := TLot.Create(Handle);                                                  //
   Lot.OnEvent := OnEvent;                                                      //
+                                                                               //
+  MSystemCBChange(Self);                                                       //
 end;                                                                           //
 /////////////////////////////////////////////////////////////////////////////////
 /////////////////////////////////////////////////////////////////////////////////
@@ -168,7 +176,7 @@ begin                                                                          /
       IniFile.WriteInteger('Preference', 'ToFirstFail', ToFirstFail);          //
       IniFile.WriteInteger('Preference', 'CreateSTS',   CreateSTS  );          //
       IniFile.WriteInteger('Preference', 'NoNorms',     NoNorms    );          //
-      IniFile.WriteInteger('Preference', 'NoMap',       NoMap      );          //
+      IniFile.WriteInteger('Preference', 'MapByParams', MapByParams);          //
     except                                                                     //
     end;                                                                       //
   finally                                                                      //
@@ -188,7 +196,7 @@ begin                                                //
     ToFirstFailChB.Checked := ToFirstFail = 1;       //
     CreateSTSChB.Checked   := CreateSTS   = 1;       //
     NoNormsChB.Checked     := NoNorms     = 1;       //
-    NoMapChB.Checked       := NoMap       = 1;       //
+    MapByParamsChB.Checked := MapByParams = 1;       //
                                                      //
     Top  := self.Top +50;                            //
     Left := self.Left+0;                             //
@@ -200,8 +208,8 @@ begin                                                //
                               else CreateSTS   := 0; //
     if NoNormsChB.Checked     then NoNorms     := 1  //
                               else NoNorms     := 0; //
-    if NoMapChB.Checked       then NoMap       := 1  //
-                              else NoMap       := 0; //
+    if MapByParamsChB.Checked then MapByParams := 1  //
+                              else MapByParams := 0; //
   end;                                               //
                                                      //
   ProcessBtn.Enabled := GetEnableProcess();          //
@@ -211,6 +219,47 @@ end;                                                 //
 procedure TMDBForm.ExitMenuClick(Sender: TObject);   //
 begin                                                //
   Close();                                           //
+end;                                                 //
+///////////////////////////////////////////////////////
+
+///////////////////////////////////////////////////////
+procedure TMDBForm.MSystemCBChange(Sender: TObject); //
+begin                                                //
+  case MSystemCB.ItemIndex of                        //
+    0: begin // Гамма-156                            //
+         LoadMDBBtn.Visible := True;                 //
+         LoadMDBLab.Visible := True;                 //
+                                                     //
+         OpenDirBtn.Visible := False;                //
+         OpenDirLab.Visible := False;                //
+                                                     //
+         LoadNormsBtn.Visible := True;               //
+         LoadNormsLab.Visible := True;               //
+                                                     //
+         LoadMapBtn.Visible := True;                 //
+         LoadMapLab.Visible := True;                 //
+       end;                                          //
+    1: begin // Schuster TSM 664                     //
+         LoadMDBBtn.Visible := False;                //
+         LoadMDBLab.Visible := False;                //
+                                                     //
+         OpenDirBtn.Visible := True;                 //
+         OpenDirLab.Visible := True;                 //
+                                                     //
+         LoadNormsBtn.Visible := False;              //
+         LoadNormsLab.Visible := False;              //
+                                                     //
+         LoadMapBtn.Visible := False;                //
+         LoadMapLab.Visible := False;                //
+       end;                                          //
+    2: begin // GAMMA TSSemi 2000-400                //
+                                                     //
+       end;                                          //
+  end;                                               //
+                                                     //
+  Lot.Init();                                        //
+  WafersLB.Clear();                                  //
+  ResultRE.Clear();                                  //
 end;                                                 //
 ///////////////////////////////////////////////////////
 
@@ -320,40 +369,29 @@ begin                                                                           
 end;                                                                                         //
 ///////////////////////////////////////////////////////////////////////////////////////////////
 ///////////////////////////////////////////////////////////////////////////////////////////////
-procedure TMDBForm.LoadTXTBtnClick(Sender: TObject);                                         //
+procedure TMDBForm.OpenDirBtnClick(Sender: TObject);                                         //
 var                                                                                          //
-  OpenDlg: TOpenDialog;                                                                      //
+  sDir: string;                                                                              //
 begin                                                                                        //
-  OpenDlg := TOpenDialog.Create(self);                                                       //
-  with OpenDlg do                                                                            //
-  begin                                                                                      //
-    InitialDir := MDBPath;                                                                   //
-    Filter := 'Файлы статистики Schuster TSM (*.txt)|*.txt*';                                //
-    Title := 'Загрузить файл статистики';                                                    //
+  sDir := MDBPath;                                                                           //
                                                                                              //
-    if Execute then                                                                          //
-      if LoadMDB(FileName) then                                                              //
-      begin                                                                                  //
-        MDBfName := FileName;                                                                //
-        MDBPath := ExtractFilePath(MDBfName);                                                //
+  if SelectDirectory(sDir, [], 0) then                                                       //
+    if LoadDirectory(sDir) then                                                              //
+    begin                                                                                    //
+      OpenDirLab.Font.Color := $00CAF90D;                                                    //
                                                                                              //
-        LoadTXTLab.Font.Color := $00CAF90D;                                                  //
+      Print_Result('* Файлы измерений загружены!', clTeal);                                  //
                                                                                              //
-        Print_Result('* Файл измерений '+ExtractFileName(MDBfName)+' загружен!', clTeal);    //
+      ProcessBtn.Enabled := GetEnableProcess();                                              //
+    end                                                                                      //
+    else                                                                                     //
+    begin                                                                                    //
+      OpenDirLab.Font.Color := clRed;                                                        //
                                                                                              //
-        ProcessBtn.Enabled := GetEnableProcess();                                            //
-      end                                                                                    //
-      else                                                                                   //
-      begin                                                                                  //
-        LoadTXTLab.Font.Color := clRed;                                                      //
+      Print_Result('* Ошибка загрузки файлов измерений!', clRed);                            //
                                                                                              //
-        Print_Result('* Ошибка загрузки файла измерений '+ExtractFileName(MDBfName), clRed); //
-                                                                                             //
-        ProcessBtn.Enabled := False;                                                         //
-      end;                                                                                   //
-                                                                                             //
-    Free;                                                                                    //
-  end;                                                                                       //
+      ProcessBtn.Enabled := False;                                                           //
+    end;                                                                                     //
 end;                                                                                         //
 ///////////////////////////////////////////////////////////////////////////////////////////////
 
@@ -423,9 +461,9 @@ begin                                                                           
   Print_Result('>>> Пластины загружены!', clGreen);                                   //
                                                                                       //
   if NormsLoaded then // Если нормы есть                                              //
-    Lot.SaveXLS(ToFirstFail = 1)                                                      //
+    Lot.SaveXLS(ToFirstFail = 1, MapByParams = 1)                                     //
   else                                                                                //
-    Lot.SaveXLS(False);                                                               //
+    Lot.SaveXLS(False, MapByParams = 1);                                              //
                                                                                       //
   TimeLab.Caption := FormatFloat('0.0', StopTime)+' сек.';                            //
 end;                                                                                  //
@@ -439,39 +477,57 @@ end;                                               //
 /////////////////////////////////////////////////////
 
 
-function TMDBForm.LoadMDB(const fName: String): Boolean;
+////////////////////////////////////////////////////////////
+function TMDBForm.LoadMDB(const fName: String): Boolean;  //
+var                                                       //
+  ADOConnection: TADOConnection;                          //
+  n: WORD;                                                //
+begin                                                     //
+  Result := False;                                        //
+                                                          //
+  ADOConnection := TADOConnection.Create(nil);            //
+  with ADOConnection do                                   //
+  try                                                     //
+    Connected := False;                                   //
+    ConnectionString := ConnStr+fName+';';                //
+    LoginPrompt := False;                                 //
+    GetTableNames(WafersLB.Items);                        //
+  except                                                  //
+    Print_Result(fName+': ошибка ADO!', clRed);           //
+    Exit;                                                 //
+  end;                                                    //
+                                                          //
+  ADOConnection.Free;                                     //
+                                                          //
+  if WafersLB.Items.Count > 0 then                        //
+  begin                                                   //
+    for n := 0 to WafersLB.Items.Count-1 do               //
+    WafersLB.Items[n] := 'Пластина № '+WafersLB.Items[n]; //
+  end                                                     //
+  else                                                    //
+  begin                                                   //
+    Print_Result(fName+' : в файле нет пластин!', clRed); //
+    Exit;                                                 //
+  end;                                                    //
+                                                          //
+  Result := True;                                         //
+end;                                                      //
+////////////////////////////////////////////////////////////
+
+function TMDBForm.LoadDirectory(const dName: string): Boolean;
 var
-  ADOConnection: TADOConnection;
-  n: WORD;
+  sr: TSearchRec;
 begin
-  Result := False;
-
-  ADOConnection := TADOConnection.Create(nil);
-  with ADOConnection do
-  try
-    Connected := False;
-    ConnectionString := ConnStr+fName+';';
-    LoginPrompt := False;
-    GetTableNames(WafersLB.Items);
-  except
-    Print_Result(fName+': ошибка ADO!', clRed);
-    Exit;
-  end;
-
-  ADOConnection.Free;
-
-  if WafersLB.Items.Count > 0 then
-  begin
-    for n := 0 to WafersLB.Items.Count-1 do
-    WafersLB.Items[n] := 'Пластина № '+WafersLB.Items[n];
-  end
-  else
-  begin
-    Print_Result(fName+' : в файле нет пластин!', clRed);
-    Exit;
-  end;
-
   Result := True;
+
+  if FindFirst(dName+'\*.txt', faAnyFile, sr) = 0  then  //ищем  файлы TXT  в каталоге
+  repeat
+    WafersLB.Items.Add(sr.Name); // выводим список в ListBox
+  until FindNext(sr) <> 0
+  else
+    Result := False;
+
+  FindClose(sr);
 end;
 
 
@@ -550,7 +606,14 @@ var
 begin
   Result := False;
 
-  if not MapLoaded() then Exit;
+  if not MapLoaded() then
+  begin
+    Waf.SaveSTS(fName);
+
+    Result := True;
+
+    Exit;
+  end;
 
   tmpWafer := TWafer.Create(Handle);
   CloneBlankWafer(Lot.BlankWafer, tmpWafer);
@@ -670,7 +733,6 @@ begin                                                                           
   if MDBLoaded then                                                                                              //
   begin                                                                                                          //
     if (NoNorms = 0) and (not NormsLoaded()) then Result := False; // Если без норм нельзя и нормы не загружены  //
-    if (NoMap   = 0) and (not MapLoaded()  ) then Result := False; // Если без обхода нельзя и обход не загружен //
   end                                                                                                            //
   else Result := False;                                                                                          //
 end;                                                                                                             //
