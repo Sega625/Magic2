@@ -143,118 +143,118 @@ end;                                      //
 ////////////////////////////////////////////
 
 
-//////////////////////////////////////////////////////////////
-function TWafer.LoadSTSHeader(): Boolean;                   //
-var                                                         //
-  INIfName: TIniFile;                                       //
-  X, Y, n: WORD;                                            //
-  P: byte;                                                  //
-  tmpSL: TStringList;                                       //
-  Str: String;                                              //
-begin                                                       //
-  Result := True;                                           //
-                                                            //
-  INIfName := TIniFile.Create(fName);                       //
-  with INIfName do                                          //
-  begin                                                     //
-    OKR        := ReadString ('Main', 'OKR', '-');          //
-    Code       := ReadString ('Main', 'Code', '0');         //
-    MPW        := ReadString ('Main', 'MPW', '-');          //
-    MPWPos     := ReadString ('Main', 'MPWPos', '-');       //
-    Device     := ReadString ('Main', 'Device', '-');       //
-    DscrDev    := ReadString ('Main', 'DscrDev', '-');      //
-    MeasSystem := ReadString ('Main', 'MSystem', '-');      //
-    Prober     := ReadString ('Main', 'Prober', '-');       //
-                                                            //
-    Diameter   := ReadInteger('Main', 'Diametr', 0);        //
-    StepX      := ReadInteger('Main', 'ChipSizeX', 0)/1000; //
-    StepY      := ReadInteger('Main', 'ChipSizeY', 0)/1000; //
-    NWPlace    := ReadInteger('Main', 'WorkPlace', 0);      //
-    NOperator  := ReadString ('Main', 'Operator', '');      //
-    NLot       := ReadString ('Main', 'Lot', '0');          //
-    P := Pos('-', NLot);                                    //
-    if P > 0 then Delete(NLot, 1, P);                       //
-    Num        := ReadString ('Main', 'Wafer', '0');        //
-    TimeDate   := ReadString ('Main', 'Date', '00.00.00');  //
-    Condition  := ReadString ('Main', 'Condition', '-');    //
-    Info       := ReadString ('Main', 'Info', '');          //
-                                                            //
-    Cadre.StartX := ReadInteger('Add', 'OffsetX', 0);       //
-    Cadre.StartY := ReadInteger('Add', 'OffsetY', 0);       //
-    Cadre.ScaleX := ReadInteger('Add', 'CadreX', 0);        //
-    Cadre.ScaleY := ReadInteger('Add', 'CadreY', 0);        //
-    X := ReadInteger('Add', 'MaxX', 0);                     //
-    Y := ReadInteger('Add', 'MaxY', 0);                     //
-    BaseChip.X := ReadInteger('Add', 'BaseChipX', 0);       //
-    BaseChip.Y := ReadInteger('Add', 'BaseChipY', 0);       //
-    Direct  := ReadInteger('Add', 'Path', 0);               //
-    CutSide := ReadInteger('Add', 'Cut', 0);                //
-                                                            //
-    if (X = 0) or (Y = 0) or (Code = '0') then              //
-    begin                                                   //
-      Result := False;                                      //
-      Exit;                                                 //
-    end;                                                    //
-                                                            //
-    SetLength(Chip, 0, 0);                                  //
-    SetLength(Chip, Y, X);                                  //
-    for Y := 0 to Length(Chip)-1 do      // Очистим         //
-      for X := 0 to Length(Chip[0])-1 do // массив          //
-      begin                              //                 //
-        Chip[Y, X].Status := 2;          //                 //
-        Chip[Y, X].ID     := 0;          //                 //
-//        Chip[Y, X].ShowGr := 0;          //                 //
-      end;                               //                 //
-                                                            //
-
-    ReadSectionValues('StatusNames', StatusNamesSL);
-
-    tmpSL := TStringList.Create;
-    ReadSectionValues('TestsParams', tmpSL);
-
-    if tmpSL.Count > 0 then
-    begin
-      SetLength(TestsParams, tmpSL.Count);
-
-      for n := 0 to tmpSL.Count-1 do
-      begin
-        P := Pos('=', tmpSL.Strings[n]);
-        if P <> 0 then
-        begin
-          Str := Trim(Copy(tmpSL.Strings[n], P+1, Length(tmpSL.Strings[n])-P));
-          P := Pos(';', Str);
-          if P <> 0 then
-          begin
-            try
-              FormatSettings.DecimalSeparator := ',';
-              TestsParams[n].Norma.Min := StrToFloat(Trim(Copy(Str, 1, P-1)));
-              FormatSettings.DecimalSeparator := '.';
-            except
-              try
-                FormatSettings.DecimalSeparator := '.';
-                TestsParams[n].Norma.Min := StrToFloat(Trim(Copy(Str, 1, P-1)));
-              except
-                TestsParams[n].Norma.Min := -NotSpec;
-              end
-            end;
-            System.Delete(Str, 1, P);
-            P := Pos(';', Str);
-            if P <> 0 then
-            begin
-              try
-                FormatSettings.DecimalSeparator := ',';
-                TestsParams[n].Norma.Max := StrToFloat(Trim(Copy(Str, 1, P-1)));
-                FormatSettings.DecimalSeparator := '.';
-              except
-                try
-                  FormatSettings.DecimalSeparator := '.';
-                  TestsParams[n].Norma.Max := StrToFloat(Trim(Copy(Str, 1, P-1)));
-                except
-                   TestsParams[n].Norma.Max := NotSpec;
-                end;
-              end;
-              System.Delete(Str, 1, P);
-              try
+//////////////////////////////////////////////////////////////////////////////////////
+function TWafer.LoadSTSHeader(): Boolean;                                           //
+var                                                                                 //
+  INIfName: TIniFile;                                                               //
+  X, Y, n: WORD;                                                                    //
+  P: byte;                                                                          //
+  tmpSL: TStringList;                                                               //
+  Str: String;                                                                      //
+begin                                                                               //
+  Result := True;                                                                   //
+                                                                                    //
+  INIfName := TIniFile.Create(fName);                                               //
+  with INIfName do                                                                  //
+  begin                                                                             //
+    OKR        := ReadString ('Main', 'OKR', '-');                                  //
+    Code       := ReadString ('Main', 'Code', '0');                                 //
+    MPW        := ReadString ('Main', 'MPW', '-');                                  //
+    MPWPos     := ReadString ('Main', 'MPWPos', '-');                               //
+    Device     := ReadString ('Main', 'Device', '-');                               //
+    DscrDev    := ReadString ('Main', 'DscrDev', '-');                              //
+    MeasSystem := ReadString ('Main', 'MSystem', '-');                              //
+    Prober     := ReadString ('Main', 'Prober', '-');                               //
+                                                                                    //
+    Diameter   := ReadInteger('Main', 'Diametr', 0);                                //
+    StepX      := ReadInteger('Main', 'ChipSizeX', 0)/1000;                         //
+    StepY      := ReadInteger('Main', 'ChipSizeY', 0)/1000;                         //
+    NWPlace    := ReadInteger('Main', 'WorkPlace', 0);                              //
+    NOperator  := ReadString ('Main', 'Operator', '');                              //
+    NLot       := ReadString ('Main', 'Lot', '0');                                  //
+    P := Pos('-', NLot);                                                            //
+    if P > 0 then Delete(NLot, 1, P);                                               //
+    Num        := ReadString ('Main', 'Wafer', '0');                                //
+    TimeDate   := ReadString ('Main', 'Date', '00.00.00');                          //
+    Condition  := ReadString ('Main', 'Condition', '-');                            //
+    Info       := ReadString ('Main', 'Info', '');                                  //
+                                                                                    //
+    Cadre.StartX := ReadInteger('Add', 'OffsetX', 0);                               //
+    Cadre.StartY := ReadInteger('Add', 'OffsetY', 0);                               //
+    Cadre.ScaleX := ReadInteger('Add', 'CadreX', 0);                                //
+    Cadre.ScaleY := ReadInteger('Add', 'CadreY', 0);                                //
+    X := ReadInteger('Add', 'MaxX', 0);                                             //
+    Y := ReadInteger('Add', 'MaxY', 0);                                             //
+    BaseChip.X := ReadInteger('Add', 'BaseChipX', 0);                               //
+    BaseChip.Y := ReadInteger('Add', 'BaseChipY', 0);                               //
+    Direct  := ReadInteger('Add', 'Path', 0);                                       //
+    CutSide := ReadInteger('Add', 'Cut', 0);                                        //
+                                                                                    //
+    if (X = 0) or (Y = 0) or (Code = '0') then                                      //
+    begin                                                                           //
+      Result := False;                                                              //
+      Exit;                                                                         //
+    end;                                                                            //
+                                                                                    //
+    SetLength(Chip, 0, 0);                                                          //
+    SetLength(Chip, Y, X);                                                          //
+    for Y := 0 to Length(Chip)-1 do      // Очистим                                 //
+      for X := 0 to Length(Chip[0])-1 do // массив                                  //
+      begin                              //                                         //
+        Chip[Y, X].Status := 2;          //                                         //
+        Chip[Y, X].ID     := 0;          //                                         //
+//        Chip[Y, X].ShowGr := 0;          //                                         //
+      end;                               //                                         //
+                                                                                    //
+                                                                                    //
+    ReadSectionValues('StatusNames', StatusNamesSL);                                //
+                                                                                    //
+    tmpSL := TStringList.Create;                                                    //
+    ReadSectionValues('TestsParams', tmpSL);                                        //
+                                                                                    //
+    if tmpSL.Count > 0 then                                                         //
+    begin                                                                           //
+      SetLength(TestsParams, tmpSL.Count);                                          //
+                                                                                    //
+      for n := 0 to tmpSL.Count-1 do                                                //
+      begin                                                                         //
+        P := Pos('=', tmpSL.Strings[n]);                                            //
+        if P <> 0 then                                                              //
+        begin                                                                       //
+          Str := Trim(Copy(tmpSL.Strings[n], P+1, Length(tmpSL.Strings[n])-P));     //
+          P := Pos(';', Str);                                                       //
+          if P <> 0 then                                                            //
+          begin                                                                     //
+            try                                                                     //
+              FormatSettings.DecimalSeparator := ',';                               //
+              TestsParams[n].Norma.Min := StrToFloat(Trim(Copy(Str, 1, P-1)));      //
+              FormatSettings.DecimalSeparator := '.';                               //
+            except                                                                  //
+              try                                                                   //
+                FormatSettings.DecimalSeparator := '.';                             //
+                TestsParams[n].Norma.Min := StrToFloat(Trim(Copy(Str, 1, P-1)));    //
+              except                                                                //
+                TestsParams[n].Norma.Min := -NotSpec;                               //
+              end                                                                   //
+            end;                                                                    //
+            System.Delete(Str, 1, P);                                               //
+            P := Pos(';', Str);                                                     //
+            if P <> 0 then                                                          //
+            begin                                                                   //
+              try                                                                   //
+                FormatSettings.DecimalSeparator := ',';                             //
+                TestsParams[n].Norma.Max := StrToFloat(Trim(Copy(Str, 1, P-1)));    //
+                FormatSettings.DecimalSeparator := '.';                             //
+              except                                                                //
+                try                                                                 //
+                  FormatSettings.DecimalSeparator := '.';                           //
+                  TestsParams[n].Norma.Max := StrToFloat(Trim(Copy(Str, 1, P-1)));  //
+                except                                                              //
+                   TestsParams[n].Norma.Max := NotSpec;                             //
+                end;                                                                //
+              end;                                                                  //
+              System.Delete(Str, 1, P);                                             //
+              try                                                                   //
                 TestsParams[n].Status := StrToInt(Trim(Copy(Str, 1, Length(Str)))); //
               except                                                                //
                 TestsParams[n].Status := 0;                                         //
@@ -1648,9 +1648,11 @@ begin                                                                           
         if Length(TestsParams) > 0 then                                                              //
           for i := 0 to Length(TestsParams)-1 do                                                     //
           begin                                                                                      //
-            Chip[Y, X].ChipParams[i].Value := Mass[i];
-            Chip[Y, X].ChipParams[i].Stat  := GetChipParamsStat(Mass[i], TestsParams[i].Norma.Min, TestsParams[i].Norma.Max);
-          end;
+            Chip[Y, X].ChipParams[i].Value := Mass[i];                                               //
+            Chip[Y, X].ChipParams[i].Stat  := GetChipParamsStat(Mass[i],                             //
+                                                     TestsParams[i].Norma.Min,                       //
+                                                     TestsParams[i].Norma.Max);                      //
+          end;                                                                                       //
                                                                                                      //
         if Trim(SL.Strings[n]) = '' then Break;                                                      //
       end;                                                                                           //
@@ -1698,28 +1700,27 @@ begin                                                                           
     tmpWafer.Free;                                                                                   //
     Exit;                                                                                            //
   end;                                                                                               //
-
+                                                                                                     //
   if tmpWafer.Code <> Code then                                                                      //
   begin                                                                                              //
     ErrMess(Handle, 'Несовпадают коды!');                                                            //
     tmpWafer.Free;                                                                                   //
     Exit;                                                                                            //
   end;                                                                                               //
-
+                                                                                                     //
   if tmpWafer.NLot <> NLot then                                                                      //
   begin                                                                                              //
     ErrMess(Handle, 'Несовпадают партии!');                                                          //
     tmpWafer.Free;                                                                                   //
     Exit;                                                                                            //
   end;                                                                                               //
-
+                                                                                                     //
 //  if tmpWafer.Num <> Wafer.Num then                                                                  //
 //  begin                                                                                              //
 //    ErrMess(Handle, 'Несовпадают номера пластин!');                                                  //
 //    tmpWafer.Free;                                                                                   //
 //    Exit;                                                                                            //
 //  end;                                                                                               //
-
                                                                                                      //
   SL := TStringList.Create;                                                                          //
   SL.LoadFromFile(STSfName);                                                                         //
@@ -1818,7 +1819,7 @@ begin                                                                           
     Exit;                                                                                            //
   end;                                                                                               //
                                                                                                      //
-  if CutSide <> 0 then                                           // Подгоним                         //
+  if CutSide <> 0 then                                     // Подгоним                               //
      while tmpWafer.CutSide <> CutSide do tmpWafer.Rotate; // срез пластины                          //
   if (Length(tmpWafer.Chip[0]) <> Length(Chip[0])) and                                               //
      (Length(tmpWafer.Chip)    <> Length(Chip))    then                                              //
