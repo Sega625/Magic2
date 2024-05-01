@@ -64,7 +64,8 @@ type
     function  LoadAGLHeader(): Boolean;
     function  AddAGLHeader() : Boolean;
 
-    function  LoadGammaMDB(const MDBfName, WafName: TFileName): Boolean;
+    function  LoadGammaMDB   (const MDBfName, WafName: TFileName): Boolean;
+    function  LoadSchusterTXT(const TXTfName: TFileName): Boolean;
     function  LoadSTS     (const STSfName: TFileName): Boolean;
     function  AddSTS      (const STSfName: TFileName): Boolean;
     function  LoadBlankSTS(const STSfName: TFileName): Boolean;
@@ -1414,6 +1415,14 @@ begin                                                                      //
   Result := True;                                                          //
 end;                                                                       //
 /////////////////////////////////////////////////////////////////////////////
+
+function TWafer.LoadSchusterTXT(const TXTfName: TFileName): Boolean;
+begin
+  Result := False;
+
+
+end;
+
 {
 ///////////////////////////////////////////////////////////////////////////////////////////////////////
 function TStatistica.AddMDB(const MDBfName: TFileName; const Params: Boolean=True): Boolean;         //

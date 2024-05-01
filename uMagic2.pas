@@ -10,7 +10,7 @@ type
   TMDBForm = class(TForm)
     LoadMDBBtn: TButton;
     WafersLB: TListBox;
-    ProcessBtn: TButton;
+    ProcGammaBtn: TButton;
     LoadNormsBtn: TButton;
     LoadMapBtn: TButton;
     LoadMDBLab: TLabel;
@@ -29,20 +29,20 @@ type
     Label4: TLabel;
     OpenDirBtn: TButton;
     OpenDirLab: TLabel;
+    ProcSchusterBtn: TButton;
 
     procedure LoadMDBBtnClick(Sender: TObject);
     procedure FormCreate(Sender: TObject);
     procedure FormDestroy(Sender: TObject);
-    procedure ProcessBtnClick(Sender: TObject);
+    procedure ProcGammaBtnClick(Sender: TObject);
     procedure LoadNormsBtnClick(Sender: TObject);
     procedure LoadMapBtnClick(Sender: TObject);
     procedure PrefMenuClick(Sender: TObject);
     procedure ExitMenuClick(Sender: TObject);
     procedure ClearBtnClick(Sender: TObject);
     procedure OpenDirBtnClick(Sender: TObject);
-    procedure WafersLBDrawItem(Control: TWinControl; Index: Integer;
-      Rect: TRect; State: TOwnerDrawState);
     procedure MSystemCBChange(Sender: TObject);
+    procedure ProcSchusterBtnClick(Sender: TObject);
   private
     Lot: TLot;
     Params: TTestsParams;
@@ -212,7 +212,7 @@ begin                                                //
                               else MapByParams := 0; //
   end;                                               //
                                                      //
-  ProcessBtn.Enabled := GetEnableProcess();          //
+  ProcGammaBtn.Enabled := GetEnableProcess();        //
 end;                                                 //
 ///////////////////////////////////////////////////////
 ///////////////////////////////////////////////////////
@@ -238,6 +238,9 @@ begin                                                //
                                                      //
          LoadMapBtn.Visible := True;                 //
          LoadMapLab.Visible := True;                 //
+                                                     //
+         ProcSchusterBtn.Left := 500;                //
+         ProcSchusterBtn.Visible := False;           //
        end;                                          //
     1: begin // Schuster TSM 664                     //
          LoadMDBBtn.Visible := False;                //
@@ -251,6 +254,9 @@ begin                                                //
                                                      //
          LoadMapBtn.Visible := False;                //
          LoadMapLab.Visible := False;                //
+                                                     //
+         ProcSchusterBtn.Left := 200;                //
+         ProcSchusterBtn.Visible := True;            //
        end;                                          //
     2: begin // GAMMA TSSemi 2000-400                //
                                                      //
@@ -285,7 +291,7 @@ begin                                                                           
                                                                                              //
         Print_Result('* Файл измерений '+ExtractFileName(MDBfName)+' загружен!', clTeal);    //
                                                                                              //
-        ProcessBtn.Enabled := GetEnableProcess();                                            //
+        ProcGammaBtn.Enabled := GetEnableProcess();                                          //
       end                                                                                    //
       else                                                                                   //
       begin                                                                                  //
@@ -293,7 +299,7 @@ begin                                                                           
                                                                                              //
         Print_Result('* Ошибка загрузки файла измерений '+ExtractFileName(MDBfName), clRed); //
                                                                                              //
-        ProcessBtn.Enabled := False;                                                         //
+        ProcGammaBtn.Enabled := False;                                                       //
       end;                                                                                   //
                                                                                              //
     Free;                                                                                    //
@@ -319,7 +325,7 @@ begin                                                                           
                                                                                              //
         Print_Result('* Нормы из файла '+ExtractFileName(FileName)+' загружены!', clTeal);   //
                                                                                              //
-        ProcessBtn.Enabled := GetEnableProcess();                                            //
+        ProcGammaBtn.Enabled := GetEnableProcess();                                          //
       end                                                                                    //
       else                                                                                   //
       begin                                                                                  //
@@ -327,7 +333,7 @@ begin                                                                           
                                                                                              //
         Print_Result('* Ошибка загрузки норм '+ExtractFileName(FileName), clRed);            //
                                                                                              //
-        ProcessBtn.Enabled := GetEnableProcess();                                            //
+        ProcGammaBtn.Enabled := GetEnableProcess();                                          //
       end;                                                                                   //
                                                                                              //
     Free;                                                                                    //
@@ -353,7 +359,7 @@ begin                                                                           
                                                                                              //
         Print_Result('* Карта обхода '+ExtractFileName(FileName)+' загружена!', clTeal);     //
                                                                                              //
-        ProcessBtn.Enabled := GetEnableProcess();                                            //
+        ProcGammaBtn.Enabled := GetEnableProcess();                                          //
       end                                                                                    //
       else                                                                                   //
       begin                                                                                  //
@@ -361,7 +367,7 @@ begin                                                                           
                                                                                              //
         Print_Result('* Ошибка загрузки карты обхода '+ExtractFileName(FileName), clRed);    //
                                                                                              //
-        ProcessBtn.Enabled := GetEnableProcess();                                            //
+        ProcGammaBtn.Enabled := GetEnableProcess();                                          //
       end;                                                                                   //
                                                                                              //
     Free;                                                                                    //
@@ -378,11 +384,12 @@ begin                                                                           
   if SelectDirectory(sDir, [], 0) then                                                       //
     if LoadDirectory(sDir) then                                                              //
     begin                                                                                    //
+      MDBPath := sDir;                                                                       //
       OpenDirLab.Font.Color := $00CAF90D;                                                    //
                                                                                              //
       Print_Result('* Файлы измерений загружены!', clTeal);                                  //
                                                                                              //
-      ProcessBtn.Enabled := GetEnableProcess();                                              //
+      ProcSchusterBtn.Enabled := True;                                                       //
     end                                                                                      //
     else                                                                                     //
     begin                                                                                    //
@@ -390,13 +397,13 @@ begin                                                                           
                                                                                              //
       Print_Result('* Ошибка загрузки файлов измерений!', clRed);                            //
                                                                                              //
-      ProcessBtn.Enabled := False;                                                           //
+      ProcSchusterBtn.Enabled := False;                                                      //
     end;                                                                                     //
 end;                                                                                         //
 ///////////////////////////////////////////////////////////////////////////////////////////////
 
 ////////////////////////////////////////////////////////////////////////////////////////
-procedure TMDBForm.ProcessBtnClick(Sender: TObject);                                  //
+procedure TMDBForm.ProcGammaBtnClick(Sender: TObject);                                //
 var                                                                                   //
   n, nWf: DWORD;                                                                      //
   Str: string;                                                                        //
@@ -413,7 +420,7 @@ begin                                                                           
                                                                                       //
   nWf := 0;                                                                           //
                                                                                       //
-  if WafersLB.SelCount > 0 then                                                       //
+//  if WafersLB.SelCount > 0 then                                                       //
   Lot.Init();                                                                         //
   SetLength(Lot.Wafer, WafersLB.SelCount);                                            //
                                                                                       //
@@ -465,6 +472,66 @@ begin                                                                           
     Lot.SaveXLS(ToFirstFail = 1, MapByParams = 1)                                     //
   else                                                                                //
     Lot.SaveXLS(False, MapByParams = 1);                                              //
+                                                                                      //
+  TimeLab.Caption := FormatFloat('0.0', StopTime)+' сек.';                            //
+end;                                                                                  //
+////////////////////////////////////////////////////////////////////////////////////////
+////////////////////////////////////////////////////////////////////////////////////////
+procedure TMDBForm.ProcSchusterBtnClick(Sender: TObject);                             //
+var                                                                                   //
+  n, nWf: DWORD;                                                                      //
+  Str: string;                                                                        //
+  P: WORD;                                                                            //
+  STSFName: TFileName;                                                                //
+begin                                                                                 //
+  if WafersLB.SelCount = 0 then                                                       //
+  begin                                                                               //
+    Print_Result('Не выбраны пластины!', clRed);                                      //
+    Exit;                                                                             //
+  end;                                                                                //
+                                                                                      //
+  StartTime();                                                                        //
+                                                                                      //
+  nWf := 0;                                                                           //
+                                                                                      //
+//  if WafersLB.SelCount > 0 then                                                       //
+  Lot.Init();                                                                         //
+  SetLength(Lot.Wafer, WafersLB.SelCount);                                            //
+                                                                                      //
+  Print_Result('... Идёт загрузка пластин!');                                         //
+                                                                                      //
+  with WafersLB do                                                                    //
+    for n := 0 to Items.Count-1 do                                                    //
+      if Selected[n] then                                                             //
+      begin                                                                           //
+        Lot.Wafer[nWf] := TWafer.Create(Handle);                                      //
+                                                                                      //
+        MDBfName := MDBPath+'\'+Items[n];                                             //
+                                                                                      //
+        if not Lot.Wafer[nWf].LoadSchusterTXT(MDBfName) then                          //
+        begin                                                                         //
+          Print_Result('Ошибка загрузки пластины!', clRed);                           //
+          Continue;                                                                   //
+        end;                                                                          //
+//        Lot.fName := MDBfName;                                                        //
+                                                                                      //
+                                                                                      //
+        if CreateSTS = 1 then                                                         //
+        begin                                                                         //
+          STSFName := ChangeFileExt(MDBfName, '')+'_'+Str+'.sts';                     //
+                                                                                      //
+          if SaveSTS(STSFName, Lot.Wafer[nWf]) then                                   //
+            Print_Result('Создан файл: '+ExtractFileName(STSFName), clBlue)           //
+          else                                                                        //
+            Print_Result('Ошибка создания файла: '+ExtractFileName(STSFName), clRed); //
+        end;                                                                          //
+                                                                                      //
+        Inc(nWf);                                                                     //
+      end;                                                                            //
+                                                                                      //
+  Print_Result('>>> Пластины загружены!', clGreen);                                   //
+                                                                                      //
+  Lot.SaveXLS(ToFirstFail = 1, MapByParams = 1);                                      //
                                                                                       //
   TimeLab.Caption := FormatFloat('0.0', StopTime)+' сек.';                            //
 end;                                                                                  //
@@ -787,29 +854,6 @@ begin                                 //
   Result := (EndTime-BegTime)/Freq;   //
 end;                                  //
 ////////////////////////////////////////
-
-
-
-
-
-procedure TMDBForm.WafersLBDrawItem(Control: TWinControl; Index: Integer; Rect: TRect; State: TOwnerDrawState);
-begin
-{
-  with WafersLB.Canvas do
-    if Odd(Index) then
-    begin
-      Brush.Color := clRed;
-      FillRect(Rect);
-    end
-    else
-    begin
-      Brush.Color := clYellow;
-      FillRect(Rect);
-    end;
-}
-end;
-
-
 
 
 end.

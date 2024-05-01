@@ -4,7 +4,7 @@ object MDBForm: TMDBForm
   BorderStyle = bsSingle
   Caption = 'Magic2'
   ClientHeight = 481
-  ClientWidth = 613
+  ClientWidth = 687
   Color = clBtnFace
   Font.Charset = DEFAULT_CHARSET
   Font.Color = clWindowText
@@ -16,8 +16,8 @@ object MDBForm: TMDBForm
   OnDestroy = FormDestroy
   TextHeight = 13
   object LoadMDBLab: TLabel
-    Left = 124
-    Top = 2
+    Left = 122
+    Top = 43
     Width = 22
     Height = 71
     Caption = #8226
@@ -29,8 +29,8 @@ object MDBForm: TMDBForm
     ParentFont = False
   end
   object LoadNormsLab: TLabel
-    Left = 123
-    Top = 50
+    Left = 122
+    Top = 93
     Width = 22
     Height = 71
     Caption = #8226
@@ -42,8 +42,8 @@ object MDBForm: TMDBForm
     ParentFont = False
   end
   object LoadMapLab: TLabel
-    Left = 123
-    Top = 99
+    Left = 122
+    Top = 143
     Width = 22
     Height = 71
     Caption = #8226
@@ -55,7 +55,7 @@ object MDBForm: TMDBForm
     ParentFont = False
   end
   object Label1: TLabel
-    Left = 198
+    Left = 245
     Top = 13
     Width = 57
     Height = 16
@@ -68,7 +68,7 @@ object MDBForm: TMDBForm
     ParentFont = False
   end
   object Label2: TLabel
-    Left = 385
+    Left = 465
     Top = 13
     Width = 68
     Height = 16
@@ -109,8 +109,8 @@ object MDBForm: TMDBForm
     ParentFont = False
   end
   object Label4: TLabel
-    Left = 4
-    Top = 322
+    Left = 10
+    Top = 9
     Width = 142
     Height = 16
     Caption = #1048#1079#1084#1077#1088#1080#1090#1077#1083#1100#1085#1072#1103' '#1089#1080#1089#1090#1077#1084#1072
@@ -121,9 +121,23 @@ object MDBForm: TMDBForm
     Font.Style = []
     ParentFont = False
   end
+  object OpenDirLab: TLabel
+    Left = 122
+    Top = 193
+    Width = 22
+    Height = 71
+    Caption = #8226
+    Font.Charset = DEFAULT_CHARSET
+    Font.Color = 13302029
+    Font.Height = -53
+    Font.Name = 'Segoe UI'
+    Font.Style = []
+    ParentFont = False
+    Visible = False
+  end
   object LoadMDBBtn: TButton
-    Left = 10
-    Top = 31
+    Left = 8
+    Top = 70
     Width = 111
     Height = 25
     Caption = #1047#1072#1075#1088#1091#1079#1080#1090#1100' MDB'
@@ -131,9 +145,9 @@ object MDBForm: TMDBForm
     OnClick = LoadMDBBtnClick
   end
   object WafersLB: TListBox
-    Left = 160
+    Left = 161
     Top = 31
-    Width = 137
+    Width = 217
     Height = 410
     BevelKind = bkFlat
     BorderStyle = bsNone
@@ -147,20 +161,21 @@ object MDBForm: TMDBForm
     ParentFont = False
     Sorted = True
     TabOrder = 1
+    OnDrawItem = WafersLBDrawItem
   end
-  object ProcMDBBtn: TButton
+  object ProcessBtn: TButton
     Left = 161
     Top = 447
-    Width = 137
+    Width = 219
     Height = 25
     Caption = #1054#1073#1088#1072#1073#1086#1090#1072#1090#1100
     Enabled = False
     TabOrder = 2
-    OnClick = ProcMDBBtnClick
+    OnClick = ProcessBtnClick
   end
   object LoadNormsBtn: TButton
-    Left = 10
-    Top = 80
+    Left = 8
+    Top = 120
     Width = 111
     Height = 25
     Caption = #1047#1072#1075#1088#1091#1079#1080#1090#1100' '#1085#1086#1088#1084#1099
@@ -168,8 +183,8 @@ object MDBForm: TMDBForm
     OnClick = LoadNormsBtnClick
   end
   object LoadMapBtn: TButton
-    Left = 9
-    Top = 128
+    Left = 7
+    Top = 170
     Width = 111
     Height = 25
     Caption = #1047#1072#1075#1088#1091#1079#1080#1090#1100' '#1082#1072#1088#1090#1091
@@ -177,7 +192,7 @@ object MDBForm: TMDBForm
     OnClick = LoadMapBtnClick
   end
   object ResultRE: TRichEdit
-    Left = 305
+    Left = 385
     Top = 31
     Width = 296
     Height = 441
@@ -196,7 +211,7 @@ object MDBForm: TMDBForm
     TabOrder = 5
   end
   object ClearBtn: TButton
-    Left = 527
+    Left = 607
     Top = 6
     Width = 73
     Height = 21
@@ -205,20 +220,29 @@ object MDBForm: TMDBForm
     OnClick = ClearBtnClick
   end
   object MSystemCB: TComboBox
-    Left = 2
-    Top = 340
-    Width = 146
+    Left = 8
+    Top = 31
+    Width = 144
     Height = 21
     ItemIndex = 0
     TabOrder = 7
     Text = #1043#1072#1084#1084#1072'-156'
+    OnChange = MSystemCBChange
     Items.Strings = (
       #1043#1072#1084#1084#1072'-156'
-      'Schuster TSM 664'
-      'GAMMA TSSemi 2000-400')
+      'Schuster TSM 664')
+  end
+  object OpenDirBtn: TButton
+    Left = 7
+    Top = 220
+    Width = 111
+    Height = 25
+    Caption = #1054#1090#1082#1088#1099#1090#1100' '#1087#1072#1087#1082#1091
+    TabOrder = 8
+    OnClick = OpenDirBtnClick
   end
   object MainMenu1: TMainMenu
-    Left = 313
+    Left = 329
     Top = 39
     object PrefMenu: TMenuItem
       Caption = #1053#1072#1089#1090#1088#1086#1081#1082#1080

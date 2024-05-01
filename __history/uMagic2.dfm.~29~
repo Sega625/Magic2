@@ -322,7 +322,7 @@ object MDBForm: TMDBForm
     Margins.Top = 4
     Margins.Right = 4
     Margins.Bottom = 4
-    Caption = #1054#1073#1088#1072#1073#1086#1090#1072#1090#1100
+    Caption = #1054#1073#1088#1072#1073#1086#1090#1072#1090#1100' SH'
     Enabled = False
     TabOrder = 9
     OnClick = ProcSchusterBtnClick
