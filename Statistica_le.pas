@@ -27,7 +27,7 @@ type
     NWPlace   : WORD;
     NOperator : String[20];
     NLot      : String[20];
-    Num       : String[20];
+    Num       : String[40];
     NTotal    : WORD;
     NMeased   : WORD;
     NOK       : WORD;
@@ -355,15 +355,15 @@ var                                                         //
   n, TotalChips: DWORD;                                     //
   P: byte;                                                  //
   X, Y: WORD;                                               //
-  NumChip, PrevChip, Str, tmpStr: AnsiString;
-  FirstTime: Boolean;
-begin
-  Result := 0;
-
-  SL := TStringList.Create;
-  SL.LoadFromFile(fName);
-
-  FirstTime := True;
+  NumChip, PrevChip, Str, tmpStr: AnsiString;               //
+  FirstTime: Boolean;                                       //
+begin                                                       //
+  Result := 0;                                              //
+                                                            //
+  SL := TStringList.Create;                                 //
+  SL.LoadFromFile(fName);                                   //
+                                                            //
+  FirstTime := True;                                        //
   X := 0;
   TotalChips := 1;
   for n := 0 to SL.Count-1 do
@@ -1416,12 +1416,223 @@ begin                                                                      //
 end;                                                                       //
 /////////////////////////////////////////////////////////////////////////////
 
-function TWafer.LoadSchusterTXT(const TXTfName: TFileName): Boolean;
-begin
-  Result := False;
+///////////////////////////////////////////////////////////////////////////
+function TWafer.LoadSchusterTXT(const TXTfName: TFileName): Boolean;     //
+var                                                                      //
+  SL: TStringList;                                                       //
+  P: byte;                                                               //
+  n, NPStr, NCh: DWORD;                                                  //
+  i: WORD;                                                               //
+  X, Y, MinX, MaxX, MaxY: Integer;                                                   //
+  Str: AnsiString;                                                       //
+  Mass: array of Single;                                                 //
+begin                                                                    //
+  Result := False;                                                       //
+                                                                         //
+  SL := TStringList.Create;                                              //
+  SL.LoadFromFile(TXTfName);                                             //
+                                                                         //
+  if SL.Count = 0 then Exit;
+
+  fName := TXTfName;
+  MeasSystem := 'Schuster';
+  Direct := 2; // Зададим обход  по умолчанию
+  Diameter := 150;
+  Condition := 'НУ';
+  Num := ChangeFileExt(ExtractFileName(TXTfName), '');
+
+  FormatSettings.DecimalSeparator := ',';
+
+  NPStr := SL.Count;
+  NCh := 0;
+  for n := 0 to SL.Count-1 do
+  begin
+    if Trim(SL.Strings[n]) = '' then Continue;
+
+    if n < NPStr then // Если считываем заголовок
+    begin
+      if Pos('MODULE', SL.Strings[n]) <> 0 then
+      begin
+        P := Pos(#9, SL.Strings[n]);
+        Device := Trim(Copy(SL.Strings[n], P+1, Length((SL.Strings[n]))));
+        Continue;
+      end;
+
+//      if Pos('CONFIG', SL.Strings[n]) <> 0 then
+//      begin
+//        P := Pos(#9, SL.Strings[n]);
+//        Code := Trim(Copy(SL.Strings[n], P+1, Length((SL.Strings[n]))));
+//        Continue;
+//      end;
+
+      if Pos('STEP', SL.Strings[n]) <> 0 then
+      begin
+        P := Pos(#9, SL.Strings[n]);
+//        Device := Trim(Copy(SL.Strings[n], P+1, Length((SL.Strings[n]))));
+        SetLength(TestsParams, 4);
+
+        ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+
+        Continue;
+      end;
+
+      if Pos('FILE', SL.Strings[n]) <> 0 then
+      begin
+        Str := SL.Strings[n+1]; // 1-й чип
+        Delete(Str, 1, Pos(#9, Str)); // FILE
+        Delete(Str, 1, Pos(#9, Str)); // NAME
+        Delete(Str, 1, Pos(#9, Str)); // ADAPTER
+        if Pos('-',  Str) = 1 then Diameter := 0; // Микросхема
+        Delete(Str, 1, Pos(#9, Str)); // SERIAL N0#
+        Delete(Str, 1, Pos(#9, Str)); // BIN#
+        Delete(Str, 1, Pos(#9, Str)); // SERIAL#
+        P := Pos(#9, Str);
+        TimeDate := Copy(Str, 1, P-1);
+
+        NPStr := n; // Дальше идут рез-ты измерений чипов
+        NTotal := SL.Count-n-1; // Кол-во чипов
+
+        SetLength(ChipN, NTotal);
+        SetLength(Chip, 0, 0);
+
+        if Diameter = 0 then
+        begin
+          X := Ceil(sqrt(NTotal)); // Сделаем
+          Y := X;                  // пластину квадратной для микросхем
+          SetLength(Chip, Y, X);
+        end;
+
+        Continue;
+      end;
+    end
+    else             // Если считываем рез-ты измерений чипов
+
+////////////////////////////////////////////////////////////////////////////////
+
+    begin
+      X := 0;
+      Y := 0;
+
+      Str := SL.Strings[n];         // Удалим
+      Delete(Str, 1, Pos(#9, Str)); // FILE
+      Delete(Str, 1, Pos(#9, Str)); // NAME
+      Delete(Str, 1, Pos(#9, Str)); // ADAPTER
+
+      if Diameter <> 0 then // Если кристалл - считаем координаты
+      begin
+        if NCh = 0 then // 1-й кристалл
+        begin
+          P := Pos('ID', Str);           // Удалим '*ID='
+          Delete(Str, 1, Pos('=', Str)); // для кристаллов
+        end;
+
+        P := Pos(',', Str);
+        X := StrToInt(Copy(Str, 1, P-1));
+        Delete(Str, 1, P);
+        P := Pos(#9, Str);
+        Y := StrToInt(Copy(Str, 1, P-1));
+        Delete(Str, 1, P);
+
+        ChipN[NCh].X := X;
+        ChipN[NCh].Y := Y;
+
+        if NCh = 0 then      // Найдём
+        begin
+          MinX := X; // минимальный X
+          MaxX := X; // максимальный X
+          MaxY := Y; // максимальный Y
+        end
+        else
+        begin
+          if X < MinX then MinX := X;
+          if X > MaxX then MaxX := X;
+          if Y > MaxY then MaxY := Y;
+        end;
+
+      end
+      else
+      begin
+        Delete(Str, 1, 1); // Удалим '-' для микросхемы
+
+        ChipN[NCh].X := X;
+        ChipN[NCh].Y := Y;
+
+        Inc(X);
+        if X = Length(Chip[0]) then
+        begin
+          X := 0;
+          Inc(Y);
+        end;
+      end;
+
+      Inc(NCh);
+    end;
+  end;
+
+  if Diameter <> 0 then // Если кристалл
+  begin
+    X := (MaxX-MinX)+1;
+    Y := MaxY+1;
+    SetLength(Chip, Y, X);
+  end;
+
+  for Y := 0 to Length(Chip)-1 do      // Очистим
+    for X := 0 to Length(Chip[0])-1 do // массив
+    begin                              // чипов
+      Chip[Y, X].Status := 2;          //
+      Chip[Y, X].ID     := 0;          //
+      SetLength(Chip[Y, X].ChipParams, Length(TestsParams));
+    end;                               //
+
+  for n := NPStr+1 to SL.Count-1 do // Ещё раз пройдёмся по рез-там измерений
+  begin
+    Str := SL.Strings[n];         // Удалим
+    Delete(Str, 1, Pos(#9, Str)); // FILE
+    Delete(Str, 1, Pos(#9, Str)); // NAME
+    Delete(Str, 1, Pos(#9, Str)); // ADAPTER
+    P := Pos(#9, Str);
+//    := Copy(Str, 1, P-1);
+    Delete(Str, 1, Pos(#9, Str)); // SERIAL N0#
+    Delete(Str, 1, Pos(#9, Str)); // BIN#
+    Delete(Str, 1, Pos(#9, Str)); // SERIAL#
+    Delete(Str, 1, Pos(#9, Str)); // DATE
+    Delete(Str, 1, Pos(#9, Str)); // TIME
+    P := Pos(#9, Str);
+//    := Copy(Str, 1, P-1);
+    Delete(Str, 1, Pos(#9, Str)); // PASS/FAIL
+
+    NCh := n-(NPStr+1);
+
+    Y := ChipN[NCh].Y;
+    if Diameter <> 0 then X := ChipN[NCh].X-MinX
+                     else X := ChipN[NCh].X;
+
+    Chip[Y, X].ID := NCh+1;
+    if Length(TestsParams) > 0 then
+      for i := 0 to Length(TestsParams)-1 do
+      begin
+        P := Pos(#9, Str);
+
+        Chip[Y, X].ChipParams[i].Value := StrToFloat(Copy(Str, 1, P-1));
+        Chip[Y, X].ChipParams[i].Stat  := GetChipParamsStat(Chip[Y, X].ChipParams[i].Value,
+                                                            TestsParams[i].Norma.Min,
+                                                            TestsParams[i].Norma.Max);
+        Delete(Str, 1, Pos(#9, Str));
+      end;
+  end;
 
 
-end;
+
+
+////////////////////////////////////////////////////////////////////////////////
+
+  SL.Free;
+
+  FormatSettings.DecimalSeparator := '.';
+
+  Result := True;
+end;                                                        //
+//////////////////////////////////////////////////////////////
 
 {
 ///////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -1626,7 +1837,9 @@ begin                                                                           
       for n := 0 to SL.Count-1 do                                                                    //
       begin                                                                                          //
         Str := SL.Strings[n];                                                                        //
-        if Trim(Str) = '' then Continue; // Пропустим пустую строку                                  //
+                                                                                                     //
+        if Trim(Str) = '' then Continue;                                                             //
+                                                                                                     //
         if Length(TestsParams) > 0 then                                                              //
           for i := 0 to Length(TestsParams)-1 do                                                     //
           begin                                                                                      //
@@ -3881,10 +4094,10 @@ begin                                                                           
 
 /////////////////////////////////                                                                                    //
                                                                                                                      //
-  XLSfName := ChangeFileExt(fName, '');
+  XLSfName := ChangeFileExt(fName, '');                                                                              //
                                                                                                                      //
   m := 0;                                                                                                            //
-  while FileExists(XLSfName+'.xlsx') do                                                                                      //
+  while FileExists(XLSfName+'.xlsx') do                                                                              //
   begin                                                                                                              //
     Inc(m);                                                                                                          //
     i := Pos('(', XLSfName);                                                                                         //

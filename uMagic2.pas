@@ -239,7 +239,7 @@ begin                                                //
          LoadMapBtn.Visible := True;                 //
          LoadMapLab.Visible := True;                 //
                                                      //
-         ProcSchusterBtn.Left := 500;                //
+         ProcSchusterBtn.Left := 400;                //
          ProcSchusterBtn.Visible := False;           //
        end;                                          //
     1: begin // Schuster TSM 664                     //
@@ -255,7 +255,7 @@ begin                                                //
          LoadMapBtn.Visible := False;                //
          LoadMapLab.Visible := False;                //
                                                      //
-         ProcSchusterBtn.Left := 200;                //
+         ProcSchusterBtn.Left := 160;                //
          ProcSchusterBtn.Visible := True;            //
        end;                                          //
     2: begin // GAMMA TSSemi 2000-400                //
