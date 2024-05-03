@@ -104,7 +104,7 @@ type
     Name  : string[40];
     Norma : TNorma;
     PUnit : string[10];
-    PMode : string[60];
+    PMode : string[30];
     Status: WORD;
   end;
   TTestsParams = array of TTestParams;

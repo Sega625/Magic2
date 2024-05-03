@@ -420,7 +420,6 @@ begin                                                                           
                                                                                       //
   nWf := 0;                                                                           //
                                                                                       //
-//  if WafersLB.SelCount > 0 then                                                       //
   Lot.Init();                                                                         //
   SetLength(Lot.Wafer, WafersLB.SelCount);                                            //
                                                                                       //
@@ -494,7 +493,6 @@ begin                                                                           
                                                                                       //
   nWf := 0;                                                                           //
                                                                                       //
-//  if WafersLB.SelCount > 0 then                                                       //
   Lot.Init();                                                                         //
   SetLength(Lot.Wafer, WafersLB.SelCount);                                            //
                                                                                       //
@@ -513,14 +511,14 @@ begin                                                                           
           Print_Result('Ошибка загрузки пластины!', clRed);                           //
           Continue;                                                                   //
         end;                                                                          //
-//        Lot.fName := MDBfName;                                                        //
+        Lot.fName := MDBfName;                                                        //
                                                                                       //
                                                                                       //
         if CreateSTS = 1 then                                                         //
         begin                                                                         //
-          STSFName := ChangeFileExt(MDBfName, '')+'_'+Str+'.sts';                     //
+          STSFName := ChangeFileExt(MDBfName, '')+'.sts';                             //
                                                                                       //
-          if SaveSTS(STSFName, Lot.Wafer[nWf]) then                                   //
+          if Lot.Wafer[nWf].SaveSTS(STSFName) then                                    //
             Print_Result('Создан файл: '+ExtractFileName(STSFName), clBlue)           //
           else                                                                        //
             Print_Result('Ошибка создания файла: '+ExtractFileName(STSFName), clRed); //
@@ -589,9 +587,13 @@ begin
   Result := True;
 
   if FindFirst(dName+'\*.txt', faAnyFile, sr) = 0  then  //ищем  файлы TXT  в каталоге
-  repeat
-    WafersLB.Items.Add(sr.Name); // выводим список в ListBox
-  until FindNext(sr) <> 0
+  begin
+    WafersLB.Clear;
+
+    repeat
+      WafersLB.Items.Add(sr.Name); // выводим список в ListBox
+    until FindNext(sr) <> 0;
+  end
   else
     Result := False;
 
