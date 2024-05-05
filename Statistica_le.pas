@@ -19,7 +19,7 @@ type
     Code      : String[20]; // Номер кристалла
     MPW       : String[20]; // MPW
     MPWPos    : String[20]; // Позиция в MPW
-    Device    : String[20];
+    Device    : String[40];
     DscrDev   : String[20]; // Описание изделия
     MeasSystem: String[25]; // Измерительная система
     Prober    : String[20]; // Зондовая установка
@@ -101,8 +101,12 @@ type
 
     fOnEvent: TOnEvent;
   public
-    Name: string[20];
+    LName: string;
     fName: TFileName;
+//    LMSystem: String[25]; // Измерительная система
+    LDevice: string; // Для Schustera
+    LConfig: string; // Для Schustera
+
     Wafer: array of TWafer;
     BlankWafer: TWafer;
 
@@ -1455,7 +1459,7 @@ begin                                                                    //
 
     if n < NPStr then // Если считываем заголовок
     begin
-      if Pos('MODULE', SL.Strings[n]) <> 0 then
+      if Pos('MODULE', UpperCase(SL.Strings[n])) <> 0 then
       begin
         P := Pos(#9, SL.Strings[n]);
         Device := Trim(Copy(SL.Strings[n], P+1, Length(SL.Strings[n])));
@@ -1471,7 +1475,7 @@ begin                                                                    //
 //        Continue;
 //      end;
 
-      if Pos('STEP', SL.Strings[n]) <> 0 then
+      if Pos('STEP', UpperCase(SL.Strings[n])) <> 0 then
       begin
         i := 0;
         Str := Trim(SL.Strings[n+i+1]);
@@ -1504,7 +1508,7 @@ begin                                                                    //
         Continue;
       end;
 
-      if Pos('FILE', SL.Strings[n]) <> 0 then
+      if Pos('FILE', UpperCase(SL.Strings[n])) <> 0 then
       begin
         Str := SL.Strings[n+1]; // 1-й чип
         Delete(Str, 1, Pos(#9, Str)); // FILE
@@ -1553,7 +1557,7 @@ begin                                                                    //
       begin
         if NCh = 0 then // 1-й кристалл
         begin
-          P := Pos('ID', Str);           // Удалим '*ID='
+          P := Pos('ID', UpperCase(Str));           // Удалим '*ID='
           Delete(Str, 1, Pos('=', Str)); // для кристаллов
         end;
 
@@ -2314,7 +2318,7 @@ begin                                                                           
   n := 0;                                                                                            //
   while FileExists(tmpfName+'.sts') do                                                               //
   begin                                                                                              //
-    P := Pos('(', tmpfName);                                                                         //
+    P := Pos('(', tmpfName); /////////////////////////////////////////////////////////////////////////////////////////////////////////////
     if P <> 0 then Delete(tmpfName, P, (Length(tmpfName)-P)+1);                                      //
     Inc(n);                                                                                          //
     tmpfName := tmpfName+'('+IntToStr(n)+')';                                                        //
@@ -3495,6 +3499,12 @@ begin                                                 //
   if Length(Wafer) > 0 then                           //
     for n := 0 to Length(Wafer)-1 do Wafer[n].Free(); //
                                                       //
+  SetLength(Wafer, 0);                                //
+                                                      //
+  LName   := '';                                      //
+  LDevice := '';                                      //
+  LConfig := '';                                      //
+                                                      //
 //  BlankWafer.Free();                                  //
 //  BlankWafer := TWafer.Create(Handle);                //
 end;                                                  //
@@ -3569,7 +3579,6 @@ begin                                                                           
   for i := 0 to Length(Wafer[0].TestsParams)-1 do
   begin
     WorkBook1.ActiveSheet.Cells[1, 2+i] := Wafer[0].TestsParams[i].Name;
-    WorkBook1.ActiveSheet.Cells[1, 2+i].Columns.Autofit;
     WorkBook1.ActiveSheet.Cells[1, 2+i].Interior.Color := clSkyBlue;
     WorkBook1.ActiveSheet.Cells[1, 2+i].BorderAround(xlContinuous, xlThin, xlAutomatic, xlAutomatic);
 
@@ -3585,6 +3594,9 @@ begin                                                                           
     WorkBook1.ActiveSheet.Cells[6, 2+i] := Wafer[0].TestsParams[i].PMode;
     WorkBook1.ActiveSheet.Cells[6, 2+i].BorderAround(xlContinuous, xlThin, xlAutomatic, xlAutomatic);
   end;
+  Cell1 := WorkBook1.ActiveSheet.Cells[1, 1];
+  Cell2 := WorkBook1.ActiveSheet.Cells[2, Length(Wafer[0].TestsParams)+1];
+  WorkBook1.ActiveSheet.Range[Cell1, Cell2].EntireColumn.AutoFit;
 
 
 ////////////////////////////////////////////////////////////////////////////////
@@ -4174,7 +4186,9 @@ begin                                                                           
     if i <> 0 then Delete(XLSfName, i, Pos(')', XLSfName)-i+1);                                                      //
     XLSfName := XLSfName+'('+IntToStr(m)+')';                                                                        //
   end;                                                                                                               //
-                                                                                                                     //
+
+//  if Assigned(OnEvent) then OnEvent(evCreate, XLSfName);
+
   Workbook1.SaveAs(XLSfName+'.xlsx');                                                                                //
                                                                                                                      //
   if Assigned(OnEvent) then OnEvent(evCreate, '-----------------------------');

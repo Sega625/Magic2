@@ -43,6 +43,8 @@ type
     procedure OpenDirBtnClick(Sender: TObject);
     procedure MSystemCBChange(Sender: TObject);
     procedure ProcSchusterBtnClick(Sender: TObject);
+    procedure WafersLBDrawItem(Control: TWinControl; Index: Integer;
+      Rect: TRect; State: TOwnerDrawState);
   private
     Lot: TLot;
     Params: TTestsParams;
@@ -50,11 +52,12 @@ type
     ToFirstFail, CreateSTS, NoNorms, MapByParams: byte;
     BegTime: Int64;
 
-    function LoadMDB   (const fName: string): Boolean;
-    function LoadDirectory(const dName: string): Boolean;
-    function LoadNorms (const fName: string): Boolean;
-    function LoadMap   (const fName: string): Boolean;
+    function LoadMDB      (const fName: TFileName): Boolean;
+    function LoadDirectory(const dName: TFileName): Boolean;
+    function LoadNorms    (const fName: TFileName): Boolean;
+    function LoadMap      (const fName: TFileName): Boolean;
     function SaveSTS(const fName: TFileName; Waf: TWafer): Boolean;
+    function IsSchusterFile(const fName: TFileName): Boolean;
 
     procedure CloneBlankWafer(sWaf, dWaf: TWafer);
 
@@ -239,7 +242,7 @@ begin                                                //
          LoadMapBtn.Visible := True;                 //
          LoadMapLab.Visible := True;                 //
                                                      //
-         ProcSchusterBtn.Left := 500;                //
+         ProcSchusterBtn.Left := 400;                //
          ProcSchusterBtn.Visible := False;           //
        end;                                          //
     1: begin // Schuster TSM 664                     //
@@ -255,7 +258,7 @@ begin                                                //
          LoadMapBtn.Visible := False;                //
          LoadMapLab.Visible := False;                //
                                                      //
-         ProcSchusterBtn.Left := 200;                //
+         ProcSchusterBtn.Left := 160;                //
          ProcSchusterBtn.Visible := True;            //
        end;                                          //
     2: begin // GAMMA TSSemi 2000-400                //
@@ -420,7 +423,6 @@ begin                                                                           
                                                                                       //
   nWf := 0;                                                                           //
                                                                                       //
-  if WafersLB.SelCount > 0 then                                                       //
   Lot.Init();                                                                         //
   SetLength(Lot.Wafer, WafersLB.SelCount);                                            //
                                                                                       //
@@ -478,8 +480,61 @@ end;                                                                            
 ////////////////////////////////////////////////////////////////////////////////////////
 ////////////////////////////////////////////////////////////////////////////////////////
 procedure TMDBForm.ProcSchusterBtnClick(Sender: TObject);                             //
+var                                                                                   //
+  n, nWf: DWORD;                                                                      //
+  Str: string;                                                                        //
+  P: WORD;                                                                            //
+  STSFName: TFileName;                                                                //
 begin                                                                                 //
-  //
+  if WafersLB.SelCount = 0 then                                                       //
+  begin                                                                               //
+    Print_Result('Не выбраны пластины!', clRed);                                      //
+    Exit;                                                                             //
+  end;                                                                                //
+                                                                                      //
+  StartTime();                                                                        //
+                                                                                      //
+  nWf := 0;                                                                           //
+                                                                                      //
+  Lot.Init();                                                                         //
+  SetLength(Lot.Wafer, WafersLB.SelCount);                                            //
+                                                                                      //
+  Print_Result('... Идёт загрузка пластин!');                                         //
+                                                                                      //
+  with WafersLB do                                                                    //
+    for n := 0 to Items.Count-1 do                                                    //
+      if Selected[n] then                                                             //
+      begin                                                                           //
+        Lot.Wafer[nWf] := TWafer.Create(Handle);                                      //
+                                                                                      //
+        MDBfName := MDBPath+'\'+Items[n];                                             //
+                                                                                      //
+        if not Lot.Wafer[nWf].LoadSchusterTXT(MDBfName) then                          //
+        begin                                                                         //
+          Print_Result('Ошибка загрузки пластины!', clRed);                           //
+          Continue;                                                                   //
+        end;                                                                          //
+        Lot.fName := MDBfName;                                                        //
+                                                                                      //
+                                                                                      //
+        if CreateSTS = 1 then                                                         //
+        begin                                                                         //
+          STSFName := ChangeFileExt(MDBfName, '')+'.sts';                             //
+                                                                                      //
+          if Lot.Wafer[nWf].SaveSTS(STSFName) then                                    //
+            Print_Result('Создан файл: '+ExtractFileName(STSFName), clBlue)           //
+          else                                                                        //
+            Print_Result('Ошибка создания файла: '+ExtractFileName(STSFName), clRed); //
+        end;                                                                          //
+                                                                                      //
+        Inc(nWf);                                                                     //
+      end;                                                                            //
+                                                                                      //
+  Print_Result('>>> Пластины загружены!', clGreen);                                   //
+                                                                                      //
+  Lot.SaveXLS(ToFirstFail = 1, MapByParams = 1);                                      //
+                                                                                      //
+  TimeLab.Caption := FormatFloat('0.0', StopTime)+' сек.';                            //
 end;                                                                                  //
 ////////////////////////////////////////////////////////////////////////////////////////
 
@@ -491,62 +546,83 @@ end;                                               //
 /////////////////////////////////////////////////////
 
 
-////////////////////////////////////////////////////////////
-function TMDBForm.LoadMDB(const fName: String): Boolean;  //
-var                                                       //
-  ADOConnection: TADOConnection;                          //
-  n: WORD;                                                //
-begin                                                     //
-  Result := False;                                        //
-                                                          //
-  ADOConnection := TADOConnection.Create(nil);            //
-  with ADOConnection do                                   //
-  try                                                     //
-    Connected := False;                                   //
-    ConnectionString := ConnStr+fName+';';                //
-    LoginPrompt := False;                                 //
-    GetTableNames(WafersLB.Items);                        //
-  except                                                  //
-    Print_Result(fName+': ошибка ADO!', clRed);           //
-    Exit;                                                 //
-  end;                                                    //
-                                                          //
-  ADOConnection.Free;                                     //
-                                                          //
-  if WafersLB.Items.Count > 0 then                        //
-  begin                                                   //
-    for n := 0 to WafersLB.Items.Count-1 do               //
-    WafersLB.Items[n] := 'Пластина № '+WafersLB.Items[n]; //
-  end                                                     //
-  else                                                    //
-  begin                                                   //
-    Print_Result(fName+' : в файле нет пластин!', clRed); //
-    Exit;                                                 //
-  end;                                                    //
-                                                          //
-  Result := True;                                         //
-end;                                                      //
-////////////////////////////////////////////////////////////
+procedure TMDBForm.WafersLBDrawItem(Control: TWinControl; Index: Integer; Rect: TRect; State: TOwnerDrawState);
+begin
+// Чтобы работало нужно Style = lbOwnerDrawFixed;
 
-function TMDBForm.LoadDirectory(const dName: string): Boolean;
+//  with WafersLB.Canvas do
+//  begin
+//    Brush.Color := RGB(100, 150, 150);
+//    FillRect(Rect);
+//    Font.Color := clRed;
+//    TextOut(Rect.Left, Rect.Top, WafersLB.Items[Index]);
+//  end;
+end;
+
+
+//////////////////////////////////////////////////////////////
+function TMDBForm.LoadMDB(const fName: TFileName): Boolean; //
+var                                                         //
+  ADOConnection: TADOConnection;                            //
+  n: WORD;                                                  //
+begin                                                       //
+  Result := False;                                          //
+                                                            //
+  ADOConnection := TADOConnection.Create(nil);              //
+  with ADOConnection do                                     //
+  try                                                       //
+    Connected := False;                                     //
+    ConnectionString := ConnStr+fName+';';                  //
+    LoginPrompt := False;                                   //
+    GetTableNames(WafersLB.Items);                          //
+  except                                                    //
+    Print_Result(fName+': ошибка ADO!', clRed);             //
+    Exit;                                                   //
+  end;                                                      //
+                                                            //
+  ADOConnection.Free;                                       //
+                                                            //
+  if WafersLB.Items.Count > 0 then                          //
+  begin                                                     //
+    for n := 0 to WafersLB.Items.Count-1 do                 //
+    WafersLB.Items[n] := 'Пластина № '+WafersLB.Items[n];   //
+  end                                                       //
+  else                                                      //
+  begin                                                     //
+    Print_Result(fName+' : в файле нет пластин!', clRed);   //
+    Exit;                                                   //
+  end;                                                      //
+                                                            //
+  Result := True;                                           //
+end;                                                        //
+//////////////////////////////////////////////////////////////
+
+function TMDBForm.LoadDirectory(const dName: TFileName): Boolean;
 var
   sr: TSearchRec;
 begin
   Result := True;
 
   if FindFirst(dName+'\*.txt', faAnyFile, sr) = 0  then  //ищем  файлы TXT  в каталоге
-  repeat
-    WafersLB.Items.Add(sr.Name); // выводим список в ListBox
-  until FindNext(sr) <> 0
+  begin
+    WafersLB.Clear;
+
+    repeat
+      if IsSchusterFile(sr.Name) then
+        WafersLB.Items.Add(sr.Name); // выводим список в ListBox
+    until FindNext(sr) <> 0;
+  end
   else
     Result := False;
 
   FindClose(sr);
+
+  if WafersLB.Items.Count = 0 then Result := False;
 end;
 
 
 ////////////////////////////////////////////////////////////////////////
-function TMDBForm.LoadNorms(const fName: string): Boolean;            //
+function TMDBForm.LoadNorms(const fName: TFileName): Boolean;         //
 var                                                                   //
   n, Cnt: WORD;                                                       //
   P, P1, P2: byte;                                                    //
@@ -605,16 +681,16 @@ begin                                                                 //
 end;                                                                  //
 ////////////////////////////////////////////////////////////////////////
 
-///////////////////////////////////////////////////////////
-function TMDBForm.LoadMap(const fName: string): Boolean; //
-begin                                                    //
-  Result := False;                                       //
-                                                         //
-  if not Lot.BlankWafer.LoadBlankSTS(fName) then Exit;   //
-                                                         //
-  Result := True;                                        //
-end;                                                     //
-///////////////////////////////////////////////////////////
+//////////////////////////////////////////////////////////////
+function TMDBForm.LoadMap(const fName: TFileName): Boolean; //
+begin                                                       //
+  Result := False;                                          //
+                                                            //
+  if not Lot.BlankWafer.LoadBlankSTS(fName) then Exit;      //
+                                                            //
+  Result := True;                                           //
+end;                                                        //
+//////////////////////////////////////////////////////////////
 
 
 function TMDBForm.SaveSTS(const fName: TFileName; Waf: TWafer): Boolean;
@@ -674,6 +750,25 @@ begin
 
   Result := True;
 end;
+
+
+/////////////////////////////////////////////////////////////////////
+function TMDBForm.IsSchusterFile(const fName: TFileName): Boolean; //
+var                                                                //
+  F: TextFile;                                                     //
+  Str: string;                                                     //
+begin                                                              //
+  Result := False;                                                 //
+                                                                   //
+  AssignFile(F, fName);                                            //
+  Reset(F);                                                        //
+                                                                   //
+  ReadLn(F, Str);                                                  //
+  if Pos('MODULE', Str) <> 0 then Result := True;                  //
+                                                                   //
+  CloseFile(F);                                                    //
+end;                                                               //
+/////////////////////////////////////////////////////////////////////
 
 
 ///////////////////////////////////////////////////////////////////
