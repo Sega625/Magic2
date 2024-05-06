@@ -7,160 +7,205 @@ object MDBForm: TMDBForm
   Margins.Bottom = 2
   BorderStyle = bsSingle
   Caption = 'Magic2'
-  ClientHeight = 481
-  ClientWidth = 687
+  ClientHeight = 601
+  ClientWidth = 859
   Color = clBtnFace
   Font.Charset = DEFAULT_CHARSET
   Font.Color = clWindowText
-  Font.Height = -11
+  Font.Height = -14
   Font.Name = 'Tahoma'
   Font.Style = []
   Menu = MainMenu1
   OnCreate = FormCreate
   OnDestroy = FormDestroy
-  TextHeight = 13
+  PixelsPerInch = 120
+  TextHeight = 17
   object LoadMDBLab: TLabel
-    Left = 122
-    Top = 43
-    Width = 22
-    Height = 71
+    Left = 153
+    Top = 54
+    Width = 27
+    Height = 88
+    Margins.Left = 4
+    Margins.Top = 4
+    Margins.Right = 4
+    Margins.Bottom = 4
     Caption = #8226
     Font.Charset = DEFAULT_CHARSET
     Font.Color = 13302029
-    Font.Height = -53
+    Font.Height = -66
     Font.Name = 'Segoe UI'
     Font.Style = []
     ParentFont = False
   end
   object LoadNormsLab: TLabel
-    Left = 122
-    Top = 93
-    Width = 22
-    Height = 71
+    Left = 153
+    Top = 116
+    Width = 27
+    Height = 88
+    Margins.Left = 4
+    Margins.Top = 4
+    Margins.Right = 4
+    Margins.Bottom = 4
     Caption = #8226
     Font.Charset = DEFAULT_CHARSET
     Font.Color = 13302029
-    Font.Height = -53
+    Font.Height = -66
     Font.Name = 'Segoe UI'
     Font.Style = []
     ParentFont = False
   end
   object LoadMapLab: TLabel
-    Left = 122
-    Top = 143
-    Width = 22
-    Height = 71
+    Left = 153
+    Top = 179
+    Width = 27
+    Height = 88
+    Margins.Left = 4
+    Margins.Top = 4
+    Margins.Right = 4
+    Margins.Bottom = 4
     Caption = #8226
     Font.Charset = DEFAULT_CHARSET
     Font.Color = 13302029
-    Font.Height = -53
+    Font.Height = -66
     Font.Name = 'Segoe UI'
     Font.Style = []
     ParentFont = False
   end
   object Label1: TLabel
-    Left = 245
-    Top = 13
-    Width = 57
-    Height = 16
+    Left = 306
+    Top = 16
+    Width = 72
+    Height = 19
+    Margins.Left = 4
+    Margins.Top = 4
+    Margins.Right = 4
+    Margins.Bottom = 4
     Caption = #1055#1083#1072#1089#1090#1080#1085#1099
     Font.Charset = DEFAULT_CHARSET
     Font.Color = clWindowText
-    Font.Height = -13
+    Font.Height = -16
     Font.Name = 'Tahoma'
     Font.Style = []
     ParentFont = False
   end
   object Label2: TLabel
-    Left = 465
-    Top = 13
-    Width = 68
-    Height = 16
+    Left = 581
+    Top = 16
+    Width = 84
+    Height = 19
+    Margins.Left = 4
+    Margins.Top = 4
+    Margins.Right = 4
+    Margins.Bottom = 4
     Caption = #1056#1077#1079#1091#1083#1100#1090#1072#1090#1099
     Font.Charset = DEFAULT_CHARSET
     Font.Color = clWindowText
-    Font.Height = -13
+    Font.Height = -16
     Font.Name = 'Tahoma'
     Font.Style = []
     ParentFont = False
   end
   object Label3: TLabel
-    Left = 21
-    Top = 438
-    Width = 106
-    Height = 16
+    Left = 26
+    Top = 548
+    Width = 133
+    Height = 19
+    Margins.Left = 4
+    Margins.Top = 4
+    Margins.Right = 4
+    Margins.Bottom = 4
     Caption = #1042#1088#1077#1084#1103' '#1086#1073#1088#1072#1073#1086#1090#1082#1080':'
     Font.Charset = DEFAULT_CHARSET
     Font.Color = clBlue
-    Font.Height = -13
+    Font.Height = -16
     Font.Name = 'Tahoma'
     Font.Style = []
     ParentFont = False
   end
   object TimeLab: TLabel
-    Left = 17
-    Top = 456
-    Width = 110
-    Height = 16
+    Left = 21
+    Top = 570
+    Width = 138
+    Height = 20
+    Margins.Left = 4
+    Margins.Top = 4
+    Margins.Right = 4
+    Margins.Bottom = 4
     Alignment = taCenter
     AutoSize = False
     Caption = '0.0 '#1089#1077#1082'.'
     Font.Charset = DEFAULT_CHARSET
     Font.Color = clBlue
-    Font.Height = -13
+    Font.Height = -16
     Font.Name = 'Tahoma'
     Font.Style = []
     ParentFont = False
   end
   object Label4: TLabel
-    Left = 10
-    Top = 9
-    Width = 142
-    Height = 16
+    Left = 13
+    Top = 11
+    Width = 174
+    Height = 19
+    Margins.Left = 4
+    Margins.Top = 4
+    Margins.Right = 4
+    Margins.Bottom = 4
     Caption = #1048#1079#1084#1077#1088#1080#1090#1077#1083#1100#1085#1072#1103' '#1089#1080#1089#1090#1077#1084#1072
     Font.Charset = DEFAULT_CHARSET
     Font.Color = clWindowText
-    Font.Height = -13
+    Font.Height = -16
     Font.Name = 'Tahoma'
     Font.Style = []
     ParentFont = False
   end
   object OpenDirLab: TLabel
-    Left = 122
-    Top = 193
-    Width = 22
-    Height = 71
+    Left = 153
+    Top = 241
+    Width = 27
+    Height = 88
+    Margins.Left = 4
+    Margins.Top = 4
+    Margins.Right = 4
+    Margins.Bottom = 4
     Caption = #8226
     Font.Charset = DEFAULT_CHARSET
     Font.Color = 13302029
-    Font.Height = -53
+    Font.Height = -66
     Font.Name = 'Segoe UI'
     Font.Style = []
     ParentFont = False
     Visible = False
   end
   object LoadMDBBtn: TButton
-    Left = 8
-    Top = 70
-    Width = 111
-    Height = 25
+    Left = 10
+    Top = 88
+    Width = 139
+    Height = 31
+    Margins.Left = 4
+    Margins.Top = 4
+    Margins.Right = 4
+    Margins.Bottom = 4
     Caption = #1047#1072#1075#1088#1091#1079#1080#1090#1100' MDB'
     TabOrder = 0
     OnClick = LoadMDBBtnClick
   end
   object WafersLB: TListBox
-    Left = 160
-    Top = 31
-    Width = 218
-    Height = 410
+    Left = 200
+    Top = 39
+    Width = 273
+    Height = 512
+    Margins.Left = 4
+    Margins.Top = 4
+    Margins.Right = 4
+    Margins.Bottom = 4
     BevelKind = bkFlat
     BorderStyle = bsNone
     Font.Charset = DEFAULT_CHARSET
     Font.Color = clWindowText
-    Font.Height = -13
+    Font.Height = -16
     Font.Name = 'Roboto'
     Font.Style = []
-    ItemHeight = 15
+    ItemHeight = 19
     MultiSelect = True
     ParentFont = False
     Sorted = True
@@ -168,38 +213,54 @@ object MDBForm: TMDBForm
     OnDrawItem = WafersLBDrawItem
   end
   object ProcGammaBtn: TButton
-    Left = 160
-    Top = 446
-    Width = 219
-    Height = 25
+    Left = 200
+    Top = 558
+    Width = 274
+    Height = 31
+    Margins.Left = 4
+    Margins.Top = 4
+    Margins.Right = 4
+    Margins.Bottom = 4
     Caption = #1054#1073#1088#1072#1073#1086#1090#1072#1090#1100
     Enabled = False
     TabOrder = 2
     OnClick = ProcGammaBtnClick
   end
   object LoadNormsBtn: TButton
-    Left = 8
-    Top = 120
-    Width = 111
-    Height = 25
+    Left = 10
+    Top = 150
+    Width = 139
+    Height = 31
+    Margins.Left = 4
+    Margins.Top = 4
+    Margins.Right = 4
+    Margins.Bottom = 4
     Caption = #1047#1072#1075#1088#1091#1079#1080#1090#1100' '#1085#1086#1088#1084#1099
     TabOrder = 3
     OnClick = LoadNormsBtnClick
   end
   object LoadMapBtn: TButton
-    Left = 7
-    Top = 170
-    Width = 111
-    Height = 25
+    Left = 9
+    Top = 213
+    Width = 139
+    Height = 31
+    Margins.Left = 4
+    Margins.Top = 4
+    Margins.Right = 4
+    Margins.Bottom = 4
     Caption = #1047#1072#1075#1088#1091#1079#1080#1090#1100' '#1082#1072#1088#1090#1091
     TabOrder = 4
     OnClick = LoadMapBtnClick
   end
   object ResultRE: TRichEdit
-    Left = 384
-    Top = 31
-    Width = 296
-    Height = 441
+    Left = 480
+    Top = 39
+    Width = 370
+    Height = 551
+    Margins.Left = 4
+    Margins.Top = 4
+    Margins.Right = 4
+    Margins.Bottom = 4
     BevelKind = bkFlat
     BorderStyle = bsNone
     Ctl3D = False
@@ -215,19 +276,27 @@ object MDBForm: TMDBForm
     TabOrder = 5
   end
   object ClearBtn: TButton
-    Left = 607
-    Top = 6
-    Width = 73
-    Height = 21
+    Left = 759
+    Top = 8
+    Width = 91
+    Height = 26
+    Margins.Left = 4
+    Margins.Top = 4
+    Margins.Right = 4
+    Margins.Bottom = 4
     Caption = #1054#1095#1080#1089#1090#1080#1090#1100
     TabOrder = 6
     OnClick = ClearBtnClick
   end
   object MSystemCB: TComboBox
-    Left = 8
-    Top = 31
-    Width = 144
-    Height = 21
+    Left = 10
+    Top = 39
+    Width = 180
+    Height = 25
+    Margins.Left = 4
+    Margins.Top = 4
+    Margins.Right = 4
+    Margins.Bottom = 4
     ItemIndex = 0
     TabOrder = 7
     Text = #1043#1072#1084#1084#1072'-156'
@@ -237,19 +306,27 @@ object MDBForm: TMDBForm
       'Schuster TSM 664')
   end
   object OpenDirBtn: TButton
-    Left = 7
-    Top = 220
-    Width = 111
-    Height = 25
+    Left = 9
+    Top = 275
+    Width = 139
+    Height = 31
+    Margins.Left = 4
+    Margins.Top = 4
+    Margins.Right = 4
+    Margins.Bottom = 4
     Caption = #1054#1090#1082#1088#1099#1090#1100' '#1087#1072#1087#1082#1091
     TabOrder = 8
     OnClick = OpenDirBtnClick
   end
   object ProcSchusterBtn: TButton
-    Left = 400
-    Top = 446
-    Width = 219
-    Height = 25
+    Left = 500
+    Top = 558
+    Width = 274
+    Height = 31
+    Margins.Left = 4
+    Margins.Top = 4
+    Margins.Right = 4
+    Margins.Bottom = 4
     Caption = #1054#1073#1088#1072#1073#1086#1090#1072#1090#1100
     Enabled = False
     TabOrder = 9

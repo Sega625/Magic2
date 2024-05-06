@@ -46,8 +46,9 @@ type
     procedure WafersLBDrawItem(Control: TWinControl; Index: Integer; Rect: TRect; State: TOwnerDrawState);
   private
     Lot: TLot;
+
     Params: TTestsParams;
-    ExePath, MDBPath, MDBfName: TFileName;
+    ExePath, MeasPath, MeasfName: TFileName;
     ToFirstFail, CreateSTS, NoNorms, MapByParams: byte;
     BegTime: Int64;
 
@@ -66,7 +67,7 @@ type
     function  MDBLoaded()  : Boolean;
     function  NormsLoaded(): Boolean;
     function  MapLoaded()  : Boolean;
-    function  GetEnableProcess()  : Boolean;
+    function  GetEnableProcess(): Boolean;
     procedure StartTime();
     function  StopTime(): Double;
   public
@@ -138,12 +139,12 @@ begin                                                                          /
                                                                                //
   try                                                                          //
     IniFile := TIniFile.Create(ExePath+'Magic2.ini');                          //
-    MDBPath   := IniFile.ReadString ('System', 'Path', 'C:');                  //
+    MeasPath  := IniFile.ReadString ('System', 'Path', 'C:');                  //
     self.Top  := IniFile.ReadInteger('System', 'Top',  250);                   //
     self.Left := IniFile.ReadInteger('System', 'Left', 500);                   //
                                                                                //
     ToFirstFail := IniFile.ReadInteger('Preference', 'ToFirstFail', 1);        //
-    CreateSTS   := IniFile.ReadInteger('Preference', 'CreateSTS',   0);        //
+    CreateSTS   := IniFile.ReadInteger('Preference', 'CreateSTS',   1);        //
     NoNorms     := IniFile.ReadInteger('Preference', 'NoNorms',     0);        //
     MapByParams := IniFile.ReadInteger('Preference', 'MapByParams', 0);        //
     MSystemCB.ItemIndex := IniFile.ReadInteger('Preference', 'MeasSystem', 0); //
@@ -173,7 +174,7 @@ begin                                                                          /
   try                                                                          //
     IniFile := TIniFile.Create(ExePath+'Magic2.ini');                          //
     try                                                                        //
-      IniFile.WriteString ('System', 'Path', MDBPath);                         //
+      IniFile.WriteString ('System', 'Path', MeasPath);                        //
       IniFile.WriteInteger('System', 'Top',  self.Top);                        //
       IniFile.WriteInteger('System', 'Left', self.Left);                       //
                                                                                //
@@ -274,138 +275,138 @@ begin                                                //
 end;                                                 //
 ///////////////////////////////////////////////////////
 
-///////////////////////////////////////////////////////////////////////////////////////////////
-procedure TMDBForm.LoadMDBBtnClick(Sender: TObject);                                         //
-var                                                                                          //
-  OpenDlg: TOpenDialog;                                                                      //
-begin                                                                                        //
-  OpenDlg := TOpenDialog.Create(self);                                                       //
-  with OpenDlg do                                                                            //
-  begin                                                                                      //
-    InitialDir := MDBPath;                                                                   //
-    Filter := 'Файлы измерений Гамма-156 (*.mdb)|*.mdb*';                                    //
-    Title := 'Загрузить файл статистики';                                                    //
-                                                                                             //
-    if Execute then                                                                          //
-      if LoadMDB(FileName) then                                                              //
-      begin                                                                                  //
-        MDBfName := FileName;                                                                //
-        MDBPath := ExtractFilePath(MDBfName);                                                //
-                                                                                             //
-        LoadMDBLab.Font.Color := $00CAF90D;                                                  //
-                                                                                             //
-        Print_Result('* Файл измерений '+ExtractFileName(MDBfName)+' загружен!', clTeal);    //
-                                                                                             //
-        ProcGammaBtn.Enabled := GetEnableProcess();                                          //
-      end                                                                                    //
-      else                                                                                   //
-      begin                                                                                  //
-        LoadMDBLab.Font.Color := clRed;                                                      //
-                                                                                             //
-        Print_Result('* Ошибка загрузки файла измерений '+ExtractFileName(MDBfName), clRed); //
-                                                                                             //
-        ProcGammaBtn.Enabled := False;                                                       //
-      end;                                                                                   //
-                                                                                             //
-    Free;                                                                                    //
-  end;                                                                                       //
-end;                                                                                         //
-///////////////////////////////////////////////////////////////////////////////////////////////
-///////////////////////////////////////////////////////////////////////////////////////////////
-procedure TMDBForm.LoadNormsBtnClick(Sender: TObject);                                       //
-var                                                                                          //
-  OpenDlg: TOpenDialog;                                                                      //
-begin                                                                                        //
-  OpenDlg := TOpenDialog.Create(self);                                                       //
-  with OpenDlg do                                                                            //
-  begin                                                                                      //
-    InitialDir := MDBPath;                                                                   //
-    Filter := 'Файлы норм (*.nrm)|*.nrm*';                                                   //
-    Title := 'Загрузить файл норм';                                                          //
-                                                                                             //
-    if Execute then                                                                          //
-      if LoadNorms(FileName) then                                                            //
-      begin                                                                                  //
-        LoadNormsLab.Font.Color := $00CAF90D;                                                //
-                                                                                             //
-        Print_Result('* Нормы из файла '+ExtractFileName(FileName)+' загружены!', clTeal);   //
-                                                                                             //
-        ProcGammaBtn.Enabled := GetEnableProcess();                                          //
-      end                                                                                    //
-      else                                                                                   //
-      begin                                                                                  //
-        LoadNormsLab.Font.Color := clRed;                                                    //
-                                                                                             //
-        Print_Result('* Ошибка загрузки норм '+ExtractFileName(FileName), clRed);            //
-                                                                                             //
-        ProcGammaBtn.Enabled := GetEnableProcess();                                          //
-      end;                                                                                   //
-                                                                                             //
-    Free;                                                                                    //
-  end;                                                                                       //
-end;                                                                                         //
-///////////////////////////////////////////////////////////////////////////////////////////////
-///////////////////////////////////////////////////////////////////////////////////////////////
-procedure TMDBForm.LoadMapBtnClick(Sender: TObject);                                         //
-var                                                                                          //
-  OpenDlg: TOpenDialog;                                                                      //
-begin                                                                                        //
-  OpenDlg := TOpenDialog.Create(self);                                                       //
-  with OpenDlg do                                                                            //
-  begin                                                                                      //
-    InitialDir := MDBPath;                                                                   //
-    Filter := 'Карта обхода (*.sts)|*.sts*';                                                 //
-    Title := 'Загрузить карту обхода';                                                       //
-                                                                                             //
-    if Execute then                                                                          //
-      if LoadMap(FileName) then                                                              //
-      begin                                                                                  //
-        LoadMapLab.Font.Color := $00CAF90D;                                                  //
-                                                                                             //
-        Print_Result('* Карта обхода '+ExtractFileName(FileName)+' загружена!', clTeal);     //
-                                                                                             //
-        ProcGammaBtn.Enabled := GetEnableProcess();                                          //
-      end                                                                                    //
-      else                                                                                   //
-      begin                                                                                  //
-        LoadMapLab.Font.Color := clRed;                                                      //
-                                                                                             //
-        Print_Result('* Ошибка загрузки карты обхода '+ExtractFileName(FileName), clRed);    //
-                                                                                             //
-        ProcGammaBtn.Enabled := GetEnableProcess();                                          //
-      end;                                                                                   //
-                                                                                             //
-    Free;                                                                                    //
-  end;                                                                                       //
-end;                                                                                         //
-///////////////////////////////////////////////////////////////////////////////////////////////
-///////////////////////////////////////////////////////////////////////////////////////////////
-procedure TMDBForm.OpenDirBtnClick(Sender: TObject);                                         //
-var                                                                                          //
-  sDir: string;                                                                              //
-begin                                                                                        //
-  sDir := MDBPath;                                                                           //
-                                                                                             //
-  if SelectDirectory(sDir, [], 0) then                                                       //
-    if LoadDirectory(sDir) then                                                              //
-    begin                                                                                    //
-      MDBPath := sDir;                                                                       //
-      OpenDirLab.Font.Color := $00CAF90D;                                                    //
-                                                                                             //
-      Print_Result('* Файлы измерений загружены!', clTeal);                                  //
-                                                                                             //
-      ProcSchusterBtn.Enabled := True;                                                       //
-    end                                                                                      //
-    else                                                                                     //
-    begin                                                                                    //
-      OpenDirLab.Font.Color := clRed;                                                        //
-                                                                                             //
-      Print_Result('* Ошибка загрузки файлов измерений!', clRed);                            //
-                                                                                             //
-      ProcSchusterBtn.Enabled := False;                                                      //
-    end;                                                                                     //
-end;                                                                                         //
-///////////////////////////////////////////////////////////////////////////////////////////////
+////////////////////////////////////////////////////////////////////////////////////////////////
+procedure TMDBForm.LoadMDBBtnClick(Sender: TObject);                                          //
+var                                                                                           //
+  OpenDlg: TOpenDialog;                                                                       //
+begin                                                                                         //
+  OpenDlg := TOpenDialog.Create(self);                                                        //
+  with OpenDlg do                                                                             //
+  begin                                                                                       //
+    InitialDir := MeasPath;                                                                   //
+    Filter := 'Файлы измерений Гамма-156 (*.mdb)|*.mdb*';                                     //
+    Title := 'Загрузить файл статистики';                                                     //
+                                                                                              //
+    if Execute then                                                                           //
+      if LoadMDB(FileName) then                                                               //
+      begin                                                                                   //
+        MeasfName := FileName;                                                                //
+        MeasPath := ExtractFilePath(MeasfName);                                               //
+                                                                                              //
+        LoadMDBLab.Font.Color := $00CAF90D;                                                   //
+                                                                                              //
+        Print_Result('* Файл измерений '+ExtractFileName(MeasfName)+' загружен!', clTeal);    //
+                                                                                              //
+        ProcGammaBtn.Enabled := GetEnableProcess();                                           //
+      end                                                                                     //
+      else                                                                                    //
+      begin                                                                                   //
+        LoadMDBLab.Font.Color := clRed;                                                       //
+                                                                                              //
+        Print_Result('* Ошибка загрузки файла измерений '+ExtractFileName(MeasfName), clRed); //
+                                                                                              //
+        ProcGammaBtn.Enabled := False;                                                        //
+      end;                                                                                    //
+                                                                                              //
+    Free;                                                                                     //
+  end;                                                                                        //
+end;                                                                                          //
+////////////////////////////////////////////////////////////////////////////////////////////////
+////////////////////////////////////////////////////////////////////////////////////////////////
+procedure TMDBForm.LoadNormsBtnClick(Sender: TObject);                                        //
+var                                                                                           //
+  OpenDlg: TOpenDialog;                                                                       //
+begin                                                                                         //
+  OpenDlg := TOpenDialog.Create(self);                                                        //
+  with OpenDlg do                                                                             //
+  begin                                                                                       //
+    InitialDir := MeasPath;                                                                   //
+    Filter := 'Файлы норм (*.nrm)|*.nrm*';                                                    //
+    Title := 'Загрузить файл норм';                                                           //
+                                                                                              //
+    if Execute then                                                                           //
+      if LoadNorms(FileName) then                                                             //
+      begin                                                                                   //
+        LoadNormsLab.Font.Color := $00CAF90D;                                                 //
+                                                                                              //
+        Print_Result('* Нормы из файла '+ExtractFileName(FileName)+' загружены!', clTeal);    //
+                                                                                              //
+        ProcGammaBtn.Enabled := GetEnableProcess();                                           //
+      end                                                                                     //
+      else                                                                                    //
+      begin                                                                                   //
+        LoadNormsLab.Font.Color := clRed;                                                     //
+                                                                                              //
+        Print_Result('* Ошибка загрузки норм '+ExtractFileName(FileName), clRed);             //
+                                                                                              //
+        ProcGammaBtn.Enabled := GetEnableProcess();                                           //
+      end;                                                                                    //
+                                                                                              //
+    Free;                                                                                     //
+  end;                                                                                        //
+end;                                                                                          //
+////////////////////////////////////////////////////////////////////////////////////////////////
+////////////////////////////////////////////////////////////////////////////////////////////////
+procedure TMDBForm.LoadMapBtnClick(Sender: TObject);                                          //
+var                                                                                           //
+  OpenDlg: TOpenDialog;                                                                       //
+begin                                                                                         //
+  OpenDlg := TOpenDialog.Create(self);                                                        //
+  with OpenDlg do                                                                             //
+  begin                                                                                       //
+    InitialDir := MeasPath;                                                                   //
+    Filter := 'Карта обхода (*.sts)|*.sts*';                                                  //
+    Title := 'Загрузить карту обхода';                                                        //
+                                                                                              //
+    if Execute then                                                                           //
+      if LoadMap(FileName) then                                                               //
+      begin                                                                                   //
+        LoadMapLab.Font.Color := $00CAF90D;                                                   //
+                                                                                              //
+        Print_Result('* Карта обхода '+ExtractFileName(FileName)+' загружена!', clTeal);      //
+                                                                                              //
+        ProcGammaBtn.Enabled := GetEnableProcess();                                           //
+      end                                                                                     //
+      else                                                                                    //
+      begin                                                                                   //
+        LoadMapLab.Font.Color := clRed;                                                       //
+                                                                                              //
+        Print_Result('* Ошибка загрузки карты обхода '+ExtractFileName(FileName), clRed);     //
+                                                                                              //
+        ProcGammaBtn.Enabled := GetEnableProcess();                                           //
+      end;                                                                                    //
+                                                                                              //
+    Free;                                                                                     //
+  end;                                                                                        //
+end;                                                                                          //
+////////////////////////////////////////////////////////////////////////////////////////////////
+////////////////////////////////////////////////////////////////////////////////////////////////
+procedure TMDBForm.OpenDirBtnClick(Sender: TObject);                                          //
+var                                                                                           //
+  sDir: string;                                                                               //
+begin                                                                                         //
+  sDir := MeasPath;                                                                           //
+                                                                                              //
+  if SelectDirectory(sDir, [], 0) then                                                        //
+    if LoadDirectory(sDir) then                                                               //
+    begin                                                                                     //
+      MeasPath := sDir;                                                                       //
+      OpenDirLab.Font.Color := $00CAF90D;                                                     //
+                                                                                              //
+      Print_Result('* Файлы измерений загружены!', clTeal);                                   //
+                                                                                              //
+      ProcSchusterBtn.Enabled := True;                                                        //
+    end                                                                                       //
+    else                                                                                      //
+    begin                                                                                     //
+      OpenDirLab.Font.Color := clRed;                                                         //
+                                                                                              //
+      Print_Result('* Ошибка загрузки файлов измерений!', clRed);                             //
+                                                                                              //
+      ProcSchusterBtn.Enabled := False;                                                       //
+    end;                                                                                      //
+end;                                                                                          //
+////////////////////////////////////////////////////////////////////////////////////////////////
 
 ////////////////////////////////////////////////////////////////////////////////////////
 procedure TMDBForm.ProcGammaBtnClick(Sender: TObject);                                //
@@ -442,12 +443,12 @@ begin                                                                           
         if Lot.Wafer[nWf] = nil then                                                  //
           Lot.Wafer[nWf] := TWafer.Create(Handle);                                    //
                                                                                       //
-        if not Lot.Wafer[nWf].LoadGammaMDB(MDBfName, Str) then                        //
+        if not Lot.Wafer[nWf].LoadGammaMDB(MeasfName, Str) then                       //
         begin                                                                         //
           Print_Result('Ошибка загрузки пластины!', clRed);                           //
           Continue;                                                                   //
         end;                                                                          //
-        Lot.LfName := MDBfName;                                                       //
+        Lot.LfName := MeasfName;                                                      //
                                                                                       //
                                                                                       //
         if NormsLoaded then // Если нормы есть                                        //
@@ -460,7 +461,7 @@ begin                                                                           
                                                                                       //
         if CreateSTS = 1 then                                                         //
         begin                                                                         //
-          STSFName := ChangeFileExt(MDBfName, '')+'_'+Str+'.sts';                     //
+          STSFName := ChangeFileExt(MeasfName, '')+'_'+Str+'.sts';                    //
                                                                                       //
           if SaveSTS(STSFName, Lot.Wafer[nWf]) then                                   //
             Print_Result('Создан файл: '+ExtractFileName(STSFName), clBlue)           //
@@ -511,11 +512,11 @@ begin                                                                           
     for n := 0 to Items.Count-1 do                                                    //
       if Selected[n] then                                                             //
       begin                                                                           //
-        MDBfName := MDBPath+'\'+Items[n];                                             //
+        MeasfName := MeasPath+'\'+Items[n];                                           //
                                                                                       //
         sModule := '';                                                                //
         sConfig := '';                                                                //
-        GetSchusterFileInfo(MDBfName, sModule, sConfig);                              //
+        GetSchusterFileInfo(MeasfName, sModule, sConfig);                             //
         if sModule <> '' then                                                         //
         if nWf = 0 then                                                               //
         begin                                                                         //
@@ -534,20 +535,20 @@ begin                                                                           
         if Lot.Wafer[nWf] = nil then                                                  //
           Lot.Wafer[nWf] := TWafer.Create(Handle);                                    //
                                                                                       //
-        if not Lot.Wafer[nWf].LoadSchusterTXT(MDBfName) then                          //
+        if not Lot.Wafer[nWf].LoadSchusterTXT(MeasfName) then                         //
         begin                                                                         //
           Print_Result('Ошибка загрузки пластины!', clRed);                           //
           Continue;                                                                   //
         end;                                                                          //
-        Lot.LfName := MDBfName;                                                       //
-
-        if nWf = 0 then
+        Lot.LfName := MeasfName;                                                      //
+                                                                                      //
+        if nWf = 0 then                                                               //
           if not Lot.CreateBlankWafer(nWf) then Print_Result('Ошибка создания шаблона обхода!', clRed);
                                                                                       //
                                                                                       //
         if CreateSTS = 1 then                                                         //
         begin                                                                         //
-          STSFName := ChangeFileExt(MDBfName, '')+'.sts';                             //
+          STSFName := ChangeFileExt(MeasfName, '')+'.sts';                            //
                                                                                       //
           if Lot.Wafer[nWf].SaveSTS(STSFName) then                                    //
             Print_Result('Создан файл: '+ExtractFileName(STSFName), clBlue)           //
