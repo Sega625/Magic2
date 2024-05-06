@@ -146,6 +146,7 @@ begin                                                                          /
     CreateSTS   := IniFile.ReadInteger('Preference', 'CreateSTS',   0);        //
     NoNorms     := IniFile.ReadInteger('Preference', 'NoNorms',     0);        //
     MapByParams := IniFile.ReadInteger('Preference', 'MapByParams', 0);        //
+    MSystemCB.ItemIndex := IniFile.ReadInteger('Preference', 'MeasSystem', 0); //
   finally                                                                      //
     IniFile.Free();                                                            //
   end;                                                                         //
@@ -180,6 +181,7 @@ begin                                                                          /
       IniFile.WriteInteger('Preference', 'CreateSTS',   CreateSTS  );          //
       IniFile.WriteInteger('Preference', 'NoNorms',     NoNorms    );          //
       IniFile.WriteInteger('Preference', 'MapByParams', MapByParams);          //
+      IniFile.WriteInteger('Preference', 'MeasSystem',  MSystemCB.ItemIndex);  //
     except                                                                     //
     end;                                                                       //
   finally                                                                      //
@@ -258,7 +260,7 @@ begin                                                //
          LoadMapBtn.Visible := False;                //
          LoadMapLab.Visible := False;                //
                                                      //
-         ProcSchusterBtn.Left := 200;                //
+         ProcSchusterBtn.Left := WafersLB.Left;      //
          ProcSchusterBtn.Visible := True;            //
        end;                                          //
     2: begin // GAMMA TSSemi 2000-400                //
@@ -420,7 +422,7 @@ begin                                                                           
   end;                                                                                //
                                                                                       //
   StartTime();                                                                        //
-  TimeLab.Caption := '0.0'' сек.';                                                    //
+  TimeLab.Caption := '0.0 сек.';                                                      //
                                                                                       //
   nWf := 0;                                                                           //
                                                                                       //
@@ -443,17 +445,15 @@ begin                                                                           
         if not Lot.Wafer[nWf].LoadGammaMDB(MDBfName, Str) then                        //
         begin                                                                         //
           Print_Result('Ошибка загрузки пластины!', clRed);                           //
-                                                                                      //
           Continue;                                                                   //
         end;                                                                          //
-        Lot.fName := MDBfName;                                                        //
+        Lot.LfName := MDBfName;                                                       //
                                                                                       //
                                                                                       //
         if NormsLoaded then // Если нормы есть                                        //
           if not Lot.Wafer[nWf].AddNorms(Params) then                                 //
           begin                                                                       //
             Print_Result('Ошибка добавления норм!', clRed);                           //
-                                                                                      //
             Continue;                                                                 //
           end;                                                                        //
                                                                                       //
@@ -512,32 +512,37 @@ begin                                                                           
       if Selected[n] then                                                             //
       begin                                                                           //
         MDBfName := MDBPath+'\'+Items[n];                                             //
-
-        sModule := '';
-        sConfig := '';
-        GetSchusterFileInfo(MDBfName, sModule, sConfig);
-        if sModule <> '' then
-        if nWf = 0 then
-        begin
-          Lot.LDevice := sModule;
-          Lot.LConfig := sConfig;
-        end
-        else
-        begin
-          if (sModule <> Lot.LDevice) or
-             (sConfig <> Lot.LConfig) then Continue;
-        end;
-
+                                                                                      //
+        sModule := '';                                                                //
+        sConfig := '';                                                                //
+        GetSchusterFileInfo(MDBfName, sModule, sConfig);                              //
+        if sModule <> '' then                                                         //
+        if nWf = 0 then                                                               //
+        begin                                                                         //
+          Lot.LDevice := sModule;                                                     //
+          Lot.LConfig := sConfig;                                                     //
+        end                                                                           //
+        else                                                                          //
+          if (sModule <> Lot.LDevice) or                                              //
+             (sConfig <> Lot.LConfig)                                                 //
+          then                                                                        //
+          begin                                                                       //
+            Print_Result('Ошибка загрузки пластины '+Items[n]+'!', clRed);            //
+            Continue;                                                                 //
+          end;                                                                        //
+                                                                                      //
         if Lot.Wafer[nWf] = nil then                                                  //
           Lot.Wafer[nWf] := TWafer.Create(Handle);                                    //
                                                                                       //
         if not Lot.Wafer[nWf].LoadSchusterTXT(MDBfName) then                          //
         begin                                                                         //
           Print_Result('Ошибка загрузки пластины!', clRed);                           //
-                                                                                      //
           Continue;                                                                   //
         end;                                                                          //
-        Lot.fName := MDBfName;                                                        //
+        Lot.LfName := MDBfName;                                                       //
+
+        if nWf = 0 then
+          if not Lot.CreateBlankWafer(nWf) then Print_Result('Ошибка создания шаблона обхода!', clRed);
                                                                                       //
                                                                                       //
         if CreateSTS = 1 then                                                         //
@@ -724,65 +729,65 @@ begin                                                       //
 end;                                                        //
 //////////////////////////////////////////////////////////////
 
-
-function TMDBForm.SaveSTS(const fName: TFileName; Waf: TWafer): Boolean;
-var
-  tmpWafer: TWafer;
-  X, Y, n, vX, vY, Count: DWORD;
-begin
-  Result := False;
-
-  if not MapLoaded() then
-  begin
-    Waf.SaveSTS(fName);
-
-    Result := True;
-
-    Exit;
-  end;
-
-  tmpWafer := TWafer.Create(Handle);
-  CloneBlankWafer(Lot.BlankWafer, tmpWafer);
-
-  tmpWafer.fName := Waf.fName;
-  tmpWafer.Code  := Waf.Code;
-  tmpWafer.TimeDate := Waf.TimeDate;
-  tmpWafer.NLot := Waf.NLot;
-  tmpWafer.Num  := Waf.Num;
-
-  SetLength(tmpWafer.TestsParams, Length(Waf.TestsParams));
-  for n := 0 to Length(tmpWafer.TestsParams)-1 do
-  begin
-    tmpWafer.TestsParams[n].Name      := Waf.TestsParams[n].Name;
-    tmpWafer.TestsParams[n].Norma.Min := Waf.TestsParams[n].Norma.Min;
-    tmpWafer.TestsParams[n].Norma.Max := Waf.TestsParams[n].Norma.Max;
-  end;
-
-  Count := 0;
-  for Y := 0 to Length(tmpWafer.Chip)-1 do
-    for X := 0 to Length(tmpWafer.Chip[0])-1 do
-      if tmpWafer.Chip[Y, X].Status = 0 then
-      begin
-        if Count > Waf.NTotal then Break;
-        vX := Waf.ChipN[tmpWafer.Chip[Y, X].ID-1].X;
-        vY := Waf.ChipN[tmpWafer.Chip[Y, X].ID-1].Y;
-
-        tmpWafer.Chip[Y, X].Status := Waf.Chip[vY, vX].Status;
-
-        SetLength(tmpWafer.Chip[Y, X].ChipParams, Length(tmpWafer.TestsParams));
-        for n := 0 to Length(tmpWafer.TestsParams)-1 do
-          tmpWafer.Chip[Y, X].ChipParams[n] := Waf.Chip[vY, vX].ChipParams[n];
-
-        Inc(Count);
-      end;
-
-  tmpWafer.SaveSTS(fName);
-
-  tmpWafer.Free();
-
-  Result := True;
-end;
-
+///////////////////////////////////////////////////////////////////////////////////
+function TMDBForm.SaveSTS(const fName: TFileName; Waf: TWafer): Boolean;         //
+var                                                                              //
+  tmpWafer: TWafer;                                                              //
+  X, Y, n, vX, vY, Count: DWORD;                                                 //
+begin                                                                            //
+  Result := False;                                                               //
+                                                                                 //
+  if not MapLoaded() then                                                        //
+  begin                                                                          //
+    Waf.SaveSTS(fName);                                                          //
+                                                                                 //
+    Result := True;                                                              //
+                                                                                 //
+    Exit;                                                                        //
+  end;                                                                           //
+                                                                                 //
+  tmpWafer := TWafer.Create(Handle);                                             //
+  CloneBlankWafer(Lot.BlankWafer, tmpWafer);                                     //
+                                                                                 //
+  tmpWafer.fName := Waf.fName;                                                   //
+  tmpWafer.Code  := Waf.Code;                                                    //
+  tmpWafer.TimeDate := Waf.TimeDate;                                             //
+  tmpWafer.NLot := Waf.NLot;                                                     //
+  tmpWafer.Num  := Waf.Num;                                                      //
+                                                                                 //
+  SetLength(tmpWafer.TestsParams, Length(Waf.TestsParams));                      //
+  for n := 0 to Length(tmpWafer.TestsParams)-1 do                                //
+  begin                                                                          //
+    tmpWafer.TestsParams[n].Name      := Waf.TestsParams[n].Name;                //
+    tmpWafer.TestsParams[n].Norma.Min := Waf.TestsParams[n].Norma.Min;           //
+    tmpWafer.TestsParams[n].Norma.Max := Waf.TestsParams[n].Norma.Max;           //
+  end;                                                                           //
+                                                                                 //
+  Count := 0;                                                                    //
+  for Y := 0 to Length(tmpWafer.Chip)-1 do                                       //
+    for X := 0 to Length(tmpWafer.Chip[0])-1 do                                  //
+      if tmpWafer.Chip[Y, X].Status = 0 then                                     //
+      begin                                                                      //
+        if Count > Waf.NTotal then Break;                                        //
+        vX := Waf.ChipN[tmpWafer.Chip[Y, X].ID-1].X;                             //
+        vY := Waf.ChipN[tmpWafer.Chip[Y, X].ID-1].Y;                             //
+                                                                                 //
+        tmpWafer.Chip[Y, X].Status := Waf.Chip[vY, vX].Status;                   //
+                                                                                 //
+        SetLength(tmpWafer.Chip[Y, X].ChipParams, Length(tmpWafer.TestsParams)); //
+        for n := 0 to Length(tmpWafer.TestsParams)-1 do                          //
+          tmpWafer.Chip[Y, X].ChipParams[n] := Waf.Chip[vY, vX].ChipParams[n];   //
+                                                                                 //
+        Inc(Count);                                                              //
+      end;                                                                       //
+                                                                                 //
+  tmpWafer.SaveSTS(fName);                                                       //
+                                                                                 //
+  tmpWafer.Free();                                                               //
+                                                                                 //
+  Result := True;                                                                //
+end;                                                                             //
+///////////////////////////////////////////////////////////////////////////////////
 
 //////////////////////////////////////////////////////////////////////////////////////////////
 procedure TMDBForm.GetSchusterFileInfo(const fName: TFileName; var Module: string);         //

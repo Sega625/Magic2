@@ -135,7 +135,6 @@ type
 
   procedure SortMassByValue(var Mass: TDynArray);
   function  GetExcelAppName2(): string;
-  function  GetFreeFileName(fName: TFileName): TFileName;
   function  IsChip    (const Status: WORD): Boolean;
   function  IsFailChip(const Status: WORD): Boolean;
   function  EqualStatus(const Status1, Status2 : WORD): Boolean;
@@ -202,30 +201,6 @@ begin                                              //
   SL.Free();                                       //
 end;                                               //
 /////////////////////////////////////////////////////
-
-//////////////////////////////////////////////////////////////
-function GetFreeFileName(fName: TFileName): TFileName;      //
-var                                                         //
-  n, P: WORD;                                               //
-  tPath, tfName, tExt: TFileName;                           //
-begin                                                       //
-  tPath  := ExtractFilePath(fName);                         //
-  Result := ExtractFileName(fName);                         //
-  tExt   := ExtractFileExt(fName);                          //
-  Result := ChangeFileExt(Result, '');                      //
-                                                            //
-  n := 0;                                                   //
-  while FileExists(tPath+Result+tExt) do                    //
-  begin                                                     //
-    P := LastDelimiter('(', Result);                        //
-    if P <> 0 then Delete(Result, P, (Length(Result)-P)+1); //
-    Inc(n);                                                 //
-    Result := Result+'('+IntToStr(n)+')';                   //
-  end;                                                      //
-                                                            //
-  Result := tPath+Result+tExt;                              //
-end;                                                        //
-//////////////////////////////////////////////////////////////
 
 ////////////////////////////////////////////////////
 function IsChip(const Status: WORD): Boolean;     //
