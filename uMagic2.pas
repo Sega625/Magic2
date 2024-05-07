@@ -494,7 +494,7 @@ var                                                                             
 begin                                                                                 //
   if WafersLB.SelCount = 0 then                                                       //
   begin                                                                               //
-    Print_Result('Не выбраны пластины!', clRed);                                      //
+    Print_Result('Не выбраны файлы измерений!', clRed);                               //
     Exit;                                                                             //
   end;                                                                                //
                                                                                       //
@@ -506,7 +506,7 @@ begin                                                                           
   Lot.Init();                                                                         //
   SetLength(Lot.Wafer, WafersLB.SelCount);                                            //
                                                                                       //
-  Print_Result('... Идёт загрузка пластин!');                                         //
+  Print_Result('... Идёт загрузка файлов измерений!');                                //
                                                                                       //
   with WafersLB do                                                                    //
     for n := 0 to Items.Count-1 do                                                    //
@@ -518,32 +518,36 @@ begin                                                                           
         sConfig := '';                                                                //
         GetSchusterFileInfo(MeasfName, sModule, sConfig);                             //
         if sModule <> '' then                                                         //
-        if nWf = 0 then                                                               //
-        begin                                                                         //
-          Lot.LDevice := sModule;                                                     //
-          Lot.LConfig := sConfig;                                                     //
-        end                                                                           //
-        else                                                                          //
-          if (sModule <> Lot.LDevice) or                                              //
-             (sConfig <> Lot.LConfig)                                                 //
-          then                                                                        //
+          if nWf = 0 then                                                             //
           begin                                                                       //
-            Print_Result('Ошибка загрузки пластины '+Items[n]+'!', clRed);            //
-            Continue;                                                                 //
-          end;                                                                        //
+            Lot.LDevice := sModule;                                                   //
+            Lot.LConfig := sConfig;                                                   //
+          end                                                                         //
+          else                                                                        //
+            if (sModule <> Lot.LDevice) or                                            //
+               (sConfig <> Lot.LConfig)                                               //
+            then                                                                      //
+            begin                                                                     //
+              Print_Result('Ошибка загрузки файла '+Items[n]+'!', clRed);             //
+              Continue;                                                               //
+            end;                                                                      //
                                                                                       //
         if Lot.Wafer[nWf] = nil then                                                  //
           Lot.Wafer[nWf] := TWafer.Create(Handle);                                    //
                                                                                       //
         if not Lot.Wafer[nWf].LoadSchusterTXT(MeasfName) then                         //
         begin                                                                         //
-          Print_Result('Ошибка загрузки пластины!', clRed);                           //
+          Print_Result('Ошибка загрузки файла измерений!', clRed);                    //
           Continue;                                                                   //
         end;                                                                          //
         Lot.LfName := MeasfName;                                                      //
                                                                                       //
-        if nWf = 0 then                                                               //
-          if not Lot.CreateBlankWafer(nWf) then Print_Result('Ошибка создания шаблона обхода!', clRed);
+                                                                                      //
+        if Lot.BlankWafer.NTotal = 0 then                                             //
+          if Lot.Wafer[nWf].Diameter <> 0 then // Создадим карту обхода из пластины   //
+          begin
+            if not Lot.CreateBlankWafer(nWf) then Print_Result('Ошибка создания шаблона обхода!', clRed);
+          end;
                                                                                       //
                                                                                       //
         if CreateSTS = 1 then                                                         //
@@ -561,7 +565,7 @@ begin                                                                           
                                                                                       //
   SetLength(Lot.Wafer, nWf);                                                          //
                                                                                       //
-  Print_Result('>>> Пластины загружены!', clGreen);                                   //
+  Print_Result('>>> Файлы загружены!', clGreen);                                      //
                                                                                       //
   Lot.SaveXLS(ToFirstFail = 1, MapByParams = 1);                                      //
                                                                                       //
