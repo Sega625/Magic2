@@ -14,7 +14,7 @@ type
   public
     Condition : string; // Условия измерения (НУ, Т+, Т-)
     Direct    : byte;
-    CutSide   : byte; // 1: 'вверху'  2: 'слева' 3: 'внизу' 4: 'справа'
+    CutSide   : byte;   // 1: 'вверху'  2: 'слева' 3: 'внизу' 4: 'справа'
     OKR       : string; // Название ОКРа
     Code      : string; // Номер кристалла
     MPW       : string; // MPW
@@ -305,15 +305,6 @@ begin                                                       //
     Diameter   := ReadInteger('Main', 'Diametr', 0);        //
     StepX      := ReadInteger('Main', 'ChipSizeX', 0)/1000; //
     StepY      := ReadInteger('Main', 'ChipSizeY', 0)/1000; //
-//    NWPlace    := ReadInteger('Main', 'WorkPlace', 0);      //
-//    Operator   := ReadString ('Main', 'Operator', '');      //
-//    NLot       := ReadString ('Main', 'Lot', '0');          //
-//    P := Pos('-', NLot);                                    //
-//    if P > 0 then Delete(NLot, 1, P);                       //
-//    Num        := ReadString ('Main', 'Wafer', '0');        //
-//    TimeDate   := ReadString ('Main', 'Date', '00.00.00');  //
-//    Condition  := ReadString ('Main', 'Condition', '-');    //
-//    Info       := ReadString ('Main', 'Info', '');          //
                                                             //
     Cadre.StartX := ReadInteger('Add', 'OffsetX', 0);       //
     Cadre.StartY := ReadInteger('Add', 'OffsetY', 0);       //
@@ -3533,11 +3524,11 @@ begin                                                 //
   LDevice := '';                                      //
   LConfig := '';                                      //
                                                       //
-  SetLength(BlankWafer.Chip, 0, 0);                   //
-  SetLength(BlankWafer.ChipN, 0);                     //
-  BlankWafer.NTotal := 0;                             //
-  BlankWafer.Diameter := 0;                           //
-  BlankWafer.MeasSystem := '';                        //
+//  SetLength(BlankWafer.Chip, 0, 0);                   //
+//  SetLength(BlankWafer.ChipN, 0);                     //
+//  BlankWafer.NTotal := 0;                             //
+//  BlankWafer.Diameter := 0;                           //
+//  BlankWafer.MeasSystem := '';                        //
 end;                                                  //
 ////////////////////////////////////////////////////////
 
