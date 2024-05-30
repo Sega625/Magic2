@@ -681,21 +681,35 @@ begin                                                                 //
     Str := Trim(SL.Strings[n]);                                       //
     if Str = '' then Continue;                                        //
                                                                       //
-    P := Pos('"cp"', Str);                                            //
+////////// Найдём строки с параметрами                                //
+                                                                      //
+    P := Pos('"', Str); // Вместо cp, cn, on                          //
     if P <> 0 then                                                    //
     begin                                                             //
       Cnt := Length(Params);                                          //
       SetLength(Params, Cnt+1);                                       //
                                                                       //
-      Delete(Str, 1, Pos(',', Str)+1);                                //
-      P := Pos('"', Str);                                             //
+      Delete(Str, 1, Pos(',', Str));                                  //
+                                                                      //
+////////// Имя параметра                                              //
+                                                                      //
+      P := Pos('"', Str); // 1-я кавычка                              //
+      Delete(Str, 1, P);                                              //
+      P := Pos('"', Str); // 2-я кавычка                              //
       Params[Cnt].Name := Trim(Copy(Str, 1, P-1));                    //
+                                                                      //
+////////// Режим измерения                                            //
                                                                       //
       P1 := Pos('(', Str);                                            //
       P2 := Pos(')', Str);                                            //
-      Params[Cnt].PMode := Trim(Copy(Str, P1+1, P2-P1-1));            //
+      Params[Cnt].PMode := Copy(Str, P1+1, P2-P1-1);                  //
                                                                       //
-      Delete(Str, 1, P+1);                                            //
+      Delete(Str, 1, P); // Удалим до 2-й кавычки                     //
+      P := Pos(',', Str);                                             //
+      Delete(Str, 1, P);                                              //
+                                                                      //
+////////// Макс. параметра                                            //
+                                                                      //
       P := Pos(',', Str);                                             //
       try                                                             //
         Params[Cnt].Norma.Max := StrToFloat(Trim(Copy(Str, 1, P-1))); //
@@ -703,7 +717,10 @@ begin                                                                 //
         Params[Cnt].Norma.Max := NotSpec;                             //
       end;                                                            //
                                                                       //
-      Delete(Str, 1, P+1);                                            //
+      Delete(Str, 1, P);                                              //
+                                                                      //
+////////// Мин. параметра                                             //
+                                                                      //
       P := Pos(',', Str);                                             //
       try                                                             //
         Params[Cnt].Norma.Min := StrToFloat(Trim(Copy(Str, 1, P-1))); //
@@ -711,28 +728,31 @@ begin                                                                 //
         Params[Cnt].Norma.Min := -NotSpec;                            //
       end;                                                            //
                                                                       //
-      Delete(Str, 1, P+2);                                            //
-      P := Pos('"', Str);                                             //
+      Delete(Str, 1, P);                                              //
+                                                                      //
+////////// Единица измерения                                          //
+                                                                      //
+      P := Pos('"', Str); // 1-я кавычка                              //
+      Delete(Str, 1, P);                                              //
+      P := Pos('"', Str); // 2-я кавычка                              //
       Params[Cnt].PUnit := Trim(Copy(Str, 1, P-1));                   //
+                                                                      //
+      Result := True;                                                 //
     end;                                                              //
   end;                                                                //
                                                                       //
   SL.Free();                                                          //
-                                                                      //
-  Result := True;                                                     //
 end;                                                                  //
 ////////////////////////////////////////////////////////////////////////
 
-//////////////////////////////////////////////////////////////
-function TMDBForm.LoadMap(const fName: TFileName): Boolean; //
-begin                                                       //
-  Result := False;                                          //
-                                                            //
-  if not Lot.BlankWafer.LoadBlankSTS(fName) then Exit;      //
-                                                            //
-  Result := True;                                           //
-end;                                                        //
-//////////////////////////////////////////////////////////////
+///////////////////////////////////////////////////////////////
+function TMDBForm.LoadMap(const fName: TFileName): Boolean;  //
+begin                                                        //
+  Result := False;                                           //
+                                                             //
+  if Lot.BlankWafer.LoadBlankSTS(fName) then Result := True; //
+end;                                                         //
+///////////////////////////////////////////////////////////////
 
 ///////////////////////////////////////////////////////////////////////////////////
 function TMDBForm.SaveSTS(const fName: TFileName; Waf: TWafer): Boolean;         //
