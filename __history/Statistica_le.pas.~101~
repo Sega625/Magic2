@@ -14,7 +14,7 @@ type
   public
     Condition : string; // Условия измерения (НУ, Т+, Т-)
     Direct    : byte;
-    CutSide   : byte; // 1: 'вверху'  2: 'слева' 3: 'внизу' 4: 'справа'
+    CutSide   : byte;   // 1: 'вверху'  2: 'слева' 3: 'внизу' 4: 'справа'
     OKR       : string; // Название ОКРа
     Code      : string; // Номер кристалла
     MPW       : string; // MPW
@@ -89,7 +89,7 @@ type
     procedure SetChipsID();
     function  IsWafer(): Boolean; // Пластина или корпус?
 
-    function GetChipParamsStat(Val, Min, Max: Single): byte;
+    function GetChipParamsStat(const Val, Min, Max: Single): byte;
     function GetStatusName(const Status: WORD): String;
   private
     Handle: THandle;
@@ -102,7 +102,7 @@ type
     fOnEvent: TOnEvent;
   public
     LName: string;
-    fName: TFileName;
+    LfName: TFileName;
 //    LMSystem: string; // Измерительная система
     LDevice: string; // Для Schustera
     LConfig: string; // Для Schustera
@@ -114,6 +114,7 @@ type
     destructor  Destroy(); override;
 
     procedure Init();
+    function  CreateBlankWafer(const NWafer: WORD): Boolean;
     function  SaveXLS(const ToFirstFail, MapByParams: Boolean): Boolean;
     function  GetColorByStatus(const Stat: WORD): TColor;
   published
@@ -304,15 +305,6 @@ begin                                                       //
     Diameter   := ReadInteger('Main', 'Diametr', 0);        //
     StepX      := ReadInteger('Main', 'ChipSizeX', 0)/1000; //
     StepY      := ReadInteger('Main', 'ChipSizeY', 0)/1000; //
-//    NWPlace    := ReadInteger('Main', 'WorkPlace', 0);      //
-//    Operator   := ReadString ('Main', 'Operator', '');      //
-//    NLot       := ReadString ('Main', 'Lot', '0');          //
-//    P := Pos('-', NLot);                                    //
-//    if P > 0 then Delete(NLot, 1, P);                       //
-//    Num        := ReadString ('Main', 'Wafer', '0');        //
-//    TimeDate   := ReadString ('Main', 'Date', '00.00.00');  //
-//    Condition  := ReadString ('Main', 'Condition', '-');    //
-//    Info       := ReadString ('Main', 'Info', '');          //
                                                             //
     Cadre.StartX := ReadInteger('Add', 'OffsetX', 0);       //
     Cadre.StartY := ReadInteger('Add', 'OffsetY', 0);       //
@@ -1302,6 +1294,8 @@ begin                                                                      //
   fName := MDBfName;                                                       //
   TimeDate := DateToStr(FileDateToDateTime(FileAge(MDBfName)));            //
   Num := WafName;                                                          //
+  MeasSystem := 'Gamma 156';                                               //
+  Condition := 'НУ';                                                       //
                                                                            //
   Str := ExtractFileName(MDBfName);                                        //
   Delete(Str, Pos('.', Str), Length(Str));                                 //
@@ -1427,24 +1421,29 @@ var                                                                      //
   i: WORD;                                                               //
   X, Y, MinX, MaxX, MaxY: Integer;                                       //
   Str: AnsiString;                                                       //
+  TmpChip: TChips;                                                       //
 begin                                                                    //
   Result := False;                                                       //
                                                                          //
   SL := TStringList.Create;                                              //
   SL.LoadFromFile(TXTfName);                                             //
                                                                          //
-  if SL.Count = 0 then Exit;
-
-  fName := TXTfName;
-  MeasSystem := 'Schuster';
-  Condition := 'НУ';
-  Num := ChangeFileExt(ExtractFileName(TXTfName), '');
-
-  SetLength(TestsParams, 0);
-
-  FormatSettings.DecimalSeparator := ',';
-
-  NPStr := SL.Count;
+  if SL.Count = 0 then Exit;                                             //
+                                                                         //
+  fName := TXTfName;                                                     //
+  TimeDate := DateToStr(FileDateToDateTime(FileAge(TXTfName)));          //
+  Num := ChangeFileExt(ExtractFileName(TXTfName), '');                   //
+  MeasSystem := 'Schuster';                                              //
+  Condition := 'НУ';                                                     //
+                                                                         //
+  Code := '-';                                                           //
+  NLot := '-';                                                           //
+                                                                         //
+  SetLength(TestsParams, 0);                                             //
+                                                                         //
+  FormatSettings.DecimalSeparator := ',';                                //
+                                                                         //
+  NPStr := SL.Count;                                                     //
   NCh := 0;
   n := 0;
   while n < SL.Count do
@@ -1668,17 +1667,39 @@ begin                                                                    //
 
 ////////////////////////////////////////////////////////////////////////////////
 
-  if Diameter <> 0 then Direct := 3
-                   else Direct := 2;
+//  if Diameter <> 0 then Direct := 3
+//                   else Direct := 2;
+
+/////////////// Отразим обход по Y (система координат другая)///////////////////
+
+  SetLength(TmpChip, Length(Chip[0]), Length(Chip));
+  for Y := 0 to Length(Chip)-1 do
+    for X := 0 to Length(Chip[0])-1 do
+    begin
+      TmpChip[Length(Chip)-Y-1, X] := Chip[Y, X];
+      SetLength(TmpChip[Length(Chip)-Y-1, X].ChipParams, Length(Chip[Y, X].ChipParams));
+    end;
+  Chip := TmpChip;
+  SetLength(Chip, Length(TmpChip[0]), Length(TmpChip));
+  TmpChip := nil;
+
+  SetChipsID;
+
+////////////////////////////////////////////////////////////////////////////////
 
   CalcChips;
+
+  Direct  := 9; // Обход на Shusterе - нижняя левая змейка
+  CutSide := 3; // Срез внизу
+
+  BaseChip := ChipN[0]; // 1-й чип - базовый
 
   SL.Free;
 
   FormatSettings.DecimalSeparator := '.';
 
   Result := True;
-end;                                                        //
+end;
 //////////////////////////////////////////////////////////////
 
 {
@@ -2306,27 +2327,15 @@ var                                                                             
   FS: TFileStream;                                                                                   //
   DateTime: TDateTime;                                                                               //
   Str: AnsiString;                                                                                   //
-  tmpfName, tmpPath: TFileName;                                                                      //
+  tfName: TFileName;                                                                                 //
 begin                                                                                                //
   Result := True;                                                                                    //
                                                                                                      //
   FormatSettings.DecimalSeparator := ',';                                                            //
                                                                                                      //
-  tmpPath  := ExtractFilePath(STSfName);                                                             //
-  tmpfName := ExtractFileName(STSfName);                                                             //
-  tmpfName := ChangeFileExt(tmpfName, '');                                                           //
+  tfName := GetFreeFileName(STSfName);                                                               //
                                                                                                      //
-  n := 0;                                                                                            //
-  while FileExists(tmpPath+tmpfName+'.sts') do                                                       //
-  begin                                                                                              //
-    P := LastDelimiter('(', tmpfName);                                                               //
-    if P <> 0 then Delete(tmpfName, P, (Length(tmpfName)-P)+1);                                      //
-    Inc(n);                                                                                          //
-    tmpfName := tmpfName+'('+IntToStr(n)+')';                                                        //
-  end;                                                                                               //
-  tmpfName := tmpPath+tmpfName+'.sts';                                                               //
-                                                                                                     //
-  INIfName := TIniFile.Create(tmpfName);                                                             //
+  INIfName := TIniFile.Create(tfName);                                                               //
   with INIfName do                                                                                   //
   begin                                                                                              //
     WriteString ('Main', 'OKR', OKR);                                                                //
@@ -2364,7 +2373,7 @@ begin                                                                           
     Free;                                                                                            //
   end;                                                                                               //
                                                                                                      //
-  FS := TFileStream.Create(tmpfName, fmOpenWrite+fmShareDenyNone);                                   //
+  FS := TFileStream.Create(tfName, fmOpenWrite+fmShareDenyNone);                                     //
   FS.Position := FS.Size;                                                                            //
   FS.Write(CR, 2);                                                                                   //
   Str := '[StatusNames]';                                                                            //
@@ -2527,7 +2536,7 @@ end;                                                                            
 ///////////////////////////////////////////////////////////////////////////////////////////////////////
 function TWafer.AddNI(const TXTfName: TFileName): Boolean;                                           //
 begin                                                                                                //
-  //
+  Result := False;
 end;                                                                                                 //
 ///////////////////////////////////////////////////////////////////////////////////////////////////////
 
@@ -2622,7 +2631,6 @@ begin                                                                           
                  BaseChip.Y := Y;                                                                             //
                end;                                                                                           //
         end;                                                                                                  //
-//        Chip[Y, X].ShowGr := 0;                                                                               //
         SetLength(Chip[Y, X].ChipParams, 0);                                                                  //
                                                                                                               //
         Inc(n);                                                                                               //
@@ -2808,7 +2816,6 @@ begin                                                                           
 //  CalcChips; // Проанализировать!!!!
                                                                                                               //
   tmpWafer.Free;                                                                                              //
-  tmpWafer := nil;                                                                                            //
 end;                                                                                                          //
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 ////////////////////////////////////////////////////////////////////////////////////////////////
@@ -3055,8 +3062,21 @@ var                                                                             
 begin                                                                                                                       //
   Result := 0;                                                                                                              //
                                                                                                                             //
+//  if CLSIDFromProgID(PWideChar(WideString(GetExcelAppName2)), ClassID) <> S_OK then                    //
+//  begin                                                                                                //
+//    if Assigned(OnEvent) then OnEvent(evError, 'Excel не найден!');                                    //
+//    Exit;                                                                                              //
+//  end;                                                                                                 //
+
+//  try                                                                                                  //
+//    Excel := GetActiveOleObject(GetExcelAppName2);                                                     //
+//  except                                                                                               //
+//    Excel := CreateOleObject(GetExcelAppName2);                                                        //
+//  end;                                                                                                 //
+//  Excel.DisplayAlerts := False; // Запретим вывод предупреждений                                       //
+
   try                                                                                                                       //
-    Ap := CreateOleObject('Excel.Application');                                                                             //
+    Ap := CreateOleObject('Excel.Application'); // Не правильно (правильно выше)
   except                                                                                                                    //
     ErrMess(Handle, 'Не удалось запустить MS Excel.');                                                                      //
     Exit;                                                                                                                   //
@@ -3083,8 +3103,21 @@ var
 begin
   Result := False;
 
+//  if CLSIDFromProgID(PWideChar(WideString(GetExcelAppName2)), ClassID) <> S_OK then                    //
+//  begin                                                                                                //
+//    if Assigned(OnEvent) then OnEvent(evError, 'Excel не найден!');                                    //
+//    Exit;                                                                                              //
+//  end;                                                                                                 //
+
+//  try                                                                                                  //
+//    Excel := GetActiveOleObject(GetExcelAppName2);                                                     //
+//  except                                                                                               //
+//    Excel := CreateOleObject(GetExcelAppName2);                                                        //
+//  end;                                                                                                 //
+//  Excel.DisplayAlerts := False; // Запретим вывод предупреждений                                       //
+
   try
-    Ap := CreateOleObject('Excel.Application');
+    Ap := CreateOleObject('Excel.Application'); // Не правильно (правильно выше)
   except
     ErrMess(Handle, 'Не удалось запустить MS Excel!');
     Exit;
@@ -3460,26 +3493,26 @@ end;
 
 
 
-//////////////////////////////////////////////////////////////////
-function TWafer.GetChipParamsStat(Val, Min, Max: Single): byte; //
-begin                                                           //
-  Result := 1;                                                  //
-                                                                //
-  if (Min = NotSpec)  and (Max = NotSpec) then Result := 0;     //
-                                                                //
-  if (Min = NotSpec)  and (Max <> NotSpec) then                 //
-    if Val > Max then Result := 3;                              //
-                                                                //
-  if (Min <> NotSpec) and (Max = NotSpec)  then                 //
-    if Val < Min then Result := 2;                              //
-                                                                //
-  if (Min <> NotSpec) and (Max <> NotSpec) then                 //
-  begin                                                         //
-    if Val < Min then Result := 2;                              //
-    if Val > Max then Result := 3;                              //
-  end;                                                          //
-end;                                                            //
-//////////////////////////////////////////////////////////////////
+////////////////////////////////////////////////////////////////////////
+function TWafer.GetChipParamsStat(const Val, Min, Max: Single): byte; //
+begin                                                                 //
+  Result := 1;                                                        //
+                                                                      //
+  if (Min = NotSpec)  and (Max = NotSpec) then Result := 0;           //
+                                                                      //
+  if (Min = NotSpec)  and (Max <> NotSpec) then                       //
+    if Val > Max then Result := 3;                                    //
+                                                                      //
+  if (Min <> NotSpec) and (Max = NotSpec)  then                       //
+    if Val < Min then Result := 2;                                    //
+                                                                      //
+  if (Min <> NotSpec) and (Max <> NotSpec) then                       //
+  begin                                                               //
+    if Val < Min then Result := 2;                                    //
+    if Val > Max then Result := 3;                                    //
+  end;                                                                //
+end;                                                                  //
+////////////////////////////////////////////////////////////////////////
 
 
 { TLot }
@@ -3520,10 +3553,47 @@ begin                                                 //
   LDevice := '';                                      //
   LConfig := '';                                      //
                                                       //
-//  BlankWafer.Free();                                  //
-//  BlankWafer := TWafer.Create(Handle);                //
+//  SetLength(BlankWafer.Chip, 0, 0);                   //
+//  SetLength(BlankWafer.ChipN, 0);                     //
+//  BlankWafer.NTotal := 0;                             //
+//  BlankWafer.Diameter := 0;                           //
+//  BlankWafer.MeasSystem := '';                        //
 end;                                                  //
 ////////////////////////////////////////////////////////
+
+///////////////////////////////////////////////////////////////////////////////////////////
+function TLot.CreateBlankWafer(const NWafer: WORD): Boolean;                             //
+var                                                                                      //
+  n, X, Y: DWORD;                                                                        //
+begin                                                                                    //
+  Result := False;                                                                       //
+                                                                                         //
+  if Wafer[NWafer] = nil then Exit;                                                      //
+  if Wafer[NWafer].Diameter = 0 then Exit;                                               //
+                                                                                         //
+  BlankWafer.MeasSystem := Wafer[NWafer].MeasSystem;                                     //
+  BlankWafer.Diameter   := Wafer[NWafer].Diameter;                                       //
+  BlankWafer.Direct     := Wafer[NWafer].Direct;                                         //
+  BlankWafer.CutSide    := Wafer[NWafer].CutSide;                                        //
+  BlankWafer.NTotal     := Wafer[NWafer].NTotal;                                         //
+                                                                                         //
+  SetLength(BlankWafer.ChipN, 0);                                                        //
+  SetLength(BlankWafer.ChipN, Length(Wafer[NWafer].ChipN));                              //
+  for n := 0 to Wafer[NWafer].NTotal-1 do BlankWafer.ChipN[n] := Wafer[NWafer].ChipN[n]; //
+                                                                                         //
+                                                                                         //
+  SetLength(BlankWafer.Chip, 0, 0);                                                      //
+  SetLength(BlankWafer.Chip, Length(Wafer[NWafer].Chip), Length(Wafer[NWafer].Chip[0])); //
+  for Y := 0 to Length(BlankWafer.Chip)-1 do                                             //
+    for X := 0 to Length(BlankWafer.Chip[0])-1 do                                        //
+    begin                                                                                //
+      BlankWafer.Chip[Y, X].Status := Wafer[NWafer].Chip[Y, X].Status;                   //
+      BlankWafer.Chip[Y, X].ID     := Wafer[NWafer].Chip[Y, X].ID;                       //
+    end;                                                                                 //
+                                                                                         //
+  Result := True;                                                                        //
+end;                                                                                     //
+///////////////////////////////////////////////////////////////////////////////////////////
 
 /////////////////////////////////////////////////////////////////////////////////////////////////////////
 function TLot.SaveXLS(const ToFirstFail, MapByParams: Boolean): Boolean;                               //
@@ -3533,13 +3603,13 @@ var                                                                             
   n, m, i, Nm, X, Y, X1, Y1: DWORD;                                                                    //
   Excel, WorkBook1, Range1, Range2, tmpRange, Chart1, Sheet, Cell1, Cell2: OleVariant;                 //
   VarMass1, VarMass2: OleVariant;                                                                      //
-  XLSfName, XLSPath: TFileName;                                                                        //
+  XLSfName: TFileName;                                                                                 //
   ClassID: TCLSID;                                                                                     //
   AvrSum, MinSum, MaxSum, StdSum, Qrt1Sum, MedSum, Qrt3Sum: array of Single;                           //
   QuantSum, OKSum, FailsSum, MeasSum: array of DWORD;                                                  //
   Col: TColor;                                                                                         //
   Str: string;                                                                                         //
-  StX, StY, P: WORD;                                                                                   //
+  StX, LenX, StY, P: WORD;                                                                             //
   MinLength, MaxLength: array of DWORD;                                                                //
 begin                                                                                                  //
   Result := False;                                                                                     //
@@ -3596,9 +3666,11 @@ begin                                                                           
     WorkBook1.ActiveSheet.Cells[1, 2+i].Interior.Color := clSkyBlue;
     WorkBook1.ActiveSheet.Cells[1, 2+i].BorderAround(xlContinuous, xlThin, xlAutomatic, xlAutomatic);
 
+    if Wafer[0].TestsParams[i].Norma.Min <> -NotSpec then
     WorkBook1.ActiveSheet.Cells[2, 2+i] := Wafer[0].TestsParams[i].Norma.Min;
     WorkBook1.ActiveSheet.Cells[2, 2+i].BorderAround(xlContinuous, xlThin, xlAutomatic, xlAutomatic);
 
+    if Wafer[0].TestsParams[i].Norma.Max <> NotSpec then
     WorkBook1.ActiveSheet.Cells[3, 2+i] := Wafer[0].TestsParams[i].Norma.Max;
     WorkBook1.ActiveSheet.Cells[3, 2+i].BorderAround(xlContinuous, xlThin, xlAutomatic, xlAutomatic);
 
@@ -3643,8 +3715,7 @@ begin                                                                           
             Range1.Copy(WorkBook1.ActiveSheet.Cells[1, i+4]); // Копируем все кроме 1-й ячейки
             Range2.Copy(WorkBook1.ActiveSheet.Cells[4, i+4]); // (она уже есть)
           end;
-          WorkBook1.ActiveSheet.Cells[1, i+4] := TestsParams[i].Name;  //
-          WorkBook1.ActiveSheet.Cells[1, i+4].Columns.Autofit;         // Копируем
+          WorkBook1.ActiveSheet.Cells[1, i+4]  := TestsParams[i].Name; // Копируем
                                                                        // названия
           WorkBook1.ActiveSheet.Cells[13, i+4] := TestsParams[i].Name; // тестов
         end;
@@ -3855,6 +3926,8 @@ begin                                                                           
         WorkBook1.ActiveSheet.Cells[NTotal+11, 4+i] := (Wafer[n].NOK*100)/NMeased; // %Годных ??????????????
         WorkBook1.ActiveSheet.Cells[NTotal+13, 4+i] := CalcsParams[i].NOKVal;      // Годных
         WorkBook1.ActiveSheet.Cells[NTotal+14, 4+i] := CalcsParams[i].NFailsVal;   // Брак
+
+        WorkBook1.ActiveSheet.Columns[4+i].EntireColumn.AutoFit; /////
       end;
 
       WorkBook1.ActiveSheet.Cells[NTotal+15, 4] := Wafer[n].NMeased; // Всего измерено
@@ -3932,20 +4005,23 @@ begin                                                                           
       end;
 
       WorkBook1.ActiveSheet.Cells[4+9*n, 1] := Wafer[n].Num;
+      WorkBook1.ActiveSheet.Columns[1].EntireColumn.AutoFit;
       for i := 0 to Length(TestsParams)-1 do
       begin
-        WorkBook1.ActiveSheet.Cells[4+ 9*n, i+3] := Wafer[n].CalcsParams[i].AvrVal;  // Среднее
-        WorkBook1.ActiveSheet.Cells[5+ 9*n, i+3] := Wafer[n].CalcsParams[i].Qrt1Val; // 1-й квартиль
-        WorkBook1.ActiveSheet.Cells[6+ 9*n, i+3] := Wafer[n].CalcsParams[i].MedVal;  // Медиана
-        WorkBook1.ActiveSheet.Cells[7+ 9*n, i+3] := Wafer[n].CalcsParams[i].Qrt3Val; // 3-й квартиль
+        WorkBook1.ActiveSheet.Cells[4+ 9*n, 3+i] := Wafer[n].CalcsParams[i].AvrVal;  // Среднее
+        WorkBook1.ActiveSheet.Cells[5+ 9*n, 3+i] := Wafer[n].CalcsParams[i].Qrt1Val; // 1-й квартиль
+        WorkBook1.ActiveSheet.Cells[6+ 9*n, 3+i] := Wafer[n].CalcsParams[i].MedVal;  // Медиана
+        WorkBook1.ActiveSheet.Cells[7+ 9*n, 3+i] := Wafer[n].CalcsParams[i].Qrt3Val; // 3-й квартиль
         if Wafer[n].CalcsParams[i].MinVal <> MaxSingle then
-          WorkBook1.ActiveSheet.Cells[8+ 9*n, i+3] := Wafer[n].CalcsParams[i].MinVal;  // Мин.
+          WorkBook1.ActiveSheet.Cells[8+ 9*n, 3+i] := Wafer[n].CalcsParams[i].MinVal;  // Мин.
         if Wafer[n].CalcsParams[i].MaxVal <> -MaxSingle then
-          WorkBook1.ActiveSheet.Cells[9+ 9*n, i+3] := Wafer[n].CalcsParams[i].MaxVal;  // Макс.
-        WorkBook1.ActiveSheet.Cells[10+9*n, i+3] := Wafer[n].CalcsParams[i].StdVal;  // Сигма
+          WorkBook1.ActiveSheet.Cells[9+ 9*n, 3+i] := Wafer[n].CalcsParams[i].MaxVal;  // Макс.
+        WorkBook1.ActiveSheet.Cells[10+9*n, 3+i] := Wafer[n].CalcsParams[i].StdVal;  // Сигма
 
-        WorkBook1.ActiveSheet.Cells[11+9*n, i+3] := Wafer[n].NOK;      // Счёт ??????
-        WorkBook1.ActiveSheet.Cells[12+9*n, i+3] := (NOK*100)/NMeased; // %Годных ??????????????
+        WorkBook1.ActiveSheet.Cells[11+9*n, 3+i] := Wafer[n].NOK;      // Счёт ??????
+        WorkBook1.ActiveSheet.Cells[12+9*n, 3+i] := (NOK*100)/NMeased; // %Годных ??????????????
+
+        WorkBook1.ActiveSheet.Columns[3+i].EntireColumn.AutoFit;
       end;
 
     end;
@@ -4086,13 +4162,22 @@ begin                                                                           
 
       StX := 13;
 
+      WorkBook1.ActiveSheet.Columns[StX-2].Orientation := 90; // Для отображения
+      WorkBook1.ActiveSheet.Columns[StX-2].Font.Bold := True; // номера
+      WorkBook1.ActiveSheet.Columns[StX-2].Font.Size := 12;   // пластины
+
       for n := 0 to Length(Wafer)-1 do
         with Wafer[n] do
         begin
           if NTotal > BlankWafer.NTotal then
-            if Assigned(OnEvent) then OnEvent(evError, ' Пластина №: '+Num+' - кристаллов больше, чем в обходе!');
+            if Assigned(OnEvent) then OnEvent(evError, ' Пластина: '+Num+' - кристаллов больше, чем в обходе!');
           if NTotal < BlankWafer.NTotal then
-            if Assigned(OnEvent) then OnEvent(evError, ' Пластина №: '+Num+' - кристаллов меньше, чем в обходе!');
+            if Assigned(OnEvent) then OnEvent(evError, ' Пластина: '+Num+' - кристаллов меньше, чем в обходе!');
+
+          Cell1 := WorkBook1.ActiveSheet.Cells[StY, StX-2];                           //  Объединим
+          Cell2 := WorkBook1.ActiveSheet.Cells[StY+Length(BlankWafer.Chip)-1, StX-2]; //  ячейки для
+          WorkBook1.ActiveSheet.Range[Cell1, Cell2].Merge;                            //  отображения
+          WorkBook1.ActiveSheet.Cells[StY, StX-2] := Num; // Номер пластины           //  номеров пластин
 
           for Nm := 0 to NTotal-1 do
           begin
@@ -4102,8 +4187,6 @@ begin                                                                           
             Y := BlankWafer.ChipN[Nm].Y;
             X1 := ChipN[Nm].X;
             Y1 := ChipN[Nm].Y;
-
-            WorkBook1.ActiveSheet.Cells[Y+StY, X+StX] := '';
 
             for i := 0 to Length(TestsParams)-1 do
             begin
@@ -4115,15 +4198,15 @@ begin                                                                           
                 4: Col := clWhite;
               end;
 
-              if n = 0 then                                                                                                   // Названия
-                if NM = 0 then WorkBook1.ActiveSheet.Cells[StY-1, StX+5+i*Length(BlankWafer.Chip[0])] := TestsParams[i].Name; // тестов
+              LenX := Length(BlankWafer.Chip[0])+1; // Шаг по Х
 
-              WorkBook1.ActiveSheet.Cells[Y+StY, X+StX+i*Length(BlankWafer.Chip[0])] := Nm+1;
-              WorkBook1.ActiveSheet.Cells[Y+StY, X+StX+i*Length(BlankWafer.Chip[0])].Interior.Color := Col;
-              WorkBook1.ActiveSheet.Cells[Y+StY, X+StX+i*Length(BlankWafer.Chip[0])].BorderAround(xlContinuous, xlThin, xlAutomatic, xlAutomatic);
+              if n = 0 then                                                                             // Названия
+                if NM = 0 then WorkBook1.ActiveSheet.Cells[StY-1, StX+5+i*LenX] := TestsParams[i].Name; // тестов
+
+              WorkBook1.ActiveSheet.Cells[Y+StY, X+StX+i*LenX] := Nm+1;
+              WorkBook1.ActiveSheet.Cells[Y+StY, X+StX+i*LenX].Interior.Color := Col;
+              WorkBook1.ActiveSheet.Cells[Y+StY, X+StX+i*LenX].BorderAround(xlContinuous, xlThin, xlAutomatic, xlAutomatic);
             end;
-
-
           end;
 
           StX := 13;
@@ -4151,12 +4234,15 @@ begin                                                                           
       for n := 0 to Length(Wafer)-1 do
         with Wafer[n] do
         begin
-          if NTotal > BlankWafer.NTotal then
-            if Assigned(OnEvent) then OnEvent(evError, ' Пластина №: '+Num+' - кристаллов больше, чем в обходе!');
-          if NTotal < BlankWafer.NTotal then
-            if Assigned(OnEvent) then OnEvent(evError, ' Пластина №: '+Num+' - кристаллов меньше, чем в обходе!');
+          if Diameter = 0 then
+            if Assigned(OnEvent) then OnEvent(evError, ' Пластина: '+Num+' - в файле нет обхода!');
 
-          WorkBook1.ActiveSheet.Cells[StY-1, StX+5] := 'Пластина №: '+Num;
+          if NTotal > BlankWafer.NTotal then
+            if Assigned(OnEvent) then OnEvent(evError, ' Пластина: '+Num+' - кристаллов больше, чем в обходе!');
+          if NTotal < BlankWafer.NTotal then
+            if Assigned(OnEvent) then OnEvent(evError, ' Пластина: '+Num+' - кристаллов меньше, чем в обходе!');
+
+          WorkBook1.ActiveSheet.Cells[StY-1, StX+5] := 'Пластина: '+Num;
           for Nm := 0 to NTotal-1 do
           begin
             if Nm > BlankWafer.NTotal-1 then Break;
@@ -4178,33 +4264,23 @@ begin                                                                           
           begin
             StX := 11;
             StY := StY+Length(BlankWafer.Chip)+2;
+
+            WorkBook1.ActiveSheet.Rows[StY-1].Font.Bold := True; // Названия
+            WorkBook1.ActiveSheet.Rows[StY-1].Font.Size := 12;   // пластин (жирн. шрифт)
           end;
         end;
     end;
   end
   else // Если нет карты обхода
   try
-    Workbook1.Sheets['Карты обхода'].Delete; // Удалим лист <Карты обхода>
+    Workbook1.Sheets['Карты обхода'].Delete; // Удалим лист <Карты обхода> /////////////////////////////////////////////////////////////
   except
   end;
 
 /////////////////////////////////
 
-  XLSPath  := ExtractFilePath(fName);                                                                //
-  XLSfName := ExtractFileName(fName);                                                                //
-  XLSfName := ChangeFileExt(XLSfName, '');                                                           //
-                                                                                                     //
-  n := 0;                                                                                            //
-  while FileExists(XLSPath+XLSfName+'.xlsx') do                                                      //
-  begin                                                                                              //
-    P := LastDelimiter('(', XLSfName);                                                               //
-    if P <> 0 then Delete(XLSfName, P, (Length(XLSfName)-P)+1);                                      //
-    Inc(n);                                                                                          //
-    XLSfName := XLSfName+'('+IntToStr(n)+')';                                                        //
-  end;                                                                                               //
-  XLSfName := XLSPath+XLSfName+'.xlsx';                                                              //
-                                                                                                     //
-  Workbook1.SaveAs(XLSfName);                                                                        //
+  XLSfName := ChangeFileExt(LfName, '')+'.xlsx';
+  Workbook1.SaveAs(GetFreeFileName(XLSfName));
 
   if Assigned(OnEvent) then OnEvent(evCreate, '-----------------------------');
   if Assigned(OnEvent) then OnEvent(evCreate, 'Создан файл: '+ExtractFileName(XLSfName)); // Пошлем сообщение о создании файла
@@ -4255,5 +4331,6 @@ begin                                                     //
   end;                                                    //
 end;                                                      //
 ////////////////////////////////////////////////////////////
+
 
 end.

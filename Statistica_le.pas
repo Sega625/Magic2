@@ -1294,6 +1294,8 @@ begin                                                                      //
   fName := MDBfName;                                                       //
   TimeDate := DateToStr(FileDateToDateTime(FileAge(MDBfName)));            //
   Num := WafName;                                                          //
+  MeasSystem := 'Gamma 156';                                               //
+  Condition := 'НУ';                                                       //
                                                                            //
   Str := ExtractFileName(MDBfName);                                        //
   Delete(Str, Pos('.', Str), Length(Str));                                 //
@@ -1419,24 +1421,30 @@ var                                                                      //
   i: WORD;                                                               //
   X, Y, MinX, MaxX, MaxY: Integer;                                       //
   Str: AnsiString;                                                       //
+  TmpChip: TChips;                                                       //
+  TmpValue: Single;                                                      //
 begin                                                                    //
   Result := False;                                                       //
                                                                          //
   SL := TStringList.Create;                                              //
   SL.LoadFromFile(TXTfName);                                             //
                                                                          //
-  if SL.Count = 0 then Exit;
-
-  fName := TXTfName;
-  MeasSystem := 'Schuster';
-  Condition := 'НУ';
-  Num := ChangeFileExt(ExtractFileName(TXTfName), '');
-
-  SetLength(TestsParams, 0);
-
-  FormatSettings.DecimalSeparator := ',';
-
-  NPStr := SL.Count;
+  if SL.Count = 0 then Exit;                                             //
+                                                                         //
+  fName := TXTfName;                                                     //
+  TimeDate := DateToStr(FileDateToDateTime(FileAge(TXTfName)));          //
+  Num := ChangeFileExt(ExtractFileName(TXTfName), '');                   //
+  MeasSystem := 'Schuster';                                              //
+  Condition := 'НУ';                                                     //
+                                                                         //
+  Code := '-';                                                           //
+  NLot := '-';                                                           //
+                                                                         //
+  SetLength(TestsParams, 0);                                             //
+                                                                         //
+  FormatSettings.DecimalSeparator := ',';                                //
+                                                                         //
+  NPStr := SL.Count;                                                     //
   NCh := 0;
   n := 0;
   while n < SL.Count do
@@ -1646,7 +1654,10 @@ begin                                                                    //
       begin
         P := Pos(#9, Str);
 
-        Chip[Y, X].ChipParams[i].Value := StrToFloat(Trim(Copy(Str, 1, P-1)));
+        TmpValue := StrToFloat(Trim(Copy(Str, 1, P-1)));
+        if TmpValue = -999 then TmpValue := NotSpec;
+
+        Chip[Y, X].ChipParams[i].Value := TmpValue;
         Chip[Y, X].ChipParams[i].Stat  := GetChipParamsStat(Chip[Y, X].ChipParams[i].Value,
                                                             TestsParams[i].Norma.Min,
                                                             TestsParams[i].Norma.Max);
@@ -1658,19 +1669,44 @@ begin                                                                    //
       end;
   end;
 
+/////////////// Отразим обход по Y (система координат другая)///////////////////
+
+  if Diameter <> 0 then // Если пластина
+  begin
+    SetLength(TmpChip, Length(Chip[0]), Length(Chip));
+    for Y := 0 to Length(Chip)-1 do
+      for X := 0 to Length(Chip[0])-1 do
+      begin
+        TmpChip[Length(Chip)-Y-1, X] := Chip[Y, X];
+        SetLength(TmpChip[Length(Chip)-Y-1, X].ChipParams, Length(Chip[Y, X].ChipParams));
+      end;
+    Chip := TmpChip;
+    SetLength(Chip, Length(TmpChip[0]), Length(TmpChip));
+    TmpChip := nil;
+
+    Direct  := 9; // Обход на Shusterе - нижняя левая змейка
+    CutSide := 3; // Срез внизу
+  end
+  else                  // Если микросхема
+  begin
+    Direct  := 2;
+    CutSide := 1;
+  end;
+
+  SetChipsID;
+
 ////////////////////////////////////////////////////////////////////////////////
 
-  if Diameter <> 0 then Direct := 3
-                   else Direct := 2;
-
   CalcChips;
+
+  BaseChip := ChipN[0]; // 1-й чип - базовый
 
   SL.Free;
 
   FormatSettings.DecimalSeparator := '.';
 
   Result := True;
-end;                                                        //
+end;
 //////////////////////////////////////////////////////////////
 
 {
@@ -3716,21 +3752,21 @@ begin                                                                           
       SetLength(CalcsParams, Length(TestsParams));
       for i := 0 to Length(TestsParams)-1 do
         with CalcsParams[i] do
-      begin
-        AvrVal    := 0.0;
-        MinVal    :=  MaxSingle;
-        MaxVal    := -MaxSingle;
-        StdVal    := 0.0;
-        ASum      := 0.0;
-        QSum      := 0.0;
-        ValCount  := 0;
-        Qrt1Val   := 0.0;
-        MedVal    := 0.0;
-        Qrt3Val   := 0.0;
-        NOKVal    := 0;
-        NFailsVal := 0;
-        SetLength(ValMass, NTotal);
-      end;
+        begin
+          AvrVal    := 0.0;
+          MinVal    :=  MaxSingle;
+          MaxVal    := -MaxSingle;
+          StdVal    := 0.0;
+          ASum      := 0.0;
+          QSum      := 0.0;
+          ValCount  := 0;
+          Qrt1Val   := 0.0;
+          MedVal    := 0.0;
+          Qrt3Val   := 0.0;
+          NOKVal    := 0;
+          NFailsVal := 0;
+          SetLength(ValMass, NTotal);
+        end;
 
 // Запишем в variant массивы
 
@@ -3777,6 +3813,8 @@ begin                                                                           
             if not ToFirstFail then // Если не до 1-го брака
               for i := 0 to Length(TestsParams)-1 do
               begin
+                if Chip[Y, X].ChipParams[i].Value = NotSpec then Continue; // Если неправильно измерено
+
                 VarMass1[Nm+1, i+1] := Chip[Y, X].ChipParams[i].Value;
 
                 with CalcsParams[i] do                                                                      //
@@ -3802,7 +3840,7 @@ begin                                                                           
 
                   with CalcsParams[i] do
                   begin
-                    if i < Chip[Y, X].Status-2000 then // Для бракованныч значений не вычисляем мин., макс. и средн.
+                    if i < Chip[Y, X].Status-2000 then // Для бракованных значений не вычисляем мин., макс. и средн.
                     begin
                       if MinVal > Chip[Y, X].ChipParams[i].Value then MinVal := Chip[Y, X].ChipParams[i].Value; // Мин.
                       if MaxVal < Chip[Y, X].ChipParams[i].Value then MaxVal := Chip[Y, X].ChipParams[i].Value; // Макс.
@@ -3829,7 +3867,7 @@ begin                                                                           
 
       for i := 0 to Length(TestsParams)-1 do
       begin
-        with CalcsParams[i] do
+        with Wafer[n].CalcsParams[i] do
         begin
           if ValCount <> 0 then
           begin
@@ -4077,8 +4115,10 @@ begin                                                                           
     WorkBook1.ActiveSheet.Cells[1+X, i+3] := Qrt1Sum[i]/Length(Wafer);     // 1-й квартиль
     WorkBook1.ActiveSheet.Cells[2+X, i+3] := MedSum[i]/Length(Wafer);      // Медиана
     WorkBook1.ActiveSheet.Cells[3+X, i+3] := Qrt3Sum[i]/Length(Wafer);     // 1-й квартиль
-    WorkBook1.ActiveSheet.Cells[4+X, i+3] := MinSum[i]/(Length(Wafer)-MinLength[i]); // Мин.
-    WorkBook1.ActiveSheet.Cells[5+X, i+3] := MaxSum[i]/(Length(Wafer)-MaxLength[i]); // Макс.
+    if Length(Wafer) <> MinLength[i] then
+      WorkBook1.ActiveSheet.Cells[4+X, i+3] := MinSum[i]/(Length(Wafer)-MinLength[i]); // Мин.
+    if Length(Wafer) <> MaxLength[i] then
+      WorkBook1.ActiveSheet.Cells[5+X, i+3] := MaxSum[i]/(Length(Wafer)-MaxLength[i]); // Макс.
     WorkBook1.ActiveSheet.Cells[6+X, i+3] := StdSum[i]/Length(Wafer);      // Сигма
     WorkBook1.ActiveSheet.Cells[7+X, i+3] := QuantSum[i]/Length(Wafer);    // Счёт ??????????
     WorkBook1.ActiveSheet.Cells[8+X, i+3] := (QuantSum[i]*100)/MeasSum[i]; // %Годных ???????

@@ -14,7 +14,7 @@ type
   public
     Condition : string; // Условия измерения (НУ, Т+, Т-)
     Direct    : byte;
-    CutSide   : byte; // 1: 'вверху'  2: 'слева' 3: 'внизу' 4: 'справа'
+    CutSide   : byte;   // 1: 'вверху'  2: 'слева' 3: 'внизу' 4: 'справа'
     OKR       : string; // Название ОКРа
     Code      : string; // Номер кристалла
     MPW       : string; // MPW
@@ -305,15 +305,6 @@ begin                                                       //
     Diameter   := ReadInteger('Main', 'Diametr', 0);        //
     StepX      := ReadInteger('Main', 'ChipSizeX', 0)/1000; //
     StepY      := ReadInteger('Main', 'ChipSizeY', 0)/1000; //
-//    NWPlace    := ReadInteger('Main', 'WorkPlace', 0);      //
-//    Operator   := ReadString ('Main', 'Operator', '');      //
-//    NLot       := ReadString ('Main', 'Lot', '0');          //
-//    P := Pos('-', NLot);                                    //
-//    if P > 0 then Delete(NLot, 1, P);                       //
-//    Num        := ReadString ('Main', 'Wafer', '0');        //
-//    TimeDate   := ReadString ('Main', 'Date', '00.00.00');  //
-//    Condition  := ReadString ('Main', 'Condition', '-');    //
-//    Info       := ReadString ('Main', 'Info', '');          //
                                                             //
     Cadre.StartX := ReadInteger('Add', 'OffsetX', 0);       //
     Cadre.StartY := ReadInteger('Add', 'OffsetY', 0);       //
@@ -1303,6 +1294,8 @@ begin                                                                      //
   fName := MDBfName;                                                       //
   TimeDate := DateToStr(FileDateToDateTime(FileAge(MDBfName)));            //
   Num := WafName;                                                          //
+  MeasSystem := 'Gamma 156';                                               //
+  Condition := 'НУ';                                                       //
                                                                            //
   Str := ExtractFileName(MDBfName);                                        //
   Delete(Str, Pos('.', Str), Length(Str));                                 //
@@ -1428,24 +1421,29 @@ var                                                                      //
   i: WORD;                                                               //
   X, Y, MinX, MaxX, MaxY: Integer;                                       //
   Str: AnsiString;                                                       //
+  TmpChip: TChips;                                                       //
 begin                                                                    //
   Result := False;                                                       //
                                                                          //
   SL := TStringList.Create;                                              //
   SL.LoadFromFile(TXTfName);                                             //
                                                                          //
-  if SL.Count = 0 then Exit;
-
-  fName := TXTfName;
-  MeasSystem := 'Schuster';
-  Condition := 'НУ';
-  Num := ChangeFileExt(ExtractFileName(TXTfName), '');
-
-  SetLength(TestsParams, 0);
-
-  FormatSettings.DecimalSeparator := ',';
-
-  NPStr := SL.Count;
+  if SL.Count = 0 then Exit;                                             //
+                                                                         //
+  fName := TXTfName;                                                     //
+  TimeDate := DateToStr(FileDateToDateTime(FileAge(TXTfName)));          //
+  Num := ChangeFileExt(ExtractFileName(TXTfName), '');                   //
+  MeasSystem := 'Schuster';                                              //
+  Condition := 'НУ';                                                     //
+                                                                         //
+  Code := '-';                                                           //
+  NLot := '-';                                                           //
+                                                                         //
+  SetLength(TestsParams, 0);                                             //
+                                                                         //
+  FormatSettings.DecimalSeparator := ',';                                //
+                                                                         //
+  NPStr := SL.Count;                                                     //
   NCh := 0;
   n := 0;
   while n < SL.Count do
@@ -1667,19 +1665,44 @@ begin                                                                    //
       end;
   end;
 
+/////////////// Отразим обход по Y (система координат другая)///////////////////
+
+  if Diameter <> 0 then // Если пластина
+  begin
+    SetLength(TmpChip, Length(Chip[0]), Length(Chip));
+    for Y := 0 to Length(Chip)-1 do
+      for X := 0 to Length(Chip[0])-1 do
+      begin
+        TmpChip[Length(Chip)-Y-1, X] := Chip[Y, X];
+        SetLength(TmpChip[Length(Chip)-Y-1, X].ChipParams, Length(Chip[Y, X].ChipParams));
+      end;
+    Chip := TmpChip;
+    SetLength(Chip, Length(TmpChip[0]), Length(TmpChip));
+    TmpChip := nil;
+
+    Direct  := 9; // Обход на Shusterе - нижняя левая змейка
+    CutSide := 3; // Срез внизу
+  end
+  else                  // Если микросхема
+  begin
+    Direct  := 2;
+    CutSide := 1;
+  end;
+
+  SetChipsID;
+
 ////////////////////////////////////////////////////////////////////////////////
 
-  if Diameter <> 0 then Direct := 3
-                   else Direct := 2;
-
   CalcChips;
+
+  BaseChip := ChipN[0]; // 1-й чип - базовый
 
   SL.Free;
 
   FormatSettings.DecimalSeparator := '.';
 
   Result := True;
-end;                                                        //
+end;
 //////////////////////////////////////////////////////////////
 
 {
@@ -2796,7 +2819,6 @@ begin                                                                           
 //  CalcChips; // Проанализировать!!!!
                                                                                                               //
   tmpWafer.Free;                                                                                              //
-  tmpWafer := nil;                                                                                            //
 end;                                                                                                          //
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 ////////////////////////////////////////////////////////////////////////////////////////////////
@@ -3534,8 +3556,11 @@ begin                                                 //
   LDevice := '';                                      //
   LConfig := '';                                      //
                                                       //
-//  BlankWafer.Free();                                  //
-//  BlankWafer := TWafer.Create(Handle);                //
+//  SetLength(BlankWafer.Chip, 0, 0);                   //
+//  SetLength(BlankWafer.ChipN, 0);                     //
+//  BlankWafer.NTotal := 0;                             //
+//  BlankWafer.Diameter := 0;                           //
+//  BlankWafer.MeasSystem := '';                        //
 end;                                                  //
 ////////////////////////////////////////////////////////
 
@@ -3549,15 +3574,13 @@ begin                                                                           
   if Wafer[NWafer] = nil then Exit;                                                      //
   if Wafer[NWafer].Diameter = 0 then Exit;                                               //
                                                                                          //
-  BlankWafer.fName      := Wafer[NWafer].fName;                                          //
   BlankWafer.MeasSystem := Wafer[NWafer].MeasSystem;                                     //
-  BlankWafer.Condition  := Wafer[NWafer].Condition;                                      //
-  BlankWafer.Num        := Wafer[NWafer].Num;                                            //
   BlankWafer.Diameter   := Wafer[NWafer].Diameter;                                       //
   BlankWafer.Direct     := Wafer[NWafer].Direct;                                         //
   BlankWafer.CutSide    := Wafer[NWafer].CutSide;                                        //
   BlankWafer.NTotal     := Wafer[NWafer].NTotal;                                         //
                                                                                          //
+  SetLength(BlankWafer.ChipN, 0);                                                        //
   SetLength(BlankWafer.ChipN, Length(Wafer[NWafer].ChipN));                              //
   for n := 0 to Wafer[NWafer].NTotal-1 do BlankWafer.ChipN[n] := Wafer[NWafer].ChipN[n]; //
                                                                                          //
@@ -3589,7 +3612,7 @@ var                                                                             
   QuantSum, OKSum, FailsSum, MeasSum: array of DWORD;                                                  //
   Col: TColor;                                                                                         //
   Str: string;                                                                                         //
-  StX, LenX, StY, P: WORD;                                                                                   //
+  StX, LenX, StY, P: WORD;                                                                             //
   MinLength, MaxLength: array of DWORD;                                                                //
 begin                                                                                                  //
   Result := False;                                                                                     //
@@ -3646,9 +3669,11 @@ begin                                                                           
     WorkBook1.ActiveSheet.Cells[1, 2+i].Interior.Color := clSkyBlue;
     WorkBook1.ActiveSheet.Cells[1, 2+i].BorderAround(xlContinuous, xlThin, xlAutomatic, xlAutomatic);
 
+    if Wafer[0].TestsParams[i].Norma.Min <> -NotSpec then
     WorkBook1.ActiveSheet.Cells[2, 2+i] := Wafer[0].TestsParams[i].Norma.Min;
     WorkBook1.ActiveSheet.Cells[2, 2+i].BorderAround(xlContinuous, xlThin, xlAutomatic, xlAutomatic);
 
+    if Wafer[0].TestsParams[i].Norma.Max <> NotSpec then
     WorkBook1.ActiveSheet.Cells[3, 2+i] := Wafer[0].TestsParams[i].Norma.Max;
     WorkBook1.ActiveSheet.Cells[3, 2+i].BorderAround(xlContinuous, xlThin, xlAutomatic, xlAutomatic);
 
@@ -3693,8 +3718,7 @@ begin                                                                           
             Range1.Copy(WorkBook1.ActiveSheet.Cells[1, i+4]); // Копируем все кроме 1-й ячейки
             Range2.Copy(WorkBook1.ActiveSheet.Cells[4, i+4]); // (она уже есть)
           end;
-          WorkBook1.ActiveSheet.Cells[1, i+4] := TestsParams[i].Name;  //
-          WorkBook1.ActiveSheet.Cells[1, i+4].Columns.Autofit;         // Копируем
+          WorkBook1.ActiveSheet.Cells[1, i+4]  := TestsParams[i].Name; // Копируем
                                                                        // названия
           WorkBook1.ActiveSheet.Cells[13, i+4] := TestsParams[i].Name; // тестов
         end;
@@ -3905,6 +3929,8 @@ begin                                                                           
         WorkBook1.ActiveSheet.Cells[NTotal+11, 4+i] := (Wafer[n].NOK*100)/NMeased; // %Годных ??????????????
         WorkBook1.ActiveSheet.Cells[NTotal+13, 4+i] := CalcsParams[i].NOKVal;      // Годных
         WorkBook1.ActiveSheet.Cells[NTotal+14, 4+i] := CalcsParams[i].NFailsVal;   // Брак
+
+        WorkBook1.ActiveSheet.Columns[4+i].EntireColumn.AutoFit; /////
       end;
 
       WorkBook1.ActiveSheet.Cells[NTotal+15, 4] := Wafer[n].NMeased; // Всего измерено
@@ -3982,20 +4008,23 @@ begin                                                                           
       end;
 
       WorkBook1.ActiveSheet.Cells[4+9*n, 1] := Wafer[n].Num;
+      WorkBook1.ActiveSheet.Columns[1].EntireColumn.AutoFit;
       for i := 0 to Length(TestsParams)-1 do
       begin
-        WorkBook1.ActiveSheet.Cells[4+ 9*n, i+3] := Wafer[n].CalcsParams[i].AvrVal;  // Среднее
-        WorkBook1.ActiveSheet.Cells[5+ 9*n, i+3] := Wafer[n].CalcsParams[i].Qrt1Val; // 1-й квартиль
-        WorkBook1.ActiveSheet.Cells[6+ 9*n, i+3] := Wafer[n].CalcsParams[i].MedVal;  // Медиана
-        WorkBook1.ActiveSheet.Cells[7+ 9*n, i+3] := Wafer[n].CalcsParams[i].Qrt3Val; // 3-й квартиль
+        WorkBook1.ActiveSheet.Cells[4+ 9*n, 3+i] := Wafer[n].CalcsParams[i].AvrVal;  // Среднее
+        WorkBook1.ActiveSheet.Cells[5+ 9*n, 3+i] := Wafer[n].CalcsParams[i].Qrt1Val; // 1-й квартиль
+        WorkBook1.ActiveSheet.Cells[6+ 9*n, 3+i] := Wafer[n].CalcsParams[i].MedVal;  // Медиана
+        WorkBook1.ActiveSheet.Cells[7+ 9*n, 3+i] := Wafer[n].CalcsParams[i].Qrt3Val; // 3-й квартиль
         if Wafer[n].CalcsParams[i].MinVal <> MaxSingle then
-          WorkBook1.ActiveSheet.Cells[8+ 9*n, i+3] := Wafer[n].CalcsParams[i].MinVal;  // Мин.
+          WorkBook1.ActiveSheet.Cells[8+ 9*n, 3+i] := Wafer[n].CalcsParams[i].MinVal;  // Мин.
         if Wafer[n].CalcsParams[i].MaxVal <> -MaxSingle then
-          WorkBook1.ActiveSheet.Cells[9+ 9*n, i+3] := Wafer[n].CalcsParams[i].MaxVal;  // Макс.
-        WorkBook1.ActiveSheet.Cells[10+9*n, i+3] := Wafer[n].CalcsParams[i].StdVal;  // Сигма
+          WorkBook1.ActiveSheet.Cells[9+ 9*n, 3+i] := Wafer[n].CalcsParams[i].MaxVal;  // Макс.
+        WorkBook1.ActiveSheet.Cells[10+9*n, 3+i] := Wafer[n].CalcsParams[i].StdVal;  // Сигма
 
-        WorkBook1.ActiveSheet.Cells[11+9*n, i+3] := Wafer[n].NOK;      // Счёт ??????
-        WorkBook1.ActiveSheet.Cells[12+9*n, i+3] := (NOK*100)/NMeased; // %Годных ??????????????
+        WorkBook1.ActiveSheet.Cells[11+9*n, 3+i] := Wafer[n].NOK;      // Счёт ??????
+        WorkBook1.ActiveSheet.Cells[12+9*n, 3+i] := (NOK*100)/NMeased; // %Годных ??????????????
+
+        WorkBook1.ActiveSheet.Columns[3+i].EntireColumn.AutoFit;
       end;
 
     end;
@@ -4144,9 +4173,9 @@ begin                                                                           
         with Wafer[n] do
         begin
           if NTotal > BlankWafer.NTotal then
-            if Assigned(OnEvent) then OnEvent(evError, ' Пластина №: '+Num+' - кристаллов больше, чем в обходе!');
+            if Assigned(OnEvent) then OnEvent(evError, ' Пластина: '+Num+' - кристаллов больше, чем в обходе!');
           if NTotal < BlankWafer.NTotal then
-            if Assigned(OnEvent) then OnEvent(evError, ' Пластина №: '+Num+' - кристаллов меньше, чем в обходе!');
+            if Assigned(OnEvent) then OnEvent(evError, ' Пластина: '+Num+' - кристаллов меньше, чем в обходе!');
 
           Cell1 := WorkBook1.ActiveSheet.Cells[StY, StX-2];                           //  Объединим
           Cell2 := WorkBook1.ActiveSheet.Cells[StY+Length(BlankWafer.Chip)-1, StX-2]; //  ячейки для
@@ -4181,8 +4210,6 @@ begin                                                                           
               WorkBook1.ActiveSheet.Cells[Y+StY, X+StX+i*LenX].Interior.Color := Col;
               WorkBook1.ActiveSheet.Cells[Y+StY, X+StX+i*LenX].BorderAround(xlContinuous, xlThin, xlAutomatic, xlAutomatic);
             end;
-
-
           end;
 
           StX := 13;
@@ -4210,12 +4237,15 @@ begin                                                                           
       for n := 0 to Length(Wafer)-1 do
         with Wafer[n] do
         begin
-          if NTotal > BlankWafer.NTotal then
-            if Assigned(OnEvent) then OnEvent(evError, ' Пластина №: '+Num+' - кристаллов больше, чем в обходе!');
-          if NTotal < BlankWafer.NTotal then
-            if Assigned(OnEvent) then OnEvent(evError, ' Пластина №: '+Num+' - кристаллов меньше, чем в обходе!');
+          if Diameter = 0 then
+            if Assigned(OnEvent) then OnEvent(evError, ' Пластина: '+Num+' - в файле нет обхода!');
 
-          WorkBook1.ActiveSheet.Cells[StY-1, StX+5] := 'Пластина №: '+Num;
+          if NTotal > BlankWafer.NTotal then
+            if Assigned(OnEvent) then OnEvent(evError, ' Пластина: '+Num+' - кристаллов больше, чем в обходе!');
+          if NTotal < BlankWafer.NTotal then
+            if Assigned(OnEvent) then OnEvent(evError, ' Пластина: '+Num+' - кристаллов меньше, чем в обходе!');
+
+          WorkBook1.ActiveSheet.Cells[StY-1, StX+5] := 'Пластина: '+Num;
           for Nm := 0 to NTotal-1 do
           begin
             if Nm > BlankWafer.NTotal-1 then Break;
@@ -4237,6 +4267,9 @@ begin                                                                           
           begin
             StX := 11;
             StY := StY+Length(BlankWafer.Chip)+2;
+
+            WorkBook1.ActiveSheet.Rows[StY-1].Font.Bold := True; // Названия
+            WorkBook1.ActiveSheet.Rows[StY-1].Font.Size := 12;   // пластин (жирн. шрифт)
           end;
         end;
     end;

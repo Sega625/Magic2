@@ -1,10 +1,14 @@
 object MDBForm: TMDBForm
   Left = 501
   Top = 226
+  Margins.Left = 2
+  Margins.Top = 2
+  Margins.Right = 2
+  Margins.Bottom = 2
   BorderStyle = bsSingle
   Caption = 'Magic2'
-  ClientHeight = 481
-  ClientWidth = 613
+  ClientHeight = 478
+  ClientWidth = 687
   Color = clBtnFace
   Font.Charset = DEFAULT_CHARSET
   Font.Color = clWindowText
@@ -29,8 +33,8 @@ object MDBForm: TMDBForm
     ParentFont = False
   end
   object LoadNormsLab: TLabel
-    Left = 121
-    Top = 91
+    Left = 122
+    Top = 93
     Width = 22
     Height = 71
     Caption = #8226
@@ -42,8 +46,8 @@ object MDBForm: TMDBForm
     ParentFont = False
   end
   object LoadMapLab: TLabel
-    Left = 121
-    Top = 140
+    Left = 122
+    Top = 143
     Width = 22
     Height = 71
     Caption = #8226
@@ -55,7 +59,7 @@ object MDBForm: TMDBForm
     ParentFont = False
   end
   object Label1: TLabel
-    Left = 198
+    Left = 245
     Top = 13
     Width = 57
     Height = 16
@@ -68,7 +72,7 @@ object MDBForm: TMDBForm
     ParentFont = False
   end
   object Label2: TLabel
-    Left = 385
+    Left = 465
     Top = 13
     Width = 68
     Height = 16
@@ -121,9 +125,9 @@ object MDBForm: TMDBForm
     Font.Style = []
     ParentFont = False
   end
-  object LoadTXTLab: TLabel
-    Left = 119
-    Top = 187
+  object OpenDirLab: TLabel
+    Left = 122
+    Top = 193
     Width = 22
     Height = 71
     Caption = #8226
@@ -137,7 +141,7 @@ object MDBForm: TMDBForm
   end
   object LoadMDBBtn: TButton
     Left = 8
-    Top = 72
+    Top = 70
     Width = 111
     Height = 25
     Caption = #1047#1072#1075#1088#1091#1079#1080#1090#1100' MDB'
@@ -147,7 +151,7 @@ object MDBForm: TMDBForm
   object WafersLB: TListBox
     Left = 160
     Top = 31
-    Width = 137
+    Width = 218
     Height = 410
     BevelKind = bkFlat
     BorderStyle = bsNone
@@ -161,20 +165,21 @@ object MDBForm: TMDBForm
     ParentFont = False
     Sorted = True
     TabOrder = 1
+    OnDrawItem = WafersLBDrawItem
   end
-  object ProcessBtn: TButton
-    Left = 161
-    Top = 447
-    Width = 137
+  object ProcGammaBtn: TButton
+    Left = 160
+    Top = 446
+    Width = 219
     Height = 25
     Caption = #1054#1073#1088#1072#1073#1086#1090#1072#1090#1100
     Enabled = False
     TabOrder = 2
-    OnClick = ProcessBtnClick
+    OnClick = ProcGammaBtnClick
   end
   object LoadNormsBtn: TButton
     Left = 8
-    Top = 121
+    Top = 120
     Width = 111
     Height = 25
     Caption = #1047#1072#1075#1088#1091#1079#1080#1090#1100' '#1085#1086#1088#1084#1099
@@ -183,7 +188,7 @@ object MDBForm: TMDBForm
   end
   object LoadMapBtn: TButton
     Left = 7
-    Top = 169
+    Top = 170
     Width = 111
     Height = 25
     Caption = #1047#1072#1075#1088#1091#1079#1080#1090#1100' '#1082#1072#1088#1090#1091
@@ -191,7 +196,7 @@ object MDBForm: TMDBForm
     OnClick = LoadMapBtnClick
   end
   object ResultRE: TRichEdit
-    Left = 305
+    Left = 384
     Top = 31
     Width = 296
     Height = 441
@@ -210,7 +215,7 @@ object MDBForm: TMDBForm
     TabOrder = 5
   end
   object ClearBtn: TButton
-    Left = 527
+    Left = 607
     Top = 6
     Width = 73
     Height = 21
@@ -223,27 +228,35 @@ object MDBForm: TMDBForm
     Top = 31
     Width = 144
     Height = 21
-    Enabled = False
     ItemIndex = 0
     TabOrder = 7
     Text = #1043#1072#1084#1084#1072'-156'
+    OnChange = MSystemCBChange
     Items.Strings = (
       #1043#1072#1084#1084#1072'-156'
-      'Schuster TSM 664'
-      'GAMMA TSSemi 2000-400')
+      'Schuster TSM 664')
   end
-  object LoadTXTBtn: TButton
-    Left = 6
-    Top = 217
+  object OpenDirBtn: TButton
+    Left = 7
+    Top = 220
     Width = 111
     Height = 25
-    Caption = #1047#1072#1075#1088#1091#1079#1080#1090#1100' TXT'
+    Caption = #1054#1090#1082#1088#1099#1090#1100' '#1087#1072#1087#1082#1091
     TabOrder = 8
-    Visible = False
-    OnClick = LoadTXTBtnClick
+    OnClick = OpenDirBtnClick
+  end
+  object ProcSchusterBtn: TButton
+    Left = 400
+    Top = 446
+    Width = 219
+    Height = 25
+    Caption = #1054#1073#1088#1072#1073#1086#1090#1072#1090#1100
+    Enabled = False
+    TabOrder = 9
+    OnClick = ProcSchusterBtnClick
   end
   object MainMenu1: TMainMenu
-    Left = 313
+    Left = 329
     Top = 39
     object PrefMenu: TMenuItem
       Caption = #1053#1072#1089#1090#1088#1086#1081#1082#1080
