@@ -556,28 +556,28 @@ begin                                                                           
             if not Lot.CreateBlankWafer(nWf) then Print_Result('Ошибка создания шаблона обхода!', clRed);
           end;
                                                                                       //
+                                                                                      //
+        if CreateSTS = 1 then                                                         //
+        begin                                                                         //
+          STSFName := ChangeFileExt(MeasfName, '')+'.sts';                            //
+                                                                                      //
+          if SaveSTS(STSFName, Lot.Wafer[nWf]) then                                   //
+            Print_Result('Создан файл: '+ExtractFileName(STSFName), clBlue)           //
+          else                                                                        //
+            Print_Result('Ошибка создания файла: '+ExtractFileName(STSFName), clRed); //
+        end;                                                                          //
+                                                                                      //
         Inc(nWf);                                                                     //
       end;                                                                            //
                                                                                       //
   SetLength(Lot.Wafer, nWf);                                                          //
                                                                                       //
   Print_Result('>>> Файлы загружены!', clGreen);                                      //
-                                                                                      //
+
   if Lot.BlankWafer.NTotal = 0 then
     if QuestMess(Handle, 'Карта обхода не была загружена!'+#13#10+'Хотите загрузить карту обхода?') = IDYES then
       if not LoadTXTMap() then
-        Lot.BlankWafer.Init();                                                        //
-                                                                                      //
-  if CreateSTS = 1 then                                                               //
-    for nWF := 0 to Length(Lot.Wafer)-1 do                                            //
-    begin                                                                             //
-      STSFName := ChangeFileExt(MeasfName, '')+'.sts';                                //
-                                                                                      //
-      if SaveSTS(STSFName, Lot.Wafer[nWf]) then                                       //
-        Print_Result('Создан файл: '+ExtractFileName(STSFName), clBlue)               //
-      else                                                                            //
-        Print_Result('Ошибка создания файла: '+ExtractFileName(STSFName), clRed);     //
-    end;                                                                              //
+        Lot.BlankWafer.Init();
                                                                                       //
   Lot.SaveXLS(ToFirstFail = 1, MapByParams = 1);                                      //
                                                                                       //
@@ -766,29 +766,33 @@ begin                                                        //
 end;                                                         //
 ///////////////////////////////////////////////////////////////
 
-/////////////////////////////////////////////////////////////////////////////////////////////////////////
-function TMDBForm.LoadTXTMap(): Boolean;                                                               //
-var                                                                                                    //
-  OpenDlg: TOpenDialog;                                                                                //
-begin                                                                                                  //
-  OpenDlg := TOpenDialog.Create(self);                                                                 //
-  with OpenDlg do                                                                                      //
-  begin                                                                                                //
-    InitialDir := MeasPath;                                                                            //
-    Filter := 'Карта обхода (*.map)|*.map*';                                                           //
-    Title := 'Загрузить карту обхода';                                                                 //
-                                                                                                       //
-    if Execute then                                                                                    //
-    begin                                                                                              //
-      Result :=  Lot.BlankWafer.LoadBlankTXT(FileName);                                                //
-      if Result then Print_Result('* Карта обхода '+ExtractFileName(FileName)+' загружена!', clTeal)   //
-                else Print_Result('* Ошибка загрузки карты обхода '+ExtractFileName(FileName), clRed); //                                                                                   //
-    end;                                                                                               //
-                                                                                                       //
-    Free;                                                                                              //
-  end;                                                                                                 //
-end;                                                                                                   //
-/////////////////////////////////////////////////////////////////////////////////////////////////////////
+/////////////////////////////////////////////////////////////////
+function TMDBForm.LoadTXTMap(): Boolean; //
+var                                                                                           //
+  OpenDlg: TOpenDialog;                                                                       //
+begin                                                                                         //
+  OpenDlg := TOpenDialog.Create(self);                                                        //
+  with OpenDlg do                                                                             //
+  begin                                                                                       //
+    InitialDir := MeasPath;                                                                   //
+//    Filter := 'Карта обхода (*.map)|*.map*';                                                  //
+    Title := 'Загрузить карту обхода';                                                        //
+                                                                                              //
+    if Execute then                                                                           //
+      if Lot.BlankWafer.LoadBlankTXT(FileName) then
+      begin                                                                                   //
+                                                                                              //
+        Print_Result('* Карта обхода '+ExtractFileName(FileName)+' загружена!', clTeal);      //
+      end                                                                                     //
+      else                                                                                    //
+      begin                                                                                   //
+        Print_Result('* Ошибка загрузки карты обхода '+ExtractFileName(FileName), clRed);     //
+      end;                                                                                    //
+                                                                                              //
+    Free;                                                                                     //
+  end;                                                                                        //
+end;                                                                                          //
+/////////////////////////////////////////////////////////////////
 
 ///////////////////////////////////////////////////////////////////////////////////
 function TMDBForm.SaveSTS(const fName: TFileName; Waf: TWafer): Boolean;         //

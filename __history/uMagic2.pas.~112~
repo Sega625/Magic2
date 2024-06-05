@@ -562,14 +562,14 @@ begin                                                                           
   SetLength(Lot.Wafer, nWf);                                                          //
                                                                                       //
   Print_Result('>>> Файлы загружены!', clGreen);                                      //
-                                                                                      //
+
   if Lot.BlankWafer.NTotal = 0 then
     if QuestMess(Handle, 'Карта обхода не была загружена!'+#13#10+'Хотите загрузить карту обхода?') = IDYES then
       if not LoadTXTMap() then
-        Lot.BlankWafer.Init();                                                        //
-                                                                                      //
-  if CreateSTS = 1 then                                                               //
-    for nWF := 0 to Length(Lot.Wafer)-1 do                                            //
+        Lot.BlankWafer.Init();
+
+  if CreateSTS = 1 then
+    for nWF := 0 to Length(Lot.Wafer)-1 do
     begin                                                                             //
       STSFName := ChangeFileExt(MeasfName, '')+'.sts';                                //
                                                                                       //

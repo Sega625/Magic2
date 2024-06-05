@@ -30,6 +30,7 @@ type
     OpenDirBtn: TButton;
     OpenDirLab: TLabel;
     ProcSchusterBtn: TButton;
+    LoadTXTMapBtn: TButton;
 
     procedure LoadMDBBtnClick(Sender: TObject);
     procedure FormCreate(Sender: TObject);
@@ -44,6 +45,7 @@ type
     procedure MSystemCBChange(Sender: TObject);
     procedure ProcSchusterBtnClick(Sender: TObject);
     procedure WafersLBDrawItem(Control: TWinControl; Index: Integer; Rect: TRect; State: TOwnerDrawState);
+    procedure LoadTXTMapBtnClick(Sender: TObject);
   private
     Lot: TLot;
 
@@ -56,7 +58,6 @@ type
     function  LoadDirectory(const dName: TFileName): Boolean;
     function  LoadNorms    (const fName: TFileName): Boolean;
     function  LoadMap      (const fName: TFileName): Boolean;
-    function  LoadTXTMap(): Boolean;
     function  SaveSTS(const fName: TFileName; Waf: TWafer): Boolean;
     procedure GetSchusterFileInfo(const fName: TFileName; var Module: string); overload;
     procedure GetSchusterFileInfo(const fName: TFileName; var Module, Config: string); overload;
@@ -456,15 +457,9 @@ begin                                                                           
           if not Lot.Wafer[nWf].AddNorms(Params) then                                 //
           begin                                                                       //
             Print_Result('Ошибка добавления норм!', clRed);                           //
-            Exit;                                                                     //
+            Continue;                                                                 //
           end;                                                                        //
                                                                                       //
-        if MapLoaded then // Если нормы есть                                          //
-          if Lot.BlankWafer.NTotal <> Lot.Wafer[nWf].NTotal then                      //
-          begin                                                                       //
-            Print_Result('Карта обхода не подходит к пластине!', clRed);              //
-            Exit;                                                                     //
-          end;                                                                        //
                                                                                       //
         if CreateSTS = 1 then                                                         //
         begin                                                                         //
@@ -556,28 +551,23 @@ begin                                                                           
             if not Lot.CreateBlankWafer(nWf) then Print_Result('Ошибка создания шаблона обхода!', clRed);
           end;
                                                                                       //
+                                                                                      //
+        if CreateSTS = 1 then                                                         //
+        begin                                                                         //
+          STSFName := ChangeFileExt(MeasfName, '')+'.sts';                            //
+                                                                                      //
+          if Lot.Wafer[nWf].SaveSTS(STSFName) then                                    //
+            Print_Result('Создан файл: '+ExtractFileName(STSFName), clBlue)           //
+          else                                                                        //
+            Print_Result('Ошибка создания файла: '+ExtractFileName(STSFName), clRed); //
+        end;                                                                          //
+                                                                                      //
         Inc(nWf);                                                                     //
       end;                                                                            //
                                                                                       //
   SetLength(Lot.Wafer, nWf);                                                          //
                                                                                       //
   Print_Result('>>> Файлы загружены!', clGreen);                                      //
-                                                                                      //
-  if Lot.BlankWafer.NTotal = 0 then
-    if QuestMess(Handle, 'Карта обхода не была загружена!'+#13#10+'Хотите загрузить карту обхода?') = IDYES then
-      if not LoadTXTMap() then
-        Lot.BlankWafer.Init();                                                        //
-                                                                                      //
-  if CreateSTS = 1 then                                                               //
-    for nWF := 0 to Length(Lot.Wafer)-1 do                                            //
-    begin                                                                             //
-      STSFName := ChangeFileExt(MeasfName, '')+'.sts';                                //
-                                                                                      //
-      if SaveSTS(STSFName, Lot.Wafer[nWf]) then                                       //
-        Print_Result('Создан файл: '+ExtractFileName(STSFName), clBlue)               //
-      else                                                                            //
-        Print_Result('Ошибка создания файла: '+ExtractFileName(STSFName), clRed);     //
-    end;                                                                              //
                                                                                       //
   Lot.SaveXLS(ToFirstFail = 1, MapByParams = 1);                                      //
                                                                                       //
@@ -765,30 +755,6 @@ begin                                                        //
   if Lot.BlankWafer.LoadBlankSTS(fName) then Result := True; //
 end;                                                         //
 ///////////////////////////////////////////////////////////////
-
-/////////////////////////////////////////////////////////////////////////////////////////////////////////
-function TMDBForm.LoadTXTMap(): Boolean;                                                               //
-var                                                                                                    //
-  OpenDlg: TOpenDialog;                                                                                //
-begin                                                                                                  //
-  OpenDlg := TOpenDialog.Create(self);                                                                 //
-  with OpenDlg do                                                                                      //
-  begin                                                                                                //
-    InitialDir := MeasPath;                                                                            //
-    Filter := 'Карта обхода (*.map)|*.map*';                                                           //
-    Title := 'Загрузить карту обхода';                                                                 //
-                                                                                                       //
-    if Execute then                                                                                    //
-    begin                                                                                              //
-      Result :=  Lot.BlankWafer.LoadBlankTXT(FileName);                                                //
-      if Result then Print_Result('* Карта обхода '+ExtractFileName(FileName)+' загружена!', clTeal)   //
-                else Print_Result('* Ошибка загрузки карты обхода '+ExtractFileName(FileName), clRed); //                                                                                   //
-    end;                                                                                               //
-                                                                                                       //
-    Free;                                                                                              //
-  end;                                                                                                 //
-end;                                                                                                   //
-/////////////////////////////////////////////////////////////////////////////////////////////////////////
 
 ///////////////////////////////////////////////////////////////////////////////////
 function TMDBForm.SaveSTS(const fName: TFileName; Waf: TWafer): Boolean;         //
@@ -1034,10 +1000,50 @@ var                                   //
 begin                                 //
   QueryPerformanceCounter(EndTime);   //
   QueryPerformanceFrequency(Freq);    //
-                                      //
   Result := (EndTime-BegTime)/Freq;   //
 end;                                  //
 ////////////////////////////////////////
+
+
+
+
+
+
+procedure TMDBForm.LoadTXTMapBtnClick(Sender: TObject);
+var                                                                                           //
+  OpenDlg: TOpenDialog;                                                                       //
+begin                                                                                         //
+  OpenDlg := TOpenDialog.Create(self);                                                        //
+  with OpenDlg do                                                                             //
+  begin                                                                                       //
+    InitialDir := MeasPath;                                                                   //
+//    Filter := 'Карта обхода (*.sts)|*.sts*';                                                  //
+    Title := 'Загрузить карту обхода';                                                        //
+                                                                                              //
+    if Execute then                                                                           //
+      if Lot.BlankWafer.LoadBlankTXT(FileName) then                                                          //
+      begin                                                                                   //
+//        LoadMapLab.Font.Color := $00CAF90D;                                                   //
+                                                                                              //
+        Print_Result('* Карта обхода '+ExtractFileName(FileName)+' загружена!', clTeal);      //
+                                                                                              //
+//        ProcSchusterBtn.Enabled := True;                                                        //
+      end                                                                                     //
+      else                                                                                    //
+      begin                                                                                   //
+//        LoadMapLab.Font.Color := clRed;                                                       //
+                                                                                              //
+        Print_Result('* Ошибка загрузки карты обхода '+ExtractFileName(FileName), clRed);     //
+                                                                                              //
+//        ProcSchusterBtn.Enabled := False;                                                        //
+      end;                                                                                    //
+                                                                                              //
+    Free;                                                                                     //
+  end;                                                                                        //
+end;                                                                                          //
+////////////////////////////////////////////////////////////////////////////////////////////////
+
+
 
 
 end.
