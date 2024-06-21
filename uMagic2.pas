@@ -790,65 +790,67 @@ begin                                                                           
 end;                                                                                                   //
 /////////////////////////////////////////////////////////////////////////////////////////////////////////
 
-///////////////////////////////////////////////////////////////////////////////////
-function TMDBForm.SaveSTS(const fName: TFileName; Waf: TWafer): Boolean;         //
-var                                                                              //
-  tmpWafer: TWafer;                                                              //
-  X, Y, n, vX, vY, Count: DWORD;                                                 //
-begin                                                                            //
-  Result := False;                                                               //
-                                                                                 //
-  if not MapLoaded() then                                                        //
-  begin                                                                          //
-    Waf.SaveSTS(fName);                                                          //
-                                                                                 //
-    Result := True;                                                              //
-                                                                                 //
-    Exit;                                                                        //
-  end;                                                                           //
-                                                                                 //
-  tmpWafer := TWafer.Create(Handle);                                             //
-  CloneBlankWafer(Lot.BlankWafer, tmpWafer);                                     //
-                                                                                 //
-  tmpWafer.fName := Waf.fName;                                                   //
-  tmpWafer.Code  := Waf.Code;                                                    //
-  tmpWafer.TimeDate := Waf.TimeDate;                                             //
-  tmpWafer.NLot := Waf.NLot;                                                     //
-  tmpWafer.Num  := Waf.Num;                                                      //
-                                                                                 //
-  SetLength(tmpWafer.TestsParams, Length(Waf.TestsParams));                      //
-  for n := 0 to Length(tmpWafer.TestsParams)-1 do                                //
-  begin                                                                          //
-    tmpWafer.TestsParams[n].Name      := Waf.TestsParams[n].Name;                //
-    tmpWafer.TestsParams[n].Norma.Min := Waf.TestsParams[n].Norma.Min;           //
-    tmpWafer.TestsParams[n].Norma.Max := Waf.TestsParams[n].Norma.Max;           //
-  end;                                                                           //
-                                                                                 //
-  Count := 0;                                                                    //
-  for Y := 0 to Length(tmpWafer.Chip)-1 do                                       //
-    for X := 0 to Length(tmpWafer.Chip[0])-1 do                                  //
-      if tmpWafer.Chip[Y, X].Status = 0 then                                     //
-      begin                                                                      //
-        if Count > Waf.NTotal then Break;                                        //
-        vX := Waf.ChipN[tmpWafer.Chip[Y, X].ID-1].X;                             //
-        vY := Waf.ChipN[tmpWafer.Chip[Y, X].ID-1].Y;                             //
-                                                                                 //
-        tmpWafer.Chip[Y, X].Status := Waf.Chip[vY, vX].Status;                   //
-                                                                                 //
-        SetLength(tmpWafer.Chip[Y, X].ChipParams, Length(tmpWafer.TestsParams)); //
-        for n := 0 to Length(tmpWafer.TestsParams)-1 do                          //
-          tmpWafer.Chip[Y, X].ChipParams[n] := Waf.Chip[vY, vX].ChipParams[n];   //
-                                                                                 //
-        Inc(Count);                                                              //
-      end;                                                                       //
-                                                                                 //
-  tmpWafer.SaveSTS(fName);                                                       //
-                                                                                 //
-  tmpWafer.Free();                                                               //
-                                                                                 //
-  Result := True;                                                                //
-end;                                                                             //
-///////////////////////////////////////////////////////////////////////////////////
+/////////////////////////////////////////////////////////////////////////////////////
+function TMDBForm.SaveSTS(const fName: TFileName; Waf: TWafer): Boolean;           //
+var                                                                                //
+  tmpWafer: TWafer;                                                                //
+  X, Y, i, vX, vY: DWORD;                                                          //
+begin                                                                              //
+  Result := False;                                                                 //
+                                                                                   //
+  if Waf.NTotal = 0 then Exit;                                                     //
+                                                                                   //
+                                                                                   //
+  if not MapLoaded() then                                                          //
+  begin                                                                            //
+    Waf.SaveSTS(fName);                                                            //
+                                                                                   //
+    Result := True;                                                                //
+                                                                                   //
+    Exit;                                                                          //
+  end;                                                                             //
+                                                                                   //
+  tmpWafer := TWafer.Create(Handle);                                               //
+  CloneBlankWafer(Lot.BlankWafer, tmpWafer);                                       //
+                                                                                   //
+  tmpWafer.fName := Waf.fName;                                                     //
+  tmpWafer.Code  := Waf.Code;                                                      //
+  tmpWafer.TimeDate := Waf.TimeDate;                                               //
+  tmpWafer.NLot := Waf.NLot;                                                       //
+  tmpWafer.Num  := Waf.Num;                                                        //
+                                                                                   //
+  SetLength(tmpWafer.TestsParams, Length(Waf.TestsParams));                        //
+  for i := 0 to Length(tmpWafer.TestsParams)-1 do                                  //
+  begin                                                                            //
+    tmpWafer.TestsParams[i].Name      := Waf.TestsParams[i].Name;                  //
+    tmpWafer.TestsParams[i].Norma.Min := Waf.TestsParams[i].Norma.Min;             //
+    tmpWafer.TestsParams[i].Norma.Max := Waf.TestsParams[i].Norma.Max;             //
+  end;                                                                             //
+                                                                                   //
+  for Y := 0 to Length(tmpWafer.Chip)-1 do                                         //
+    for X := 0 to Length(tmpWafer.Chip[0])-1 do                                    //
+      if tmpWafer.Chip[Y, X].Status = 0 then                                       //
+      begin                                                                        //
+        if (tmpWafer.Chip[Y, X].ID-1) < Waf.NTotal then                            //
+        begin                                                                      //
+          vX := Waf.ChipN[tmpWafer.Chip[Y, X].ID-1].X;                             //
+          vY := Waf.ChipN[tmpWafer.Chip[Y, X].ID-1].Y;                             //
+                                                                                   //
+          tmpWafer.Chip[Y, X].Status := Waf.Chip[vY, vX].Status;                   //
+                                                                                   //
+          SetLength(tmpWafer.Chip[Y, X].ChipParams, Length(tmpWafer.TestsParams)); //
+          for i := 0 to Length(tmpWafer.TestsParams)-1 do                          //
+            tmpWafer.Chip[Y, X].ChipParams[i] := Waf.Chip[vY, vX].ChipParams[i];   //
+        end;                                                                       //
+      end;                                                                         //
+                                                                                   //
+  tmpWafer.SaveSTS(fName);                                                         //
+                                                                                   //
+  tmpWafer.Free();                                                                 //
+                                                                                   //
+  Result := True;                                                                  //
+end;                                                                               //
+/////////////////////////////////////////////////////////////////////////////////////
 
 //////////////////////////////////////////////////////////////////////////////////////////////
 procedure TMDBForm.GetSchusterFileInfo(const fName: TFileName; var Module: string);         //

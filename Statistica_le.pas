@@ -68,6 +68,7 @@ type
     function  LoadGammaMDB   (const MDBfName, WafName: TFileName): Boolean;
     function  LoadSchusterTXT(const TXTfName: TFileName): Boolean;
     function  LoadBlankTXT   (const TXTfName: TFileName): Boolean;
+    function  LoadBlank690   (const TXTfName: TFileName): Boolean;
     function  LoadSTS     (const STSfName: TFileName): Boolean;
     function  AddSTS      (const STSfName: TFileName): Boolean;
     function  LoadBlankSTS(const STSfName: TFileName): Boolean;
@@ -1918,7 +1919,16 @@ begin                                                                           
   Result := True;                                                                 //
 end;                                                                              //
 ////////////////////////////////////////////////////////////////////////////////////
+////////////////////////////////////////////////////////////////////////////////////
+function TWafer.LoadBlank690(const TXTfName: TFileName): Boolean;
+begin
+  Result := False;
 
+  fName := TXTfName;
+
+  Result := True;
+end;
+/////////////////////////////////////////////////////////////////////////////////////
 {
 ///////////////////////////////////////////////////////////////////////////////////////////////////////
 function TStatistica.AddMDB(const MDBfName: TFileName; const Params: Boolean=True): Boolean;         //
