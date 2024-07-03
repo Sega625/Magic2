@@ -800,7 +800,6 @@ begin                                                                           
                                                                                    //
   if Waf.NTotal = 0 then Exit;                                                     //
                                                                                    //
-                                                                                   //
   if not MapLoaded() then                                                          //
   begin                                                                            //
     Waf.SaveSTS(fName);                                                            //

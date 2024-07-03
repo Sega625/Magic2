@@ -345,7 +345,7 @@ end;                                                                            
 //////////////////////////////////////////////////////////////////////////////////////
 
 //////////////////////////////////////////////////////////////
-function TWafer.LoadBlankSTSHeader: Boolean;                //
+function TWafer.LoadBlankSTSHeader(): Boolean;              //
 var                                                         //
   INIfName: TIniFile;                                       //
   X, Y: WORD;                                               //
@@ -355,14 +355,14 @@ begin                                                       //
   INIfName := TIniFile.Create(fName);                       //
   with INIfName do                                          //
   begin                                                     //
-    OKR        := ReadString ('Main', 'OKR',     '-');      //
+    OKR        := ReadString ('Main', 'OKR',     '' );      //
     Code       := ReadString ('Main', 'Code',    '0');      //
-    MPW        := ReadString ('Main', 'MPW',     '-');      //
-    MPWPos     := ReadString ('Main', 'MPWPos',  '-');      //
-    Device     := ReadString ('Main', 'Device',  '-');      //
-    DscrDev    := ReadString ('Main', 'DscrDev', '-');      //
-    MeasSystem := ReadString ('Main', 'MSystem', '-');      //
-    Prober     := ReadString ('Main', 'Prober',  '-');      //
+    MPW        := ReadString ('Main', 'MPW',     '' );      //
+    MPWPos     := ReadString ('Main', 'MPWPos',  '' );      //
+    Device     := ReadString ('Main', 'Device',  '' );      //
+    DscrDev    := ReadString ('Main', 'DscrDev', '' );      //
+    MeasSystem := ReadString ('Main', 'MSystem', '' );      //
+    Prober     := ReadString ('Main', 'Prober',  '' );      //
                                                             //
     Diameter   := ReadInteger('Main', 'Diametr',   0);      //
     StepX      := ReadInteger('Main', 'ChipSizeX', 0)/1000; //
@@ -385,8 +385,8 @@ begin                                                       //
       Exit;                                                 //
     end;                                                    //
                                                             //
-    SetLength(Chip, 0, 0);                                  //
-    SetLength(Chip, Y, X);                                  //
+    SetLength(Chip, 0, 0);               //                 //
+    SetLength(Chip, Y, X);               //                 //
     for Y := 0 to Length(Chip)-1 do      // Очистим         //
       for X := 0 to Length(Chip[0])-1 do // массив          //
       begin                              //                 //
@@ -519,7 +519,6 @@ begin                                                       //
       begin                              //
         Chip[Y, X].Status := 2;          //
         Chip[Y, X].ID     := 0;          //
-//        Chip[Y, X].ShowGr := 0;          //
         SetLength(Chip[Y, X].ChipParams, Length(TestsParams));
       end;                               //
   Direct := 2;
@@ -1357,7 +1356,7 @@ begin                                                                      //
   TimeDate := DateToStr(FileDateToDateTime(FileAge(MDBfName)));            //
   Num := WafName;                                                          //
   MeasSystem := 'Gamma 156';                                               //
-  Condition := 'НУ';                                                       //
+  Condition := 'NU';                                                       //
                                                                            //
   Str := ExtractFileName(MDBfName);                                        //
   Delete(Str, Pos('.', Str), Length(Str));                                 //
@@ -1770,26 +1769,26 @@ begin                                                                    //
   Result := True;
 end;
 //////////////////////////////////////////////////////////////
-////////////////////////////////////////////////////////////////////
-function TWafer.LoadBlankTXT(const TXTfName: TFileName): Boolean; //
-                                                                  //
-  /////////////////////////////////////////////////////////       //
-  function GetCoordFromStr(S: string; nT: WORD): TPoint; //       //
-  var                                                    //       //
-    P: WORD;                                             //       //
-  begin                                                  //       //
-    Result := Point(-999, -999);                         //       //
-                                                         //       //
-    while nT > 0 do                                      //       //
-    begin                                                //       //
-      P := Pos(#9, S);                                   //       //
-      Delete(S, 1, P);                                   //       //
-                                                         //       //
-      Dec(nT);                                           //       //
-    end;                                                 //       //
-                                                         //       //
-    P := Pos('*ID=', S);                                 //       //
-    if P <> 0 then Delete(S, 1, P+3);                    //       //
+////////////////////////////////////////////////////////////////////////////////////
+function TWafer.LoadBlankTXT(const TXTfName: TFileName): Boolean;                 //
+                                                                                  //
+  /////////////////////////////////////////////////////////                       //
+  function GetCoordFromStr(S: string; nT: WORD): TPoint; //                       //
+  var                                                    //                       //
+    P: WORD;                                             //                       //
+  begin                                                  //                       //
+    Result := Point(-999, -999);                         //                       //
+                                                         //                       //
+    while nT > 0 do                                      //                       //
+    begin                                                //                       //
+      P := Pos(#9, S);                                   //                       //
+      Delete(S, 1, P);                                   //                       //
+                                                         //                       //
+      Dec(nT);                                           //                       //
+    end;                                                 //                       //
+                                                         //                       //
+    P := Pos('*ID=', S);                                 //                       //
+    if P <> 0 then Delete(S, 1, P+3);                    //                       //
     P := Pos(#9, S);                                     //                       //
     if P <> 0 then Delete(S, P, Length(S));              //                       //
                                                          //                       //
@@ -1919,16 +1918,128 @@ begin                                                                           
   Result := True;                                                                 //
 end;                                                                              //
 ////////////////////////////////////////////////////////////////////////////////////
-////////////////////////////////////////////////////////////////////////////////////
-function TWafer.LoadBlank690(const TXTfName: TFileName): Boolean;
-begin
-  Result := False;
 
-  fName := TXTfName;
+/////////////////////////////////////////////////////////////////////
+function TWafer.LoadBlank690(const TXTfName: TFileName): Boolean;  //
+var                                                                //
+  IniFile: TIniFile;                                               //
+  Zone: TZones2;                                                   //
+  P: byte;                                                         //
+  X, Y, n: WORD;                                                   //
+  MinX, MinY, MaxX, MaxY: Integer;                                 //
+  SL: TStringList;                                                 //
+  Str: String;                                                     //
+begin                                                              //
+  Result := False;                                                 //
+                                                                   //
+  fName := TXTfName;                                               //
+                                                                   //
+  FormatSettings.DecimalSeparator := ',';                          //
+                                                                   //
+  SL := TStringList.Create();                                      //
+  IniFile := TIniFile.Create(fName);                               //
+  try                                                              //
+    Code       := IniFile.ReadString('690', 'Code',      '');      //
+//    Device     := IniFile.ReadString('690', 'Device',     0);      //
+    Diameter   := IniFile.ReadInteger('690', 'Diametr',   0);      //
+    StepX      := IniFile.ReadInteger('690', 'ChipSizeX', 0)/1000; //
+    StepY      := IniFile.ReadInteger('690', 'ChipSizeY', 0)/1000; //
+    BaseChip.X := IniFile.ReadInteger('690', 'BaseChipX', 0);      //
+    BaseChip.Y := IniFile.ReadInteger('690', 'BaseChipY', 0);      //
+    Direct     := IniFile.ReadInteger('690', 'Path', 0);           //
+    CutSide    := IniFile.ReadInteger('690', 'Notch', 0);          //
+                                                                   //
+    MinX := BaseChip.X;                                            //
+    MinY := BaseChip.Y;                                            //
+    MaxX := BaseChip.X;                                            //
+    MaxY := BaseChip.Y;                                            //
+                                                                   //
+    IniFile.ReadSectionValues('Zones', SL);                        //
+    SetLength(Zone, SL.Count);                                     //
+    if Length(Zone) > 0 then                                       //
+      for n := 0 to Length(Zone)-1 do                              //
+      begin                                                        //
+        Str := Trim(SL.Strings[n]);                                //
+                                                                   //
+        P := Pos('=', Str);                                        //
+        Delete(Str, 1, P);                                         //
+        P := Pos(';', Str);                                        //
+        Zone[n].Y1 := StrToInt(Copy(Str, 1, P-1));                 //
+        if MinY > Zone[n].Y1 then MinY := Zone[n].Y1;              //
+                                                                   //
+        Delete(Str, 1, P);                                         //
+        P := Pos(';', Str);                                        //
+        Zone[n].Y2 := StrToInt(Copy(Str, 1, P-1));                 //
+        if MaxY < Zone[n].Y2 then MaxY := Zone[n].Y2;              //
+                                                                   //
+        Delete(Str, 1, P);                                         //
+        P := Pos(';', Str);                                        //
+        Zone[n].X3 := StrToInt(Copy(Str, 1, P-1));                 //
+        if MinX > Zone[n].X3 then MinX := Zone[n].X3;              //
+                                                                   //
+        Delete(Str, 1, P);                                         //
+        Zone[n].X4 := StrToInt(Str);                               //
+        if MaxX < Zone[n].X4 then MaxX := Zone[n].X4;              //
+      end;                                                         //
+  except                                                           //
+    IniFile.Free();                                                //
+  end;                                                             //
+  SL.Free();                                                       //
+                                                                   //
+/////////////////////////////////////////////////                  //
+                                                                   //
+  if Code = '' then                                                //
+  begin                                                            //
+    ErrMess(Handle, 'Ошибка чтения файла!');                       //
+    Exit;                                                          //
+  end;                                                             //
+  if Length(Zone) = 0 then                                         //
+  begin                                                            //
+    ErrMess(Handle, 'Ошибка чтения зон обхода!');                  //
+    Exit;                                                          //
+  end;                                                             //
+                                                                   //
+//  SetLength(ChipN, SL.Count);                                      //
+  SetLength(Chip, 0, 0);                                           //
+                                                                   //
+  MaxY := MaxY-MinY+1;                                             //
+  MaxX := MaxX-MinX+1;                                             //
+  SetLength(Chip, MaxY, MaxX);                                     //
+  for Y := 0 to MaxY-1 do                                          //
+    for X := 0 to MaxX-1 do                                        //
+    begin                                                          //
+      Chip[Y, X].Status := 2;                                      //
+      Chip[Y, X].ID     := 0;                                      //
+    end;                                                           //
+                                                                   //
+  NTotal := 0;                                                     //
+  for n := 0 to Length(Zone)-1 do                                  //
+    for Y := Zone[n].Y1 to Zone[n].Y2 do                           //
+      for X := Zone[n].X3 to Zone[n].X4 do                         //
+      begin                                                        //
+        Chip[Y-MinY, X-MinX].Status := 0;                          //
+                                                                   //
+        Inc(NTotal);                                               //
+      end;                                                         //
+                                                                   //
+  BaseChip.X := BaseChip.X-MinX;                                   //
+  BaseChip.Y := BaseChip.Y-MinY;                                   //
+                                                                   //
+  if Diameter = 150 then LDiameter := 144.25                       //
+                    else LDiameter := Diameter*0.96;               //
+  Radius  := Diameter/2;                                           //
+  LRadius := Radius-(Diameter-LDiameter);                          //
+  Chord   := Sqrt(Radius*Radius-LRadius*LRadius);                  //
+                                                                   //
+  FormatSettings.DecimalSeparator := '.';                          //
+                                                                   //
+  SetChipsID();                                                    //
+//  CalcChips();                                                     //
+                                                                   //
+  Result := True;                                                  //
+end;                                                               //
+/////////////////////////////////////////////////////////////////////
 
-  Result := True;
-end;
-/////////////////////////////////////////////////////////////////////////////////////
 {
 ///////////////////////////////////////////////////////////////////////////////////////////////////////
 function TStatistica.AddMDB(const MDBfName: TFileName; const Params: Boolean=True): Boolean;         //
@@ -2068,7 +2179,7 @@ begin                                                                           
                                                                                                      //
   fName := STSfName;                                                                                 //
                                                                                                      //
-  if not LoadSTSHeader then                                                                          //
+  if not LoadSTSHeader() then                                                                        //
   begin                                                                                              //
     ErrMess(Handle, 'Ошибка загрузки заголовка!');                                                   //
 //    Init;                                                                                            //
@@ -2211,7 +2322,7 @@ begin                                                                           
                                                                                                      //
   FormatSettings.DecimalSeparator := ',';                                                            //
                                                                                                      //
-  if not tmpWafer.LoadSTSHeader then                                                                 //
+  if not tmpWafer.LoadSTSHeader() then                                                               //
   begin                                                                                              //
     ErrMess(Handle, 'Ошибка загрузки заголовка!');                                                   //
     tmpWafer.Free;                                                                                   //
@@ -2385,7 +2496,7 @@ end;                                                                            
 function TWafer.LoadBlankSTS(const STSfName: TFileName): Boolean;                                    //
 var                                                                                                  //
   X, Y: WORD;                                                                                        //
-  n, Count: DWORD;                                                                                   //
+  n, Count, nParams, i: DWORD;                                                                       //
   SL: TStringList;                                                                                   //
   Str, S: String;                                                                                    //
   P: byte;                                                                                           //
@@ -2395,7 +2506,7 @@ begin                                                                           
                                                                                                      //
   fName := STSfName;                                                                                 //
                                                                                                      //
-  if not LoadBlankSTSHeader then                                                                     //
+  if not LoadBlankSTSHeader() then                                                                   //
   begin                                                                                              //
     ErrMess(Handle, 'Ошибка загрузки заголовка!');                                                   //
     Exit;                                                                                            //
@@ -2405,8 +2516,6 @@ begin                                                                           
   SL.LoadFromFile(STSfName);                                                                         //
                                                                                                      //
   Count := 0;                                                                                        //
-  n := 0;                                                                                            //
-                                                                                                     //
   while (Trim(SL.Strings[0]) <> '[ChipsParams]') do                                                  //
   begin                                                                                              //
     if SL.Count = 1 then                                                                             //
@@ -2427,9 +2536,11 @@ begin                                                                           
   try                                                                                                //
     P := Pos(#9, Str);                                                                               //
     S := Copy(Str, 1, P-1);                                                                          //
-    n := 0;                                                                                          //
+    nParams := 0;                                                                                    //
     while Trim(S) <> 'Status' do                                                                     //
     begin                                                                                            //
+      Inc(nParams); // Кол-во параметров (для уже измеренной пластины > 0)                           //
+                                                                                                     //
       Delete(Str, 1, P);                                //                                           //
       P := Pos(#9, Str);                                //                                           //
       S := Copy(Str, 1, P-1);                           //                                           //
@@ -2447,6 +2558,14 @@ begin                                                                           
         Str := SL.Strings[n];                                                                        //
         if Trim(Str) = '' then Continue;                                                             //
                                                                                                      //
+        if nParams > 0 then                                                                          //
+          for i := 0 to nParams-1 do // Пропустим                                                    //
+          begin                      // измерения                                                    //
+            P := Pos(#9, Str);       // для                                                          //
+            S := Copy(Str, 1, P-1);  // уже                                                          //
+            Delete(Str, 1, P);       // измеренной                                                   //
+          end;                       // пластины                                                     //
+                                                                                                     //
         P := Pos(#9, Str);                                                                           //
         S := Copy(Str, 1, P-1);                                                                      //
         Stat := StrToInt(S); // Status                                                               //
@@ -2454,15 +2573,16 @@ begin                                                                           
                                                                                                      //
         P := Pos(#9, Str);                                                                           //
         S := Copy(Str, 1, P-1);                                                                      //
-        X := StrToInt(S); // X                                                                       //
+        X := StrToInt(S);    // X                                                                    //
         Delete(Str, 1, P);                                                                           //
         if X > (Length(Chip[0])-1) then SetLength(Chip[0], X+1);                                     //
                                                                                                      //
-        Y := StrToInt(Str); // Y                                                                     //
+        Y := StrToInt(Str);  // Y                                                                    //
         Delete(Str, 1, P);                                                                           //
         if Y > (Length(Chip)-1) then SetLength(Chip, Y+1);                                           //
                                                                                                      //
-        Chip[Y, X].Status := Stat;                                                                   //
+        if Stat in [0, 2, 3, 4, 5, 7] then Chip[Y, X].Status := Stat                                 //
+                                      else Chip[Y, X].Status := 0; // Для уже измеренных пластин     //
                                                                                                      //
         if Trim(SL.Strings[n]) = '' then Break;                                                      //
       end;                                                                                           //
@@ -2628,7 +2748,7 @@ begin                                                                           
                                                                                                      //
   fName := TXTfName;                                                                                 //
                                                                                                      //
-  HeaderCount := LoadNIHeader;                                                                       //
+  HeaderCount := LoadNIHeader();                                                                     //
   if HeaderCount = 0 then                                                                            //
   begin                                                                                              //
     ErrMess(Handle, 'Ошибка загрузки заголовка!');                                                   //
@@ -3721,8 +3841,6 @@ begin                                                 //
                                                       //
   LDevice := '';                                      //
   LConfig := '';                                      //
-                                                      //
-  BlankWafer.Init();                                  //
 end;                                                  //
 ////////////////////////////////////////////////////////
 

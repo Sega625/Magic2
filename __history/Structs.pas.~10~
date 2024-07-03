@@ -68,14 +68,6 @@ type
     ScaleY: WORD;
   end;
 
-  TZone2 = record
-    Y1: WORD;
-    Y2: WORD;
-    X3: WORD;
-    X4: WORD;
-  end;
-  TZones2 = array of TZone2;
-
 /////////////////////////////////////////
 
   TChipParams = record
