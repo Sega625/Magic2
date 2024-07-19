@@ -3744,8 +3744,13 @@ begin
   for n := 0 to Length(TestsParams)-1 do
   begin
     Str1 := Copy(TestsParams[n].Name, Pos(' ', TestsParams[n].Name), Length(TestsParams[n].Name)); // Уберём номер теста
-    Str1 := StringReplace(Str1, ' ', '', [rfReplaceAll, rfIgnoreCase]);
-    Str2 := StringReplace(tParams[n].Name, ' ', '', [rfReplaceAll, rfIgnoreCase]);
+    Str1 := StringReplace(Str1, ' ', '', [rfReplaceAll, rfIgnoreCase]); // Удалим пробелы
+    Str1 := StringReplace(Str1, ',', '', [rfReplaceAll, rfIgnoreCase]); // Удалим запятые
+    Str1 := StringReplace(Str1, '.', '', [rfReplaceAll, rfIgnoreCase]); // Удалим точки
+
+    Str2 := StringReplace(tParams[n].Name, ' ', '', [rfReplaceAll, rfIgnoreCase]); // Удалим пробелы
+    Str2 := StringReplace(Str1, ',', '', [rfReplaceAll, rfIgnoreCase]); // Удалим запятые
+    Str2 := StringReplace(Str1, '.', '', [rfReplaceAll, rfIgnoreCase]); // Удалим точки
     if Str1 <> Str2 then
     begin
       ErrMess(Handle, 'Не совпадают имена тестов');
