@@ -125,6 +125,8 @@ type
     Qsum: Single;       // Сумма квадратов для Стд. отклонения
     ValMass: TDynArray; // Массив параметров для медианы и квартилей
     ValCount: DWORD;    // Кол-во параметров
+    AllValMass: TDynArray; // Массив всех параметров (для гистограмм)
+    AllValCount: DWORD;    // Кол-во всех параметров
 
     NOKVal   : DWORD;
     NFailsVal: DWORD;
@@ -138,24 +140,6 @@ type
     Qrt3Val: Single; // 3-й квартиль
   end;
   TCalcsParams = array of TCalcParams;
-
-/////////////////////////////////////////
-
-  TGroup = record
-    Min: Single;
-    Max: Single;
-    Num: WORD;
-  end;
-
-  THistParams = record
-    Name: string;
-    AllValMass: TDynArray; // Массив параметров для гистограмм
-    AllMinVal : Single;    // Минимальный параметр
-    AllMaxVal : Single;    // Максимальный параметр
-
-    NGroups: WORD; // Кол-во групп
-    Group: array of TGroup;
-  end;
 
 /////////////////////////////////////////
 

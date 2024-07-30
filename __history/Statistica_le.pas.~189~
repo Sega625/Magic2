@@ -113,13 +113,10 @@ type
     Wafer: array of TWafer;
     BlankWafer: TWafer;
 
-    HistGroup: array of DWORD;
-
     constructor Create(Hndl: THandle);
     destructor  Destroy(); override;
 
     procedure Init();
-    function  LoadHistGroupsFromIni(): Boolean;
     function  CreateBlankWafer(const NWafer: WORD): Boolean;
     function  SaveXLS(const ToFirstFail, MapByParams: Boolean): Boolean;
     function  GetColorByStatus(const Stat: WORD): TColor;
@@ -3732,51 +3729,6 @@ begin                                                 //
 end;                                                  //
 ////////////////////////////////////////////////////////
 
-
-function TLot.LoadHistGroupsFromIni(): Boolean;
-var
-  Buffer: array[0..MAX_PATH] of Char;
-  IniFile: TIniFile;
-  InifName: TFileName;
-  SL: TStringList;
-  n, P: WORD;
-begin
-  Result := False;
-
-  GetModuleFileName(0, Buffer, MAX_PATH);
-  InifName := ExtractFilePath(Buffer)+'Templates\Params.ini';
-  if not FileExists(InifName) then
-  begin
-    if Assigned(OnEvent) then OnEvent(evError, 'Не найден файл Params.ini');
-//    Exit;
-  end;
-
-  SL := TStringList.Create();
-  IniFile := TIniFile.Create(InifName);
-  try
-    IniFile.ReadSectionValues('Groups', SL);
-    if SL.Count > 0 then
-    begin
-      SetLength(HistGroup, SL.Count);
-
-      for n := 0 to SL.Count-1 do
-      begin
-        P := Pos('=', SL[n]);
-        try
-          HistGroup[n] := StrToInt(Copy(SL[n], P+1, Length(SL[n])));
-        except
-          HistGroup[n] := 0;
-        end;
-      end;
-    end;
-  except
-    IniFile.Free();
-  end;
-  SL.Free();
-
-  Result := True;
-end;
-
 ///////////////////////////////////////////////////////////////////////////////////////////
 function TLot.CreateBlankWafer(const NWafer: WORD): Boolean;                             //
 var                                                                                      //
@@ -3867,9 +3819,6 @@ begin                                                                           
     if Assigned(OnEvent) then OnEvent(evError, 'Не найден файл шаблона!');                             //
     Exit;                                                                                              //
   end;                                                                                                 //
-
-
-
                                                                                                        //
 /////////////////////////////////                                                                      //
                                                                                                        //
@@ -4399,9 +4348,7 @@ begin                                                                           
 
         HistParams[i].Name := Wafer[n].TestsParams[i].Name;
 
-        if (Length(HistGroup) > i) and
-           (HistGroup[i] <> 0) then HistParams[i].NGroups := HistGroup[i] ///////////////////////
-                               else HistParams[i].NGroups := 10;          ///////////////////////
+            HistParams[i].NGroups := 30; ///////////////////////
       end;
 
 
@@ -4458,12 +4405,12 @@ begin                                                                           
         Range1.Copy(WorkBook1.ActiveSheet.Cells[1+24*i, 1]); // Скопируем чарт
 
         Chart[i] := Workbook1.ActiveSheet.ChartObjects(i+1);
-      end;
 
-      Cell1 := WorkBook1.ActiveSheet.Cells[2, 16+i*3];           //
-      Cell2 := WorkBook1.ActiveSheet.Cells[2+NGroups-1, 17+i*3]; // Укажем
-      Range2 := WorkBook1.ActiveSheet.Range[Cell1, Cell2];       // данные
-      Chart[i].Chart.SetSourceData(Range2);                      //
+        Cell1 := WorkBook1.ActiveSheet.Cells[2, 16+i*3];           //
+        Cell2 := WorkBook1.ActiveSheet.Cells[2+NGroups-1, 17+i*3]; // Укажем
+        Range2 := WorkBook1.ActiveSheet.Range[Cell1, Cell2];       // данные
+        Chart[i].Chart.SetSourceData(Range2);                      //
+      end;
 
       WorkBook1.ActiveSheet.Cells[1+24*i, 6] := Name;
     end;

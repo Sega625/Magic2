@@ -113,13 +113,10 @@ type
     Wafer: array of TWafer;
     BlankWafer: TWafer;
 
-    HistGroup: array of DWORD;
-
     constructor Create(Hndl: THandle);
     destructor  Destroy(); override;
 
     procedure Init();
-    function  LoadHistGroupsFromIni(): Boolean;
     function  CreateBlankWafer(const NWafer: WORD): Boolean;
     function  SaveXLS(const ToFirstFail, MapByParams: Boolean): Boolean;
     function  GetColorByStatus(const Stat: WORD): TColor;
@@ -3732,51 +3729,6 @@ begin                                                 //
 end;                                                  //
 ////////////////////////////////////////////////////////
 
-
-function TLot.LoadHistGroupsFromIni(): Boolean;
-var
-  Buffer: array[0..MAX_PATH] of Char;
-  IniFile: TIniFile;
-  InifName: TFileName;
-  SL: TStringList;
-  n, P: WORD;
-begin
-  Result := False;
-
-  GetModuleFileName(0, Buffer, MAX_PATH);
-  InifName := ExtractFilePath(Buffer)+'Templates\Params.ini';
-  if not FileExists(InifName) then
-  begin
-    if Assigned(OnEvent) then OnEvent(evError, 'Не найден файл Params.ini');
-//    Exit;
-  end;
-
-  SL := TStringList.Create();
-  IniFile := TIniFile.Create(InifName);
-  try
-    IniFile.ReadSectionValues('Groups', SL);
-    if SL.Count > 0 then
-    begin
-      SetLength(HistGroup, SL.Count);
-
-      for n := 0 to SL.Count-1 do
-      begin
-        P := Pos('=', SL[n]);
-        try
-          HistGroup[n] := StrToInt(Copy(SL[n], P+1, Length(SL[n])));
-        except
-          HistGroup[n] := 0;
-        end;
-      end;
-    end;
-  except
-    IniFile.Free();
-  end;
-  SL.Free();
-
-  Result := True;
-end;
-
 ///////////////////////////////////////////////////////////////////////////////////////////
 function TLot.CreateBlankWafer(const NWafer: WORD): Boolean;                             //
 var                                                                                      //
@@ -3826,7 +3778,6 @@ var                                                                             
   tmpfName: TFileName; // Файл шаблона                                                                 //
   n, m, i, Nm, X, Y, X1, Y1: DWORD;                                                                    //
   Excel, WorkBook1, Range1, Range2, tmpRange, Chart1, Sheet, Cell1, Cell2: OleVariant;                 //
-  Chart: array of OleVariant;                                                                          //
   VarMass1, VarMass2: OleVariant;                                                                      //
   XLSfName: TFileName;                                                                                 //
   ClassID: TCLSID;                                                                                     //
@@ -3837,7 +3788,6 @@ var                                                                             
   Str: string;                                                                                         //
   StX, LenX, StY, P: WORD;                                                                             //
   MinLength, MaxLength: array of DWORD;                                                                //
-  GroupDiap: Single;                                                                                   //
 begin                                                                                                  //
   Result := False;                                                                                     //
                                                                                                        //
@@ -3867,9 +3817,6 @@ begin                                                                           
     if Assigned(OnEvent) then OnEvent(evError, 'Не найден файл шаблона!');                             //
     Exit;                                                                                              //
   end;                                                                                                 //
-
-
-
                                                                                                        //
 /////////////////////////////////                                                                      //
                                                                                                        //
@@ -3885,7 +3832,6 @@ begin                                                                           
     Workbook1.Sheets['Нормы и режимы'].Activate;                                                       //
   except                                                                                               //
     if Assigned(OnEvent) then OnEvent(evError, 'В шаблоне отсутствует лист <Нормы и режимы>');         //
-
   end;
 
   for i := 0 to Length(Wafer[0].TestsParams)-1 do
@@ -3921,7 +3867,6 @@ begin                                                                           
     Workbook1.Sheets['Пластина'].Activate;
   except
     if Assigned(OnEvent) then OnEvent(evError, 'В шаблоне отсутствует лист <Пластина>');
-
   end;
 
   if Assigned(OnEvent) then OnEvent(evInfo, '...Идёт обработка');
@@ -4193,7 +4138,6 @@ begin                                                                           
     Workbook1.Sheets['Всего'].Activate;
   except
     if Assigned(OnEvent) then OnEvent(evError, 'В шаблоне отсутствует лист <Всего>');
-
   end;
 
   for n := 0 to Length(Wafer)-1 do
@@ -4374,16 +4318,15 @@ begin                                                                           
     Workbook1.Sheets['Гистограммы'].Activate;
   except
     if Assigned(OnEvent) then OnEvent(evError, 'В шаблоне отсутствует лист <Гистограммы>');
-
   end;
 
-  SetLength(HistParams, Length(Wafer[0].CalcsParams));         //
-  for i := 0 to Length(HistParams)-1 do                        //
-  begin                                                        // Инициализация
-    SetLength(HistParams[i].AllValMass, 0);                    // групп
-                                                               //
-    HistParams[i].AllMinVal := Wafer[0].CalcsParams[i].MinVal; //
-    HistParams[i].AllMaxVal := Wafer[0].CalcsParams[i].MaxVal; //
+  SetLength(HistParams, Length(Wafer[0].CalcsParams));
+  for i := 0 to Length(HistParams)-1 do
+  begin
+    SetLength(HistParams[i].AllValMass, 0);
+
+    HistParams[i].AllMinVal := Wafer[0].CalcsParams[i].MinVal;
+    HistParams[i].AllMaxVal := Wafer[0].CalcsParams[i].MaxVal;
   end;
 
   for n := 0 to Length(Wafer)-1 do                                                         //
@@ -4394,78 +4337,44 @@ begin                                                                           
         SetLength(HistParams[i].AllValMass, Nm+ValCount);                                  // пластинам
           for m := 0 to Length(ValMass)-1 do HistParams[i].AllValMass[Nm+m] := ValMass[m]; //
                                                                                            //
-        if HistParams[i].AllMinVal > MinVal then HistParams[i].AllMinVal := MinVal;        // Найдём мин
-        if HistParams[i].AllMaxVal < MaxVal then HistParams[i].AllMaxVal := MaxVal;        // и макс
+        if HistParams[i].AllMinVal > MinVal then HistParams[i].AllMinVal := MinVal;        // Найдём
+        if HistParams[i].AllMaxVal < MaxVal then HistParams[i].AllMaxVal := MaxVal;        // мин и макс
 
         HistParams[i].Name := Wafer[n].TestsParams[i].Name;
 
-        if (Length(HistGroup) > i) and
-           (HistGroup[i] <> 0) then HistParams[i].NGroups := HistGroup[i] ///////////////////////
-                               else HistParams[i].NGroups := 10;          ///////////////////////
+            HistParams[i].NGroups := 30; ///////////////////////
       end;
 
 
+
   for i := 0 to Length(HistParams)-1 do
-    with HistParams[i] do
+  with HistParams[i] do
+  begin
+    SetLength(Group, NGroups);
+
+    for m := 0 to Length(Group)-1 do  // Создадим группы для гистограмм
     begin
-      SortMassByValue(AllValMass); // Отсортируем массивы
+      Group[m].Min := 0;
+      Group[m].Max := 0;
+    end;
 
-      GroupDiap := (AllMaxVal-AllMinVal)/NGroups; // Диапазон группы
-
-      SetLength(Group, NGroups);
-      for m := 0 to Length(Group)-1 do            //
-      begin                                       //
-        Group[m].Min := AllMinVal+GroupDiap*m;    // Создадим
-        if m < Length(Group)-1 then               // группы
-          Group[m].Max := Group[m].Min+GroupDiap  // для
-        else                                      // гистограмм
-          Group[m].Max := AllMaxVal;              //
-      end;                                        //
-
-      Nm := 0;                                              //
-      for m := 0 to Length(AllValMass)-1 do                 //
-      begin                                                 // Распределим
-        if AllValMass[m] > Group[Nm].Max then               // измерения
-          while (AllValMass[m] > Group[Nm].Max) do Inc(Nm); // по
-                                                            // группам
-        Inc(Group[Nm].Num);                                 //
-      end;                                                  //
-    end;                                                    //
+  end;
 
 
-  SetLength(Chart, Length(HistParams));
-
-  Chart[0] := Workbook1.ActiveSheet.ChartObjects(1);
-
-  Cell1 := WorkBook1.ActiveSheet.Cells[1, 1];
-  Cell2 := WorkBook1.ActiveSheet.Cells[22, 14];
-  Range1 := WorkBook1.ActiveSheet.Range[Cell1, Cell2];
 
   for i := 0 to Length(HistParams)-1 do
     with HistParams[i] do
     begin
+      SortMassByValue(AllValMass);
+
+
+
+
 
       WorkBook1.ActiveSheet.Cells[1, 16+i*3] := Name;
 
-      for m := 0 to Length(Group)-1 do
-      begin
-        WorkBook1.ActiveSheet.Cells[2+m, 16+i*3] := FormatFloat('0.000',Group[m].Min)+'-'+FormatFloat('0.000',Group[m].Max);
-        WorkBook1.ActiveSheet.Cells[2+m, 17+i*3] := Group[m].Num;
-      end;
-
-      if i > 0 then
-      begin
-        Range1.Copy(WorkBook1.ActiveSheet.Cells[1+24*i, 1]); // Скопируем чарт
-
-        Chart[i] := Workbook1.ActiveSheet.ChartObjects(i+1);
-      end;
-
-      Cell1 := WorkBook1.ActiveSheet.Cells[2, 16+i*3];           //
-      Cell2 := WorkBook1.ActiveSheet.Cells[2+NGroups-1, 17+i*3]; // Укажем
-      Range2 := WorkBook1.ActiveSheet.Range[Cell1, Cell2];       // данные
-      Chart[i].Chart.SetSourceData(Range2);                      //
-
-      WorkBook1.ActiveSheet.Cells[1+24*i, 6] := Name;
+      for m := 0 to Length(AllValMass)-1 do
+        WorkBook1.ActiveSheet.Cells[m+3, 16+i*3] := AllValMass[m];
     end;
 
 ////////////////////////////////////////////////////////////////////////////////
@@ -4478,7 +4387,6 @@ begin                                                                           
       Workbook1.Sheets['Карты обхода'].Activate;
     except
       if Assigned(OnEvent) then OnEvent(evError, 'В шаблоне отсутствует лист <Карты обхода>');
-
     end;
 
     if Assigned(OnEvent) then OnEvent(evInfo, '... Идёт запись в файл!');
@@ -4652,7 +4560,7 @@ begin                                                                           
   XLSfName := ChangeFileExt(LfName, '')+'.xlsx';
   Workbook1.SaveAs(GetFreeFileName(XLSfName));
 
-  if Assigned(OnEvent) then OnEvent(evCreate, '-------------------------------------------');
+  if Assigned(OnEvent) then OnEvent(evCreate, '-----------------------------');
   if Assigned(OnEvent) then OnEvent(evCreate, 'Создан файл: '+ExtractFileName(XLSfName)); // Пошлем сообщение о создании файла
                                                                                                                      //
   FormatSettings.DecimalSeparator := '.';                                                                            //

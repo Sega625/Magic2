@@ -144,7 +144,6 @@ type
   TGroup = record
     Min: Single;
     Max: Single;
-    Num: WORD;
   end;
 
   THistParams = record

@@ -426,8 +426,6 @@ begin                                                                           
   StartTime();                                                                        //
   TimeLab.Caption := '0.0 сек.';                                                      //
                                                                                       //
-  Lot.LoadHistGroupsFromIni();
-
   nWf := 0;                                                                           //
                                                                                       //
   Lot.Init();                                                                         //
@@ -461,12 +459,12 @@ begin                                                                           
             Exit;                                                                     //
           end;                                                                        //
                                                                                       //
-//        if MapLoaded then // Если карта обхода есть                                   //
-//          if Lot.BlankWafer.NTotal <> Lot.Wafer[nWf].NTotal then                      //
-//          begin                                                                       //
-//            Print_Result('Карта обхода не подходит к пластине!', clRed);              //
-//            Exit;                                                                     //
-//          end;                                                                        //
+        if MapLoaded then // Если нормы есть                                          //
+          if Lot.BlankWafer.NTotal <> Lot.Wafer[nWf].NTotal then                      //
+          begin                                                                       //
+            Print_Result('Карта обхода не подходит к пластине!', clRed);              //
+            Exit;                                                                     //
+          end;                                                                        //
                                                                                       //
         if CreateSTS = 1 then                                                         //
         begin                                                                         //
@@ -510,8 +508,6 @@ begin                                                                           
   StartTime();                                                                        //
   TimeLab.Caption := '0.0 сек.';                                                      //
                                                                                       //
-  Lot.LoadHistGroupsFromIni();
-
   nWf := 0;                                                                           //
                                                                                       //
   Lot.Init();                                                                         //

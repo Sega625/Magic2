@@ -4399,9 +4399,8 @@ begin                                                                           
 
         HistParams[i].Name := Wafer[n].TestsParams[i].Name;
 
-        if (Length(HistGroup) > i) and
-           (HistGroup[i] <> 0) then HistParams[i].NGroups := HistGroup[i] ///////////////////////
-                               else HistParams[i].NGroups := 10;          ///////////////////////
+        if Length(HistGroup) > i then HistParams[i].NGroups := HistGroup[i] ///////////////////////
+                                 else HistParams[i].NGroups := 10;
       end;
 
 
@@ -4458,12 +4457,12 @@ begin                                                                           
         Range1.Copy(WorkBook1.ActiveSheet.Cells[1+24*i, 1]); // —копируем чарт
 
         Chart[i] := Workbook1.ActiveSheet.ChartObjects(i+1);
-      end;
 
-      Cell1 := WorkBook1.ActiveSheet.Cells[2, 16+i*3];           //
-      Cell2 := WorkBook1.ActiveSheet.Cells[2+NGroups-1, 17+i*3]; // ”кажем
-      Range2 := WorkBook1.ActiveSheet.Range[Cell1, Cell2];       // данные
-      Chart[i].Chart.SetSourceData(Range2);                      //
+        Cell1 := WorkBook1.ActiveSheet.Cells[2, 16+i*3];           //
+        Cell2 := WorkBook1.ActiveSheet.Cells[2+NGroups-1, 17+i*3]; // ”кажем
+        Range2 := WorkBook1.ActiveSheet.Range[Cell1, Cell2];       // данные
+        Chart[i].Chart.SetSourceData(Range2);                      //
+      end;
 
       WorkBook1.ActiveSheet.Cells[1+24*i, 6] := Name;
     end;

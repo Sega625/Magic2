@@ -426,8 +426,6 @@ begin                                                                           
   StartTime();                                                                        //
   TimeLab.Caption := '0.0 сек.';                                                      //
                                                                                       //
-  Lot.LoadHistGroupsFromIni();
-
   nWf := 0;                                                                           //
                                                                                       //
   Lot.Init();                                                                         //
@@ -510,8 +508,6 @@ begin                                                                           
   StartTime();                                                                        //
   TimeLab.Caption := '0.0 сек.';                                                      //
                                                                                       //
-  Lot.LoadHistGroupsFromIni();
-
   nWf := 0;                                                                           //
                                                                                       //
   Lot.Init();                                                                         //

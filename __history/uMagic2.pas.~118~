@@ -30,6 +30,7 @@ type
     OpenDirBtn: TButton;
     OpenDirLab: TLabel;
     ProcSchusterBtn: TButton;
+    LoadIniBtn: TButton;
 
     procedure LoadMDBBtnClick(Sender: TObject);
     procedure FormCreate(Sender: TObject);
@@ -44,6 +45,7 @@ type
     procedure MSystemCBChange(Sender: TObject);
     procedure ProcSchusterBtnClick(Sender: TObject);
     procedure WafersLBDrawItem(Control: TWinControl; Index: Integer; Rect: TRect; State: TOwnerDrawState);
+    procedure LoadIniBtnClick(Sender: TObject);
   private
     Lot: TLot;
 
@@ -426,8 +428,6 @@ begin                                                                           
   StartTime();                                                                        //
   TimeLab.Caption := '0.0 сек.';                                                      //
                                                                                       //
-  Lot.LoadHistGroupsFromIni();
-
   nWf := 0;                                                                           //
                                                                                       //
   Lot.Init();                                                                         //
@@ -510,8 +510,6 @@ begin                                                                           
   StartTime();                                                                        //
   TimeLab.Caption := '0.0 сек.';                                                      //
                                                                                       //
-  Lot.LoadHistGroupsFromIni();
-
   nWf := 0;                                                                           //
                                                                                       //
   Lot.Init();                                                                         //
@@ -1043,6 +1041,17 @@ begin                                 //
   Result := (EndTime-BegTime)/Freq;   //
 end;                                  //
 ////////////////////////////////////////
+
+
+
+
+
+
+procedure TMDBForm.LoadIniBtnClick(Sender: TObject);
+begin
+  Lot.LoadHistGroupsFromIni();
+end;
+
 
 
 end.

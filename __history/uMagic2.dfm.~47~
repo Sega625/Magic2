@@ -261,7 +261,7 @@ object MDBForm: TMDBForm
     BevelKind = bkFlat
     BorderStyle = bsNone
     Ctl3D = False
-    Font.Charset = RUSSIAN_CHARSET
+    Font.Charset = DEFAULT_CHARSET
     Font.Color = clWindowText
     Font.Height = -17
     Font.Name = 'Roboto'

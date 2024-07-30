@@ -113,13 +113,10 @@ type
     Wafer: array of TWafer;
     BlankWafer: TWafer;
 
-    HistGroup: array of DWORD;
-
     constructor Create(Hndl: THandle);
     destructor  Destroy(); override;
 
     procedure Init();
-    function  LoadHistGroupsFromIni(): Boolean;
     function  CreateBlankWafer(const NWafer: WORD): Boolean;
     function  SaveXLS(const ToFirstFail, MapByParams: Boolean): Boolean;
     function  GetColorByStatus(const Stat: WORD): TColor;
@@ -3732,51 +3729,6 @@ begin                                                 //
 end;                                                  //
 ////////////////////////////////////////////////////////
 
-
-function TLot.LoadHistGroupsFromIni(): Boolean;
-var
-  Buffer: array[0..MAX_PATH] of Char;
-  IniFile: TIniFile;
-  InifName: TFileName;
-  SL: TStringList;
-  n, P: WORD;
-begin
-  Result := False;
-
-  GetModuleFileName(0, Buffer, MAX_PATH);
-  InifName := ExtractFilePath(Buffer)+'Templates\Params.ini';
-  if not FileExists(InifName) then
-  begin
-    if Assigned(OnEvent) then OnEvent(evError, 'Не найден файл Params.ini');
-//    Exit;
-  end;
-
-  SL := TStringList.Create();
-  IniFile := TIniFile.Create(InifName);
-  try
-    IniFile.ReadSectionValues('Groups', SL);
-    if SL.Count > 0 then
-    begin
-      SetLength(HistGroup, SL.Count);
-
-      for n := 0 to SL.Count-1 do
-      begin
-        P := Pos('=', SL[n]);
-        try
-          HistGroup[n] := StrToInt(Copy(SL[n], P+1, Length(SL[n])));
-        except
-          HistGroup[n] := 0;
-        end;
-      end;
-    end;
-  except
-    IniFile.Free();
-  end;
-  SL.Free();
-
-  Result := True;
-end;
-
 ///////////////////////////////////////////////////////////////////////////////////////////
 function TLot.CreateBlankWafer(const NWafer: WORD): Boolean;                             //
 var                                                                                      //
@@ -3826,7 +3778,6 @@ var                                                                             
   tmpfName: TFileName; // Файл шаблона                                                                 //
   n, m, i, Nm, X, Y, X1, Y1: DWORD;                                                                    //
   Excel, WorkBook1, Range1, Range2, tmpRange, Chart1, Sheet, Cell1, Cell2: OleVariant;                 //
-  Chart: array of OleVariant;                                                                          //
   VarMass1, VarMass2: OleVariant;                                                                      //
   XLSfName: TFileName;                                                                                 //
   ClassID: TCLSID;                                                                                     //
@@ -3837,7 +3788,7 @@ var                                                                             
   Str: string;                                                                                         //
   StX, LenX, StY, P: WORD;                                                                             //
   MinLength, MaxLength: array of DWORD;                                                                //
-  GroupDiap: Single;                                                                                   //
+  GroupDiap: Single;
 begin                                                                                                  //
   Result := False;                                                                                     //
                                                                                                        //
@@ -3867,9 +3818,6 @@ begin                                                                           
     if Assigned(OnEvent) then OnEvent(evError, 'Не найден файл шаблона!');                             //
     Exit;                                                                                              //
   end;                                                                                                 //
-
-
-
                                                                                                        //
 /////////////////////////////////                                                                      //
                                                                                                        //
@@ -4399,9 +4347,7 @@ begin                                                                           
 
         HistParams[i].Name := Wafer[n].TestsParams[i].Name;
 
-        if (Length(HistGroup) > i) and
-           (HistGroup[i] <> 0) then HistParams[i].NGroups := HistGroup[i] ///////////////////////
-                               else HistParams[i].NGroups := 10;          ///////////////////////
+            HistParams[i].NGroups := 10; ///////////////////////
       end;
 
 
@@ -4422,50 +4368,39 @@ begin                                                                           
           Group[m].Max := AllMaxVal;              //
       end;                                        //
 
-      Nm := 0;                                              //
-      for m := 0 to Length(AllValMass)-1 do                 //
-      begin                                                 // Распределим
-        if AllValMass[m] > Group[Nm].Max then               // измерения
-          while (AllValMass[m] > Group[Nm].Max) do Inc(Nm); // по
-                                                            // группам
-        Inc(Group[Nm].Num);                                 //
-      end;                                                  //
-    end;                                                    //
+      Nm := 0;                                     //
+      for m := 0 to Length(AllValMass)-1 do        //
+      begin                                        //
+        if AllValMass[m] > Group[Nm].Max then      //
+        begin                                      // Распределим
+          while (AllValMass[m] > Group[Nm].Max) do // измерения
+            {if Nm < Length(Group)-1 then} Inc(Nm);  // группам
+        end;                                       //
+                                                   //
+        Inc(Group[Nm].Num);                        //
+      end;                                         //
+    end;                                           //
 
-
-  SetLength(Chart, Length(HistParams));
-
-  Chart[0] := Workbook1.ActiveSheet.ChartObjects(1);
-
-  Cell1 := WorkBook1.ActiveSheet.Cells[1, 1];
-  Cell2 := WorkBook1.ActiveSheet.Cells[22, 14];
-  Range1 := WorkBook1.ActiveSheet.Range[Cell1, Cell2];
+  Workbook1.Sheets['Temp'].Activate;
 
   for i := 0 to Length(HistParams)-1 do
     with HistParams[i] do
     begin
 
-      WorkBook1.ActiveSheet.Cells[1, 16+i*3] := Name;
+      WorkBook1.ActiveSheet.Cells[1, 1+i*3] := Name;
 
       for m := 0 to Length(Group)-1 do
       begin
-        WorkBook1.ActiveSheet.Cells[2+m, 16+i*3] := FormatFloat('0.000',Group[m].Min)+'-'+FormatFloat('0.000',Group[m].Max);
-        WorkBook1.ActiveSheet.Cells[2+m, 17+i*3] := Group[m].Num;
+        WorkBook1.ActiveSheet.Cells[2+m, 1+i*3] := Group[m].Num;
+        WorkBook1.ActiveSheet.Cells[2+m, 2+i*3] := FormatFloat('0.000',Group[m].Min)+'-'+FormatFloat('0.000',Group[m].Max);
       end;
 
-      if i > 0 then
-      begin
-        Range1.Copy(WorkBook1.ActiveSheet.Cells[1+24*i, 1]); // Скопируем чарт
 
-        Chart[i] := Workbook1.ActiveSheet.ChartObjects(i+1);
-      end;
+//      for m := 0 to Length(AllValMass)-1 do
+//        WorkBook1.ActiveSheet.Cells[m+3, 16+i*3] := AllValMass[m];
 
-      Cell1 := WorkBook1.ActiveSheet.Cells[2, 16+i*3];           //
-      Cell2 := WorkBook1.ActiveSheet.Cells[2+NGroups-1, 17+i*3]; // Укажем
-      Range2 := WorkBook1.ActiveSheet.Range[Cell1, Cell2];       // данные
-      Chart[i].Chart.SetSourceData(Range2);                      //
-
-      WorkBook1.ActiveSheet.Cells[1+24*i, 6] := Name;
+//      for m := 0 to Length(Group)-1 do WorkBook1.ActiveSheet.Cells[m+3, 17+i*3] := Group[m].Min;
+//      for m := 0 to Length(Group)-1 do WorkBook1.ActiveSheet.Cells[m+3, 18+i*3] := Group[m].Max;
     end;
 
 ////////////////////////////////////////////////////////////////////////////////
