@@ -141,11 +141,6 @@ type
 
 /////////////////////////////////////////
 
-  THistGroup = record
-    Name: string;
-    Num: WORD;
-  end;
-
   TGroup = record
     Min: Single;
     Max: Single;
@@ -154,7 +149,6 @@ type
 
   THistParams = record
     Name: string;
-    ShortName: string;
     AllValMass: TDynArray; // Массив параметров для гистограмм
     AllMinVal : Single;    // Минимальный параметр
     AllMaxVal : Single;    // Максимальный параметр

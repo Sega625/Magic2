@@ -283,6 +283,7 @@ object MDBForm: TMDBForm
     Margins.Bottom = 4
     Caption = #1054#1095#1080#1089#1090#1080#1090#1100
     TabOrder = 6
+    Visible = False
     OnClick = ClearBtnClick
   end
   object MSystemCB: TComboBox

@@ -1,9 +1,9 @@
 object MDBForm: TMDBForm
-  Left = 501
-  Top = 226
+  Left = 215
+  Top = 262
   BorderStyle = bsSingle
   Caption = 'Magic2'
-  ClientHeight = 601
+  ClientHeight = 598
   ClientWidth = 859
   Color = clBtnFace
   Font.Charset = DEFAULT_CHARSET
@@ -12,6 +12,7 @@ object MDBForm: TMDBForm
   Font.Name = 'Tahoma'
   Font.Style = []
   Menu = MainMenu1
+  Position = poDesigned
   OnCreate = FormCreate
   OnDestroy = FormDestroy
   PixelsPerInch = 120
@@ -139,7 +140,7 @@ object MDBForm: TMDBForm
   end
   object Label4: TLabel
     Left = 13
-    Top = 11
+    Top = 14
     Width = 174
     Height = 19
     Margins.Left = 4
@@ -186,9 +187,9 @@ object MDBForm: TMDBForm
     OnClick = LoadMDBBtnClick
   end
   object WafersLB: TListBox
-    Left = 200
-    Top = 39
-    Width = 272
+    Left = 199
+    Top = 38
+    Width = 273
     Height = 512
     Margins.Left = 4
     Margins.Top = 4
@@ -198,14 +199,15 @@ object MDBForm: TMDBForm
     BorderStyle = bsNone
     Font.Charset = DEFAULT_CHARSET
     Font.Color = clWindowText
-    Font.Height = -16
+    Font.Height = -17
     Font.Name = 'Roboto'
     Font.Style = []
-    ItemHeight = 19
+    ItemHeight = 20
     MultiSelect = True
     ParentFont = False
     Sorted = True
     TabOrder = 1
+    OnDrawItem = WafersLBDrawItem
   end
   object ProcGammaBtn: TButton
     Left = 200
@@ -249,7 +251,7 @@ object MDBForm: TMDBForm
   end
   object ResultRE: TRichEdit
     Left = 480
-    Top = 39
+    Top = 38
     Width = 370
     Height = 551
     Margins.Left = 4
@@ -261,7 +263,7 @@ object MDBForm: TMDBForm
     Ctl3D = False
     Font.Charset = RUSSIAN_CHARSET
     Font.Color = clWindowText
-    Font.Height = -13
+    Font.Height = -17
     Font.Name = 'Roboto'
     Font.Style = []
     ParentCtl3D = False
