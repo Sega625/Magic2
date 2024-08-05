@@ -271,6 +271,7 @@ object MDBForm: TMDBForm
     ReadOnly = True
     ScrollBars = ssVertical
     TabOrder = 5
+    OnChange = ResultREChange
   end
   object ClearBtn: TButton
     Left = 759

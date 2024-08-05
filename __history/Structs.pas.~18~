@@ -141,10 +141,10 @@ type
 
 /////////////////////////////////////////
 
-  THistGroup = record //
-    Name: string;     // Для считывания
-    Num: WORD;        // из файла
-  end;                //
+  THistGroup = record
+    Name: string;
+    Num: WORD;
+  end;
 
   TGroup = record
     Min: Single;
@@ -160,7 +160,7 @@ type
     AllMaxVal : Single;    // Максимальный параметр
 
     NGroups: WORD; // Кол-во групп
-    Group: array of TGroup; // Группы
+    Group: array of TGroup;
   end;
 
 /////////////////////////////////////////

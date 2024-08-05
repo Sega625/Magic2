@@ -3887,7 +3887,7 @@ begin                                                                           
     HistParams[i].NGroups := 30;
                                                                                   //
     if Length(HistGroup) > 0 then                                                 //
-      for m := 0 to Length(HistGroup) do                                          //
+      for m := 0 to Length(HistGroup)-1 do                                        //
         if HistParams[i].ShortName = HistGroup[m].Name then                       //
         begin                                                                     //
           if HistGroup[m].Num > 0 then HistParams[i].NGroups := HistGroup[m].Num; //
@@ -4059,7 +4059,6 @@ begin                                                                           
             if not ToFirstFail then // Если не до 1-го брака
               for i := 0 to Length(TestsParams)-1 do
               begin
-                // if Chip[Y, X].ChipParams[i].Value = NotSpec then Continue; // Если неправильно измерено
                 if Chip[Y, X].ChipParams[i].Value = NotSpec then //
                 begin                                            // Параметр
                   VarMass1[Nm+1, i+1] := '';                     // не
@@ -4088,7 +4087,12 @@ begin                                                                           
               for i := 0 to Length(TestsParams)-1 do
                 if i < Chip[Y, X].Status-1999 then
                 begin
-                  if Chip[Y, X].ChipParams[i].Value = NotSpec then Continue; // Если неправильно измерено
+                  if Chip[Y, X].ChipParams[i].Value = NotSpec then //
+                  begin                                            // Параметр
+                    VarMass1[Nm+1, i+1] := '';                     // не
+                    Chip[Y, X].ChipParams[i].Stat := 4;            // измерялся
+                    Continue;                                      //
+                  end;
 
                   VarMass1[Nm+1, i+1] := Chip[Y, X].ChipParams[i].Value;
 
@@ -4163,7 +4167,8 @@ begin                                                                           
                   Group[m].Max := MaxVal;                 //
               end;                                        //
 
-              Nm := 0;                                           //
+              Nm := 0;
+
               for m := 0 to Length(ValMass)-1 do                 //
               begin                                              // Распределим
                 if ValMass[m] > Group[Nm].Max then               // измерения
@@ -4199,11 +4204,12 @@ begin                                                                           
             Chart[i] := Workbook1.ActiveSheet.ChartObjects(i+2);
           end;
 
-          for m := 0 to Length(Group)-1 do
-          begin                                                                                                                                   // Выведем
-            WorkBook1.ActiveSheet.Cells[BottomSheet+3+26*i+m, 13+2*i] := FormatFloat('0.000',Group[m].Min)+'-'+FormatFloat('0.000',Group[m].Max); // границы
-            WorkBook1.ActiveSheet.Cells[BottomSheet+3+26*i+m, 14+2*i] := Group[m].Num;                                                            // и кол-во
-          end;
+          if Length(Group) > 0 then
+            for m := 0 to Length(Group)-1 do
+            begin                                                                                                                                     // Выведем
+              WorkBook1.ActiveSheet.Cells[BottomSheet+3+26*i+m, 13+2*i] := FormatFloat('0.000', Group[m].Min)+'-'+FormatFloat('0.000', Group[m].Max); // границы
+              WorkBook1.ActiveSheet.Cells[BottomSheet+3+26*i+m, 14+2*i] := Group[m].Num;                                                              // и кол-во
+            end;
 
           Cell1 := WorkBook1.ActiveSheet.Cells[BottomSheet+3+26*i, 13+2*i];           //
           Cell2 := WorkBook1.ActiveSheet.Cells[BottomSheet+3+26*i+NGroups-1, 14+2*i]; // Укажем
@@ -4242,24 +4248,25 @@ begin                                                                           
       Range2.NumberFormat := '0';                                             // Количество годных
 
       for i := 0 to Length(TestsParams)-1 do
-      begin
-        WorkBook1.ActiveSheet.Cells[NTotal+3,  4+i] := CalcsParams[i].AvrVal;  // Среднее
-        WorkBook1.ActiveSheet.Cells[NTotal+4,  4+i] := CalcsParams[i].Qrt1Val; // 1-й квартиль
-        WorkBook1.ActiveSheet.Cells[NTotal+5,  4+i] := CalcsParams[i].MedVal;  // Медиана
-        WorkBook1.ActiveSheet.Cells[NTotal+6,  4+i] := CalcsParams[i].Qrt3Val; // 3-й квартиль
-        if CalcsParams[i].MinVal <> MaxSingle then
-          WorkBook1.ActiveSheet.Cells[NTotal+7,  4+i] := CalcsParams[i].MinVal;  // Мин.
-        if CalcsParams[i].MaxVal <> -MaxSingle then
-          WorkBook1.ActiveSheet.Cells[NTotal+8,  4+i] := CalcsParams[i].MaxVal;  // Мах.
-        WorkBook1.ActiveSheet.Cells[NTotal+9,  4+i] := CalcsParams[i].StdVal;  // Сигма
-        WorkBook1.ActiveSheet.Cells[NTotal+10, 4+i] := Wafer[n].NOK;           // Счёт ???????????????????
+        if CalcsParams[i].ValCount > 0 then
+        begin
+          WorkBook1.ActiveSheet.Cells[NTotal+3,  4+i] := CalcsParams[i].AvrVal;  // Среднее
+          WorkBook1.ActiveSheet.Cells[NTotal+4,  4+i] := CalcsParams[i].Qrt1Val; // 1-й квартиль
+          WorkBook1.ActiveSheet.Cells[NTotal+5,  4+i] := CalcsParams[i].MedVal;  // Медиана
+          WorkBook1.ActiveSheet.Cells[NTotal+6,  4+i] := CalcsParams[i].Qrt3Val; // 3-й квартиль
+          if CalcsParams[i].MinVal <> MaxSingle then
+            WorkBook1.ActiveSheet.Cells[NTotal+7,  4+i] := CalcsParams[i].MinVal;  // Мин.
+          if CalcsParams[i].MaxVal <> -MaxSingle then
+            WorkBook1.ActiveSheet.Cells[NTotal+8,  4+i] := CalcsParams[i].MaxVal;  // Мах.
+          WorkBook1.ActiveSheet.Cells[NTotal+9,  4+i] := CalcsParams[i].StdVal;  // Сигма
+          WorkBook1.ActiveSheet.Cells[NTotal+10, 4+i] := Wafer[n].NOK;           // Счёт ???????????????????
 
-        WorkBook1.ActiveSheet.Cells[NTotal+11, 4+i] := (Wafer[n].NOK*100)/NMeased; // %Годных ??????????????
-        WorkBook1.ActiveSheet.Cells[NTotal+13, 4+i] := CalcsParams[i].NOKVal;      // Годных
-        WorkBook1.ActiveSheet.Cells[NTotal+14, 4+i] := CalcsParams[i].NFailsVal;   // Брак
+          WorkBook1.ActiveSheet.Cells[NTotal+11, 4+i] := (Wafer[n].NOK*100)/NMeased; // %Годных ??????????????
+          WorkBook1.ActiveSheet.Cells[NTotal+13, 4+i] := CalcsParams[i].NOKVal;      // Годных
+          WorkBook1.ActiveSheet.Cells[NTotal+14, 4+i] := CalcsParams[i].NFailsVal;   // Брак
 
-        WorkBook1.ActiveSheet.Columns[4+i].EntireColumn.AutoFit; /////
-      end;
+          WorkBook1.ActiveSheet.Columns[4+i].EntireColumn.AutoFit; /////
+        end;
 
       WorkBook1.ActiveSheet.Cells[NTotal+15, 4] := Wafer[n].NMeased; // Всего измерено
       WorkBook1.ActiveSheet.Cells[NTotal+16, 4] := Wafer[n].NOK;     // Всего годных
@@ -4342,23 +4349,25 @@ begin                                                                           
 
       WorkBook1.ActiveSheet.Cells[4+9*n, 1] := Wafer[n].Num;
       WorkBook1.ActiveSheet.Columns[1].EntireColumn.AutoFit;
+
       for i := 0 to Length(TestsParams)-1 do
-      begin
-        WorkBook1.ActiveSheet.Cells[4+ 9*n, 3+i] := Wafer[n].CalcsParams[i].AvrVal;   // Среднее
-        WorkBook1.ActiveSheet.Cells[5+ 9*n, 3+i] := Wafer[n].CalcsParams[i].Qrt1Val;  // 1-й квартиль
-        WorkBook1.ActiveSheet.Cells[6+ 9*n, 3+i] := Wafer[n].CalcsParams[i].MedVal;   // Медиана
-        WorkBook1.ActiveSheet.Cells[7+ 9*n, 3+i] := Wafer[n].CalcsParams[i].Qrt3Val;  // 3-й квартиль
-        if Wafer[n].CalcsParams[i].MinVal <> MaxSingle then
-          WorkBook1.ActiveSheet.Cells[8+ 9*n, 3+i] := Wafer[n].CalcsParams[i].MinVal; // Мин.
-        if Wafer[n].CalcsParams[i].MaxVal <> -MaxSingle then
-          WorkBook1.ActiveSheet.Cells[9+ 9*n, 3+i] := Wafer[n].CalcsParams[i].MaxVal; // Макс.
-        WorkBook1.ActiveSheet.Cells[10+9*n, 3+i] := Wafer[n].CalcsParams[i].StdVal;   // Сигма
+        if CalcsParams[i].ValCount > 0 then
+        begin
+          WorkBook1.ActiveSheet.Cells[4+ 9*n, 3+i] := Wafer[n].CalcsParams[i].AvrVal;   // Среднее
+          WorkBook1.ActiveSheet.Cells[5+ 9*n, 3+i] := Wafer[n].CalcsParams[i].Qrt1Val;  // 1-й квартиль
+          WorkBook1.ActiveSheet.Cells[6+ 9*n, 3+i] := Wafer[n].CalcsParams[i].MedVal;   // Медиана
+          WorkBook1.ActiveSheet.Cells[7+ 9*n, 3+i] := Wafer[n].CalcsParams[i].Qrt3Val;  // 3-й квартиль
+          if Wafer[n].CalcsParams[i].MinVal <> MaxSingle then
+            WorkBook1.ActiveSheet.Cells[8+ 9*n, 3+i] := Wafer[n].CalcsParams[i].MinVal; // Мин.
+          if Wafer[n].CalcsParams[i].MaxVal <> -MaxSingle then
+            WorkBook1.ActiveSheet.Cells[9+ 9*n, 3+i] := Wafer[n].CalcsParams[i].MaxVal; // Макс.
+          WorkBook1.ActiveSheet.Cells[10+9*n, 3+i] := Wafer[n].CalcsParams[i].StdVal;   // Сигма
 
-        WorkBook1.ActiveSheet.Cells[11+9*n, 3+i] := Wafer[n].NOK;      // Счёт ??????
-        WorkBook1.ActiveSheet.Cells[12+9*n, 3+i] := (NOK*100)/NMeased; // %Годных ??????????????
+          WorkBook1.ActiveSheet.Cells[11+9*n, 3+i] := Wafer[n].NOK;      // Счёт ??????
+          WorkBook1.ActiveSheet.Cells[12+9*n, 3+i] := (NOK*100)/NMeased; // %Годных ??????????????
 
-        WorkBook1.ActiveSheet.Columns[3+i].EntireColumn.AutoFit;
-      end;
+          WorkBook1.ActiveSheet.Columns[3+i].EntireColumn.AutoFit;
+        end;
 
     end;
 
@@ -4457,18 +4466,8 @@ begin                                                                           
     WorkBook1.ActiveSheet.Cells[12+X, i+3] := OKSum[i]+FailsSum[i]; // Всего
   end;
 
-  for i := 0 to Length(HistParams)-1 do                        //
-  begin                                                        // Инициализация
-    SetLength(HistParams[i].AllValMass, 0);                    // групп
-                                                               //
-    HistParams[i].AllMinVal := Wafer[0].CalcsParams[i].MinVal; //
-    HistParams[i].AllMaxVal := Wafer[0].CalcsParams[i].MaxVal; //
-
-    SetLength(HistParams[i].Group, 0);
-  end;
-
 //////////////////// * Общие гистограммы по параметрам * ///////////////////////
-
+{
   for i := 0 to Length(HistParams)-1 do                        //
   begin                                                        // Инициализация
     SetLength(HistParams[i].AllValMass, 0);                    // групп
@@ -4484,7 +4483,8 @@ begin                                                                           
       with Wafer[n].CalcsParams[i] do                                                      // Сложим
       begin                                                                                // параметры
         Nm := Length(HistParams[i].AllValMass);                                            // по всем
-        SetLength(HistParams[i].AllValMass, Nm+ValCount);                                  // пластинам
+        SetLength(HistParams[i].AllValMass, Nm+Wafer[n].CalcsParams[i].ValCount);                                  // пластинам
+        if Length(Wafer[n].CalcsParams[i].ValMass) > 0 then                                                        //
           for m := 0 to Length(ValMass)-1 do HistParams[i].AllValMass[Nm+m] := ValMass[m]; //
                                                                                            //
         if HistParams[i].AllMinVal > MinVal then HistParams[i].AllMinVal := MinVal;        // Найдём мин
@@ -4556,7 +4556,7 @@ begin                                                                           
       Range2.Font.Color := clWhite; // Сделаем данные невидимыми
     end;
 
-
+}
   if Assigned(OnEvent) then OnEvent(evOK, '>>> Обработаны все пластины!');
 
 ////////////////////////////////////////////////////////////////////////////////

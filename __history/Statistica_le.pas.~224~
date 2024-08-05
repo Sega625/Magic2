@@ -3872,9 +3872,11 @@ begin                                                                           
     if Assigned(OnEvent) then OnEvent(evError, 'Не найден файл шаблона!');                             //
     Exit;                                                                                              //
   end;                                                                                                 //
-                                                                                                       //
+
+////////////////////////////////////
 
   SetLength(HistParams, Length(Wafer[0].TestsParams)); // Зададим кол-во групп для гистограмм
+
   for i := 0 to Length(HistParams)-1 do
   begin
     HistParams[i].Name := Wafer[0].TestsParams[i].Name;
@@ -3885,7 +3887,7 @@ begin                                                                           
     HistParams[i].NGroups := 30;
                                                                                   //
     if Length(HistGroup) > 0 then                                                 //
-      for m := 0 to Length(HistGroup) do                                          //
+      for m := 0 to Length(HistGroup)-1 do                                        //
         if HistParams[i].ShortName = HistGroup[m].Name then                       //
         begin                                                                     //
           if HistGroup[m].Num > 0 then HistParams[i].NGroups := HistGroup[m].Num; //
@@ -3992,44 +3994,6 @@ begin                                                                           
       Chart1.Chart.SetSourceData(Range2);                                       // для графика
 
       BottomSheet := NTotal+17+27; // Самая нижняя строка
-
-      SetLength(Chart, Length(TestsParams));
-      Chart[0] := Workbook1.ActiveSheet.ChartObjects(2);
-      Chart[0].Top := WorkBook1.ActiveSheet.Rows[BottomSheet+3].Top;
-
-      Cell1 := WorkBook1.ActiveSheet.Cells[BottomSheet+3, 1];
-      Cell2 := WorkBook1.ActiveSheet.Cells[BottomSheet+3+24, 11];
-      Range1 := WorkBook1.ActiveSheet.Range[Cell1, Cell2];
-
-      BottomSheet := BottomSheet+3+24;
-
-      for i := 0 to 2 do //Length(HistParams)-1 do
-        with HistParams[i] do
-        begin
-          WorkBook1.ActiveSheet.Cells[BottomSheet+2, 5] := Name;
-
-//          for m := 0 to Length(Group)-1 do
-//          begin
-//            WorkBook1.ActiveSheet.Cells[2+m, 16+i*3] := FormatFloat('0.000',Group[m].Min)+'-'+FormatFloat('0.000',Group[m].Max);
-//            WorkBook1.ActiveSheet.Cells[2+m, 17+i*3] := Group[m].Num;
-//          end;
-
-          if i > 0 then
-          begin
-            Range1.Copy(WorkBook1.ActiveSheet.Cells[BottomSheet+3, 1]); // Скопируем чарт
-            BottomSheet := BottomSheet+3+24;
-
-            Chart[i] := Workbook1.ActiveSheet.ChartObjects(i+2);
-          end;
-
-//          Cell1 := WorkBook1.ActiveSheet.Cells[2, 16+i*3];           //
-//          Cell2 := WorkBook1.ActiveSheet.Cells[2+NGroups-1, 17+i*3]; // Укажем
-//          Range2 := WorkBook1.ActiveSheet.Range[Cell1, Cell2];       // данные
-//          Chart[i].Chart.SetSourceData(Range2);                      //
-
-//          WorkBook1.ActiveSheet.Cells[1+24*i, 6] := Name;
-        end;
-
 
       SetLength(CalcsParams, Length(TestsParams));
       for i := 0 to Length(CalcsParams)-1 do
@@ -4182,7 +4146,7 @@ begin                                                                           
               Qrt3Val := (ValMass[(3*(ValCount div 4))-1]+ValMass[3*(ValCount div 4)])/2; //
             end;                                                                          //
 
-
+/////////////////////////////
 
             with HistParams[i] do // Для гистограммы
             begin
@@ -4191,6 +4155,7 @@ begin                                                                           
               SetLength(Group, NGroups);
               for m := 0 to Length(Group)-1 do            //
               begin                                       //
+                Group[m].Num := 0;                        //
                 Group[m].Min := MinVal+GroupDiap*m;       // Создадим
                 if m < Length(Group)-1 then               // группы
                   Group[m].Max := Group[m].Min+GroupDiap  // для
@@ -4210,6 +4175,45 @@ begin                                                                           
           end;
         end;
       end;
+
+      /////////////// ** Нарисуем гистограммы по параметрам ** /////////////////
+
+      SetLength(Chart, 0);
+      SetLength(Chart, Length(HistParams));
+      Chart[0] := Workbook1.ActiveSheet.ChartObjects(2);             // Первая
+      Chart[0].Top := WorkBook1.ActiveSheet.Rows[BottomSheet+3].Top; // гистограмма
+      Chart[0].Copy;
+
+      for i := 0 to Length(HistParams)-1 do
+        with HistParams[i] do
+        begin
+          WorkBook1.ActiveSheet.Cells[BottomSheet+2+26*i, 5].Font.Bold := True; //
+          WorkBook1.ActiveSheet.Cells[BottomSheet+2+26*i, 5].Font.Size := 12;   // Имя
+          WorkBook1.ActiveSheet.Cells[BottomSheet+2+26*i, 5] := Name;           // гистограммы
+
+          if i > 0 then
+          begin
+            WorkBook1.ActiveSheet.Cells[BottomSheet+3+26*i, 1].Select;
+            WorkBook1.ActiveSheet.Paste;
+
+            Chart[i] := Workbook1.ActiveSheet.ChartObjects(i+2);
+          end;
+
+          for m := 0 to Length(Group)-1 do
+          begin                                                                                                                                   // Выведем
+            WorkBook1.ActiveSheet.Cells[BottomSheet+3+26*i+m, 13+2*i] := FormatFloat('0.000',Group[m].Min)+'-'+FormatFloat('0.000',Group[m].Max); // границы
+            WorkBook1.ActiveSheet.Cells[BottomSheet+3+26*i+m, 14+2*i] := Group[m].Num;                                                            // и кол-во
+          end;
+
+          Cell1 := WorkBook1.ActiveSheet.Cells[BottomSheet+3+26*i, 13+2*i];           //
+          Cell2 := WorkBook1.ActiveSheet.Cells[BottomSheet+3+26*i+NGroups-1, 14+2*i]; // Укажем
+          Range2 := WorkBook1.ActiveSheet.Range[Cell1, Cell2];                        // данные
+          Chart[i].Chart.SetSourceData(Range2);                                       //
+
+          Range2.Font.Color := clWhite; // Сделаем данные невидимыми
+        end;
+
+      //////////////////////////////////////////////////////////////////////////
 
       Cell1 := WorkBook1.ActiveSheet.Cells[2, 4];                            // Внесём
       Cell2 := WorkBook1.ActiveSheet.Cells[NTotal+1, 3+Length(TestsParams)]; // результаты
@@ -4265,10 +4269,6 @@ begin                                                                           
       VarClear(VarMass1); // Очистим
       VarClear(VarMass2); // вариантные массивы
     end; // for Wafer[n]
-
-
-
-
 
   try
     Workbook1.Sheets['Пластина'].Delete; // Удалим лист шаблона
@@ -4337,6 +4337,8 @@ begin                                                                           
             Range1.Copy(WorkBook1.ActiveSheet.Cells[13+9*i, 1]); // для всех пластин
         end;
       end;
+
+      BottomSheet := 27+9*(Length(Wafer)-1)+26; // Самая нижняя строка //////// +27
 
       WorkBook1.ActiveSheet.Cells[4+9*n, 1] := Wafer[n].Num;
       WorkBook1.ActiveSheet.Columns[1].EntireColumn.AutoFit;
@@ -4455,28 +4457,26 @@ begin                                                                           
     WorkBook1.ActiveSheet.Cells[12+X, i+3] := OKSum[i]+FailsSum[i]; // Всего
   end;
 
-//  BottomSheet := Chart1.Top+27;
-
-  if Assigned(OnEvent) then OnEvent(evOK, '>>> Обработаны все пластины!');
-
-////////////////////////////////////////////////////////////////////////////////
-//////////////////////////// * Лист "Гистограммы" * ////////////////////////////
-////////////////////////////////////////////////////////////////////////////////
-
-  try
-    Workbook1.Sheets['Гистограммы'].Activate;
-  except
-    if Assigned(OnEvent) then OnEvent(evError, 'В шаблоне отсутствует лист <Гистограммы>');
-
-  end;
-
-  SetLength(HistParams, Length(Wafer[0].CalcsParams));         //
   for i := 0 to Length(HistParams)-1 do                        //
   begin                                                        // Инициализация
     SetLength(HistParams[i].AllValMass, 0);                    // групп
                                                                //
     HistParams[i].AllMinVal := Wafer[0].CalcsParams[i].MinVal; //
     HistParams[i].AllMaxVal := Wafer[0].CalcsParams[i].MaxVal; //
+
+    SetLength(HistParams[i].Group, 0);
+  end;
+
+//////////////////// * Общие гистограммы по параметрам * ///////////////////////
+
+  for i := 0 to Length(HistParams)-1 do                        //
+  begin                                                        // Инициализация
+    SetLength(HistParams[i].AllValMass, 0);                    // групп
+                                                               //
+    HistParams[i].AllMinVal := Wafer[0].CalcsParams[i].MinVal; //
+    HistParams[i].AllMaxVal := Wafer[0].CalcsParams[i].MaxVal; //
+
+    SetLength(HistParams[i].Group, 0);
   end;
 
   for n := 0 to Length(Wafer)-1 do                                                         //
@@ -4489,21 +4489,6 @@ begin                                                                           
                                                                                            //
         if HistParams[i].AllMinVal > MinVal then HistParams[i].AllMinVal := MinVal;        // Найдём мин
         if HistParams[i].AllMaxVal < MaxVal then HistParams[i].AllMaxVal := MaxVal;        // и макс
-
-        HistParams[i].Name := Wafer[n].TestsParams[i].Name;
-        P := Pos(' ', HistParams[i].Name);
-        if P > 0 then
-          HistParams[i].ShortName := AnsiUpperCase(Copy(HistParams[i].Name, 1, P-1));
-
-        HistParams[i].NGroups := 30;
-                                                                                      //
-        if Length(HistGroup) > 0 then                                                 //
-          for m := 0 to Length(HistGroup) do                                          //
-            if HistParams[i].ShortName = HistGroup[m].Name then                       //
-            begin                                                                     //
-              if HistGroup[m].Num > 0 then HistParams[i].NGroups := HistGroup[m].Num; //
-              Break;                                                                  //
-            end;                                                                      //
       end;
 
 
@@ -4517,6 +4502,7 @@ begin                                                                           
       SetLength(Group, NGroups);
       for m := 0 to Length(Group)-1 do            //
       begin                                       //
+        Group[m].Num := 0;                        //
         Group[m].Min := AllMinVal+GroupDiap*m;    // Создадим
         if m < Length(Group)-1 then               // группы
           Group[m].Max := Group[m].Min+GroupDiap  // для
@@ -4535,40 +4521,135 @@ begin                                                                           
     end;                                                    //
 
 
-//  SetLength(Chart, Length(HistParams));
-
-  Chart[0] := Workbook1.ActiveSheet.ChartObjects(1);
-
-  Cell1 := WorkBook1.ActiveSheet.Cells[1, 1];
-  Cell2 := WorkBook1.ActiveSheet.Cells[22, 14];
-  Range1 := WorkBook1.ActiveSheet.Range[Cell1, Cell2];
+  SetLength(Chart, 0);
+  SetLength(Chart, Length(HistParams));
+  Chart[0] := Workbook1.ActiveSheet.ChartObjects(2);             // Первая
+  Chart[0].Top := WorkBook1.ActiveSheet.Rows[BottomSheet+3].Top; // гистограмма
+  Chart[0].Copy;
 
   for i := 0 to Length(HistParams)-1 do
     with HistParams[i] do
     begin
-
-      WorkBook1.ActiveSheet.Cells[1, 16+i*3] := Name;
-
-      for m := 0 to Length(Group)-1 do
-      begin
-        WorkBook1.ActiveSheet.Cells[2+m, 16+i*3] := FormatFloat('0.000',Group[m].Min)+'-'+FormatFloat('0.000',Group[m].Max);
-        WorkBook1.ActiveSheet.Cells[2+m, 17+i*3] := Group[m].Num;
-      end;
+      WorkBook1.ActiveSheet.Cells[BottomSheet+2+26*i, 5].Font.Bold := True; //
+      WorkBook1.ActiveSheet.Cells[BottomSheet+2+26*i, 5].Font.Size := 12;   // Имя
+      WorkBook1.ActiveSheet.Cells[BottomSheet+2+26*i, 5] := Name;           // гистограммы
 
       if i > 0 then
       begin
-        Range1.Copy(WorkBook1.ActiveSheet.Cells[1+24*i, 1]); // Скопируем чарт
+        WorkBook1.ActiveSheet.Cells[BottomSheet+3+26*i, 1].Select;
+        WorkBook1.ActiveSheet.Paste;
 
-        Chart[i] := Workbook1.ActiveSheet.ChartObjects(i+1);
+        Chart[i] := Workbook1.ActiveSheet.ChartObjects(i+2);
       end;
 
-      Cell1 := WorkBook1.ActiveSheet.Cells[2, 16+i*3];           //
-      Cell2 := WorkBook1.ActiveSheet.Cells[2+NGroups-1, 17+i*3]; // Укажем
-      Range2 := WorkBook1.ActiveSheet.Range[Cell1, Cell2];       // данные
-      Chart[i].Chart.SetSourceData(Range2);                      //
+      for m := 0 to Length(Group)-1 do
+      begin                                                                                                                                   // Выведем
+        WorkBook1.ActiveSheet.Cells[BottomSheet+3+26*i+m, 13+2*i] := FormatFloat('0.000',Group[m].Min)+'-'+FormatFloat('0.000',Group[m].Max); // границы
+        WorkBook1.ActiveSheet.Cells[BottomSheet+3+26*i+m, 14+2*i] := Group[m].Num;                                                            // и кол-во
+      end;
 
-      WorkBook1.ActiveSheet.Cells[1+24*i, 6] := Name;
+      Cell1 := WorkBook1.ActiveSheet.Cells[BottomSheet+3+26*i, 13+2*i];           //
+      Cell2 := WorkBook1.ActiveSheet.Cells[BottomSheet+3+26*i+NGroups-1, 14+2*i]; // Укажем
+      Range2 := WorkBook1.ActiveSheet.Range[Cell1, Cell2];                        // данные
+      Chart[i].Chart.SetSourceData(Range2);                                       //
+
+      Range2.Font.Color := clWhite; // Сделаем данные невидимыми
     end;
+
+
+  if Assigned(OnEvent) then OnEvent(evOK, '>>> Обработаны все пластины!');
+
+////////////////////////////////////////////////////////////////////////////////
+//////////////////////////// * Лист "Гистограммы" * ////////////////////////////
+////////////////////////////////////////////////////////////////////////////////
+
+//  try
+//    Workbook1.Sheets['Гистограммы'].Activate;
+//  except
+//    if Assigned(OnEvent) then OnEvent(evError, 'В шаблоне отсутствует лист <Гистограммы>');
+//
+//  end;
+//
+//  for i := 0 to Length(HistParams)-1 do                        //
+//  begin                                                        // Инициализация
+//    SetLength(HistParams[i].AllValMass, 0);                    // групп
+//                                                               //
+//    HistParams[i].AllMinVal := Wafer[0].CalcsParams[i].MinVal; //
+//    HistParams[i].AllMaxVal := Wafer[0].CalcsParams[i].MaxVal; //
+//
+//    SetLength(HistParams[i].Group, 0);
+//  end;
+//
+//  for n := 0 to Length(Wafer)-1 do                                                         //
+//    for i := 0 to Length(HistParams)-1 do                                                  //
+//      with Wafer[n].CalcsParams[i] do                                                      // Сложим
+//      begin                                                                                // параметры
+//        Nm := Length(HistParams[i].AllValMass);                                            // по всем
+//        SetLength(HistParams[i].AllValMass, Nm+ValCount);                                  // пластинам
+//          for m := 0 to Length(ValMass)-1 do HistParams[i].AllValMass[Nm+m] := ValMass[m]; //
+//                                                                                           //
+//        if HistParams[i].AllMinVal > MinVal then HistParams[i].AllMinVal := MinVal;        // Найдём мин
+//        if HistParams[i].AllMaxVal < MaxVal then HistParams[i].AllMaxVal := MaxVal;        // и макс
+//      end;
+//
+//
+//  for i := 0 to Length(HistParams)-1 do
+//    with HistParams[i] do
+//    begin
+//      SortMassByValue(AllValMass); // Отсортируем массивы
+//
+//      GroupDiap := (AllMaxVal-AllMinVal)/NGroups; // Диапазон группы
+//
+//      SetLength(Group, NGroups);
+//      for m := 0 to Length(Group)-1 do            //
+//      begin                                       //
+//        Group[m].Num := 0;                        //
+//        Group[m].Min := AllMinVal+GroupDiap*m;    // Создадим
+//        if m < Length(Group)-1 then               // группы
+//          Group[m].Max := Group[m].Min+GroupDiap  // для
+//        else                                      // гистограмм
+//          Group[m].Max := AllMaxVal;              //
+//      end;                                        //
+//
+//      Nm := 0;                                              //
+//      for m := 0 to Length(AllValMass)-1 do                 //
+//      begin                                                 // Распределим
+//        if AllValMass[m] > Group[Nm].Max then               // измерения
+//          while (AllValMass[m] > Group[Nm].Max) do Inc(Nm); // по
+//                                                            // группам
+//        Inc(Group[Nm].Num);                                 //
+//      end;                                                  //
+//    end;                                                    //
+//
+//  Chart[0] := Workbook1.ActiveSheet.ChartObjects(1);
+//
+//  Cell1 := WorkBook1.ActiveSheet.Cells[2, 1];
+//  Cell2 := WorkBook1.ActiveSheet.Cells[23, 12];
+//  Range1 := WorkBook1.ActiveSheet.Range[Cell1, Cell2];
+//
+//  for i := 0 to Length(HistParams)-1 do
+//    with HistParams[i] do
+//    begin
+//      WorkBook1.ActiveSheet.Cells[1+25*i, 6] := Name;
+//
+//      if i > 0 then
+//      begin
+//        Range1.Copy(WorkBook1.ActiveSheet.Cells[2+25*i, 1]); // Скопируем чарт
+//
+//        Chart[i] := Workbook1.ActiveSheet.ChartObjects(i+1);
+//      end;
+//
+//      for m := 0 to Length(Group)-1 do
+//      begin
+//        WorkBook1.ActiveSheet.Cells[2+m, 16+i*3] := FormatFloat('0.000',Group[m].Min)+'-'+FormatFloat('0.000',Group[m].Max);
+//        WorkBook1.ActiveSheet.Cells[2+m, 17+i*3] := Group[m].Num;
+//      end;
+//
+//      Cell1 := WorkBook1.ActiveSheet.Cells[2, 16+i*3];           //
+//      Cell2 := WorkBook1.ActiveSheet.Cells[2+NGroups-1, 17+i*3]; // Укажем
+//      Range2 := WorkBook1.ActiveSheet.Range[Cell1, Cell2];       // данные
+//      Chart[i].Chart.SetSourceData(Range2);                      //
+//    end;
 
 ////////////////////////////////////////////////////////////////////////////////
 //////////////////////////// * Лист "Карта обхода" * ///////////////////////////

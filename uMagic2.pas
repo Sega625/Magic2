@@ -44,6 +44,7 @@ type
     procedure MSystemCBChange(Sender: TObject);
     procedure ProcSchusterBtnClick(Sender: TObject);
     procedure WafersLBDrawItem(Control: TWinControl; Index: Integer; Rect: TRect; State: TOwnerDrawState);
+    procedure ResultREChange(Sender: TObject);
   private
     Lot: TLot;
 
@@ -586,7 +587,12 @@ begin                                                                           
   Lot.SaveXLS(ToFirstFail = 1, MapByParams = 1);                                      //
                                                                                       //
   TimeLab.Caption := FormatFloat('0.0', StopTime)+' сек.';                            //
-end;                                                                                  //
+end;                                                                                  procedure TMDBForm.ResultREChange(Sender: TObject);
+begin
+
+end;
+
+//
 ////////////////////////////////////////////////////////////////////////////////////////
 
 /////////////////////////////////////////////////////
@@ -786,7 +792,7 @@ begin                                                                           
     begin                                                                                              //
       Result :=  Lot.BlankWafer.LoadBlankTXT(FileName);                                                //
       if Result then Print_Result('* Карта обхода '+ExtractFileName(FileName)+' загружена!', clTeal)   //
-                else Print_Result('* Ошибка загрузки карты обхода '+ExtractFileName(FileName), clRed); //                                                                                   //
+                else Print_Result('* Ошибка загрузки карты обхода '+ExtractFileName(FileName), clRed); //
     end;                                                                                               //
                                                                                                        //
     Free;                                                                                              //
