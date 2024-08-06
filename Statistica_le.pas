@@ -1720,8 +1720,12 @@ begin                                                                    //
       begin
         P := Pos(#9, Str);
 
-        TmpValue := StrToFloat(Trim(Copy(Str, 1, P-1)));
-        if TmpValue = -999 then TmpValue := NotSpec;
+        try
+          TmpValue := StrToFloat(Trim(Copy(Str, 1, P-1)));
+        except
+          TmpValue := NotSpec;
+        end;
+        if TmpValue = -999 then TmpValue := NotSpec; // -999 убираем (Арнаутов)
 
         Chip[Y, X].ChipParams[i].Value := TmpValue;
         Chip[Y, X].ChipParams[i].Stat  := GetChipParamsStat(Chip[Y, X].ChipParams[i].Value,

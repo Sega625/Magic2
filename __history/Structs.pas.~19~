@@ -116,6 +116,7 @@ type
     Status: WORD;
   end;
   TTestsParams = array of TTestParams;
+  PTestsParams = ^TTestsParams;
 
 /////////////////////////////////////////
 
@@ -154,9 +155,9 @@ type
   THistParams = record
     Name: string;
     ShortName: string;
-//    AllValMass: TDynArray; // Массив параметров для гистограмм
-//    AllMinVal : Single;    // Минимальный параметр
-//    AllMaxVal : Single;    // Максимальный параметр
+    AllValMass: TDynArray; // Массив параметров для гистограмм
+    AllMinVal : Single;    // Минимальный параметр
+    AllMaxVal : Single;    // Максимальный параметр
 
     NGroups: WORD; // Кол-во групп
     Group: array of TGroup; // Группы
