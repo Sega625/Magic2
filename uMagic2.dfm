@@ -102,42 +102,6 @@ object MDBForm: TMDBForm
     Font.Style = []
     ParentFont = False
   end
-  object Label3: TLabel
-    Left = 26
-    Top = 548
-    Width = 133
-    Height = 19
-    Margins.Left = 4
-    Margins.Top = 4
-    Margins.Right = 4
-    Margins.Bottom = 4
-    Caption = #1042#1088#1077#1084#1103' '#1086#1073#1088#1072#1073#1086#1090#1082#1080':'
-    Font.Charset = DEFAULT_CHARSET
-    Font.Color = clBlue
-    Font.Height = -16
-    Font.Name = 'Tahoma'
-    Font.Style = []
-    ParentFont = False
-  end
-  object TimeLab: TLabel
-    Left = 21
-    Top = 570
-    Width = 138
-    Height = 20
-    Margins.Left = 4
-    Margins.Top = 4
-    Margins.Right = 4
-    Margins.Bottom = 4
-    Alignment = taCenter
-    AutoSize = False
-    Caption = '0.0 '#1089#1077#1082'.'
-    Font.Charset = DEFAULT_CHARSET
-    Font.Color = clBlue
-    Font.Height = -16
-    Font.Name = 'Tahoma'
-    Font.Style = []
-    ParentFont = False
-  end
   object Label4: TLabel
     Left = 13
     Top = 14
@@ -271,7 +235,6 @@ object MDBForm: TMDBForm
     ReadOnly = True
     ScrollBars = ssVertical
     TabOrder = 5
-    OnChange = ResultREChange
   end
   object ClearBtn: TButton
     Left = 759

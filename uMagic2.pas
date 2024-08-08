@@ -23,8 +23,6 @@ type
     Label1: TLabel;
     Label2: TLabel;
     ClearBtn: TButton;
-    Label3: TLabel;
-    TimeLab: TLabel;
     MSystemCB: TComboBox;
     Label4: TLabel;
     OpenDirBtn: TButton;
@@ -44,7 +42,6 @@ type
     procedure MSystemCBChange(Sender: TObject);
     procedure ProcSchusterBtnClick(Sender: TObject);
     procedure WafersLBDrawItem(Control: TWinControl; Index: Integer; Rect: TRect; State: TOwnerDrawState);
-    procedure ResultREChange(Sender: TObject);
   private
     Lot: TLot;
 
@@ -425,10 +422,9 @@ begin                                                                           
   end;                                                                                //
                                                                                       //
   StartTime();                                                                        //
-  TimeLab.Caption := '0.0 сек.';                                                      //
                                                                                       //
-  Lot.LoadHistGroupsFromIni();
-
+  Lot.LoadHistGroupsFromIni();                                                        //
+                                                                                      //
   nWf := 0;                                                                           //
                                                                                       //
   Lot.Init();                                                                         //
@@ -491,7 +487,7 @@ begin                                                                           
   else                                                                                //
     Lot.SaveXLS(False, MapByParams = 1);                                              //
                                                                                       //
-  TimeLab.Caption := FormatFloat('0.0', StopTime)+' сек.';                            //
+  Print_Result( 'Время обработки '+FormatFloat('0.0', StopTime)+' сек.');             //
 end;                                                                                  //
 ////////////////////////////////////////////////////////////////////////////////////////
 ////////////////////////////////////////////////////////////////////////////////////////
@@ -509,10 +505,9 @@ begin                                                                           
   end;                                                                                //
                                                                                       //
   StartTime();                                                                        //
-  TimeLab.Caption := '0.0 сек.';                                                      //
                                                                                       //
-  Lot.LoadHistGroupsFromIni();
-
+  Lot.LoadHistGroupsFromIni();                                                        //
+                                                                                      //
   nWf := 0;                                                                           //
                                                                                       //
   Lot.Init();                                                                         //
@@ -586,13 +581,8 @@ begin                                                                           
                                                                                       //
   Lot.SaveXLS(ToFirstFail = 1, MapByParams = 1);                                      //
                                                                                       //
-  TimeLab.Caption := FormatFloat('0.0', StopTime)+' сек.';                            //
-end;                                                                                  procedure TMDBForm.ResultREChange(Sender: TObject);
-begin
-
-end;
-
-//
+  Print_Result(' Время обработки '+FormatFloat('0.0', StopTime)+' сек.')              //
+end;                                                                                  //
 ////////////////////////////////////////////////////////////////////////////////////////
 
 /////////////////////////////////////////////////////
