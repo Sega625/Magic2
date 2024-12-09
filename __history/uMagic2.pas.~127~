@@ -23,14 +23,11 @@ type
     Label1: TLabel;
     Label2: TLabel;
     ClearBtn: TButton;
-    Label3: TLabel;
-    TimeLab: TLabel;
     MSystemCB: TComboBox;
     Label4: TLabel;
     OpenDirBtn: TButton;
     OpenDirLab: TLabel;
     ProcSchusterBtn: TButton;
-    LoadTXTMapBtn: TButton;
 
     procedure LoadMDBBtnClick(Sender: TObject);
     procedure FormCreate(Sender: TObject);
@@ -45,7 +42,6 @@ type
     procedure MSystemCBChange(Sender: TObject);
     procedure ProcSchusterBtnClick(Sender: TObject);
     procedure WafersLBDrawItem(Control: TWinControl; Index: Integer; Rect: TRect; State: TOwnerDrawState);
-    procedure LoadTXTMapBtnClick(Sender: TObject);
   private
     Lot: TLot;
 
@@ -58,6 +54,7 @@ type
     function  LoadDirectory(const dName: TFileName): Boolean;
     function  LoadNorms    (const fName: TFileName): Boolean;
     function  LoadMap      (const fName: TFileName): Boolean;
+    function  LoadTXTMap(): Boolean;
     function  SaveSTS(const fName: TFileName; Waf: TWafer): Boolean;
     procedure GetSchusterFileInfo(const fName: TFileName; var Module: string); overload;
     procedure GetSchusterFileInfo(const fName: TFileName; var Module, Config: string); overload;
@@ -425,7 +422,8 @@ begin                                                                           
   end;                                                                                //
                                                                                       //
   StartTime();                                                                        //
-  TimeLab.Caption := '0.0 сек.';                                                      //
+                                                                                      //
+  Lot.LoadHistGroupsFromIni();                                                        //
                                                                                       //
   nWf := 0;                                                                           //
                                                                                       //
@@ -457,9 +455,15 @@ begin                                                                           
           if not Lot.Wafer[nWf].AddNorms(Params) then                                 //
           begin                                                                       //
             Print_Result('Ошибка добавления норм!', clRed);                           //
-            Continue;                                                                 //
+            Exit;                                                                     //
           end;                                                                        //
                                                                                       //
+//        if MapLoaded then // Если карта обхода есть                                   //
+//          if Lot.BlankWafer.NTotal <> Lot.Wafer[nWf].NTotal then                      //
+//          begin                                                                       //
+//            Print_Result('Карта обхода не подходит к пластине!', clRed);              //
+//            Exit;                                                                     //
+//          end;                                                                        //
                                                                                       //
         if CreateSTS = 1 then                                                         //
         begin                                                                         //
@@ -483,7 +487,7 @@ begin                                                                           
   else                                                                                //
     Lot.SaveXLS(False, MapByParams = 1);                                              //
                                                                                       //
-  TimeLab.Caption := FormatFloat('0.0', StopTime)+' сек.';                            //
+  Print_Result( 'Время обработки '+FormatFloat('0.0', StopTime())+' сек.');           //
 end;                                                                                  //
 ////////////////////////////////////////////////////////////////////////////////////////
 ////////////////////////////////////////////////////////////////////////////////////////
@@ -501,7 +505,8 @@ begin                                                                           
   end;                                                                                //
                                                                                       //
   StartTime();                                                                        //
-  TimeLab.Caption := '0.0 сек.';                                                      //
+                                                                                      //
+  Lot.LoadHistGroupsFromIni();                                                        //
                                                                                       //
   nWf := 0;                                                                           //
                                                                                       //
@@ -551,18 +556,6 @@ begin                                                                           
             if not Lot.CreateBlankWafer(nWf) then Print_Result('Ошибка создания шаблона обхода!', clRed);
           end;
                                                                                       //
-                                                                                      //
-        if CreateSTS = 1 then                                                         //
-        begin                                                                         //
-          STSFName := ChangeFileExt(MeasfName, '')+'.sts';                            //
-                                                                                      //
-          if SaveSTS(STSFName, Lot.Wafer[nWf]) then
-//          if Lot.Wafer[nWf].SaveSTS(STSFName) then                                    //
-            Print_Result('Создан файл: '+ExtractFileName(STSFName), clBlue)           //
-          else                                                                        //
-            Print_Result('Ошибка создания файла: '+ExtractFileName(STSFName), clRed); //
-        end;                                                                          //
-                                                                                      //
         Inc(nWf);                                                                     //
       end;                                                                            //
                                                                                       //
@@ -570,9 +563,25 @@ begin                                                                           
                                                                                       //
   Print_Result('>>> Файлы загружены!', clGreen);                                      //
                                                                                       //
+  if Lot.BlankWafer.NTotal = 0 then
+    if QuestMess(Handle, 'Карта обхода не была загружена!'+#13#10+'Хотите загрузить карту обхода?') = IDYES then
+      if not LoadTXTMap() then
+        Lot.BlankWafer.Init();                                                        //
+                                                                                      //
+  if CreateSTS = 1 then                                                               //
+    for nWF := 0 to Length(Lot.Wafer)-1 do                                            //
+    begin                                                                             //
+      STSFName := ChangeFileExt(MeasfName, '')+'.sts';                                //
+                                                                                      //
+      if SaveSTS(STSFName, Lot.Wafer[nWf]) then                                       //
+        Print_Result('Создан файл: '+ExtractFileName(STSFName), clBlue)               //
+      else                                                                            //
+        Print_Result('Ошибка создания файла: '+ExtractFileName(STSFName), clRed);     //
+    end;                                                                              //
+                                                                                      //
   Lot.SaveXLS(ToFirstFail = 1, MapByParams = 1);                                      //
                                                                                       //
-  TimeLab.Caption := FormatFloat('0.0', StopTime)+' сек.';                            //
+  Print_Result(' Время обработки '+FormatFloat('0.0', StopTime())+' сек.')            //
 end;                                                                                  //
 ////////////////////////////////////////////////////////////////////////////////////////
 
@@ -602,7 +611,7 @@ end;
 function TMDBForm.LoadMDB(const fName: TFileName): Boolean; //
 var                                                         //
   ADOConnection: TADOConnection;                            //
-  n: WORD;                                                  //
+  n: DWORD;                                                 //
 begin                                                       //
   Result := False;                                          //
                                                             //
@@ -669,7 +678,7 @@ end;                                                                            
 ////////////////////////////////////////////////////////////////////////
 function TMDBForm.LoadNorms(const fName: TFileName): Boolean;         //
 var                                                                   //
-  n, Cnt: WORD;                                                       //
+  n, Cnt: DWORD;                                                      //
   P, P1, P2: byte;                                                    //
   SL: TStringList;                                                    //
   Str: string;                                                        //
@@ -757,65 +766,90 @@ begin                                                        //
 end;                                                         //
 ///////////////////////////////////////////////////////////////
 
-///////////////////////////////////////////////////////////////////////////////////
-function TMDBForm.SaveSTS(const fName: TFileName; Waf: TWafer): Boolean;         //
-var                                                                              //
-  tmpWafer: TWafer;                                                              //
-  X, Y, n, vX, vY, Count: DWORD;                                                 //
-begin                                                                            //
-  Result := False;                                                               //
-                                                                                 //
-  if not MapLoaded() then                                                        //
-  begin                                                                          //
-    Waf.SaveSTS(fName);                                                          //
-                                                                                 //
-    Result := True;                                                              //
-                                                                                 //
-    Exit;                                                                        //
-  end;                                                                           //
-                                                                                 //
-  tmpWafer := TWafer.Create(Handle);                                             //
-  CloneBlankWafer(Lot.BlankWafer, tmpWafer);                                     //
-                                                                                 //
-  tmpWafer.fName := Waf.fName;                                                   //
-  tmpWafer.Code  := Waf.Code;                                                    //
-  tmpWafer.TimeDate := Waf.TimeDate;                                             //
-  tmpWafer.NLot := Waf.NLot;                                                     //
-  tmpWafer.Num  := Waf.Num;                                                      //
-                                                                                 //
-  SetLength(tmpWafer.TestsParams, Length(Waf.TestsParams));                      //
-  for n := 0 to Length(tmpWafer.TestsParams)-1 do                                //
-  begin                                                                          //
-    tmpWafer.TestsParams[n].Name      := Waf.TestsParams[n].Name;                //
-    tmpWafer.TestsParams[n].Norma.Min := Waf.TestsParams[n].Norma.Min;           //
-    tmpWafer.TestsParams[n].Norma.Max := Waf.TestsParams[n].Norma.Max;           //
-  end;                                                                           //
-                                                                                 //
-  Count := 0;                                                                    //
-  for Y := 0 to Length(tmpWafer.Chip)-1 do                                       //
-    for X := 0 to Length(tmpWafer.Chip[0])-1 do                                  //
-      if tmpWafer.Chip[Y, X].Status = 0 then                                     //
-      begin                                                                      //
-        if Count > Waf.NTotal then Break;                                        //
-        vX := Waf.ChipN[tmpWafer.Chip[Y, X].ID-1].X;                             //
-        vY := Waf.ChipN[tmpWafer.Chip[Y, X].ID-1].Y;                             //
-                                                                                 //
-        tmpWafer.Chip[Y, X].Status := Waf.Chip[vY, vX].Status;                   //
-                                                                                 //
-        SetLength(tmpWafer.Chip[Y, X].ChipParams, Length(tmpWafer.TestsParams)); //
-        for n := 0 to Length(tmpWafer.TestsParams)-1 do                          //
-          tmpWafer.Chip[Y, X].ChipParams[n] := Waf.Chip[vY, vX].ChipParams[n];   //
-                                                                                 //
-        Inc(Count);                                                              //
-      end;                                                                       //
-                                                                                 //
-  tmpWafer.SaveSTS(fName);                                                       //
-                                                                                 //
-  tmpWafer.Free();                                                               //
-                                                                                 //
-  Result := True;                                                                //
-end;                                                                             //
-///////////////////////////////////////////////////////////////////////////////////
+/////////////////////////////////////////////////////////////////////////////////////////////////////////
+function TMDBForm.LoadTXTMap(): Boolean;                                                               //
+var                                                                                                    //
+  OpenDlg: TOpenDialog;                                                                                //
+begin                                                                                                  //
+  OpenDlg := TOpenDialog.Create(self);                                                                 //
+  with OpenDlg do                                                                                      //
+  begin                                                                                                //
+    InitialDir := MeasPath;                                                                            //
+    Filter := 'Карта обхода (*.map)|*.map*';                                                           //
+    Title := 'Загрузить карту обхода';                                                                 //
+                                                                                                       //
+    if Execute then                                                                                    //
+    begin                                                                                              //
+      Result :=  Lot.BlankWafer.LoadBlankTXT(FileName);                                                //
+      if Result then Print_Result('* Карта обхода '+ExtractFileName(FileName)+' загружена!', clTeal)   //
+                else Print_Result('* Ошибка загрузки карты обхода '+ExtractFileName(FileName), clRed); //
+    end;                                                                                               //
+                                                                                                       //
+    Free;                                                                                              //
+  end;                                                                                                 //
+end;                                                                                                   //
+/////////////////////////////////////////////////////////////////////////////////////////////////////////
+
+/////////////////////////////////////////////////////////////////////////////////////
+function TMDBForm.SaveSTS(const fName: TFileName; Waf: TWafer): Boolean;           //
+var                                                                                //
+  tmpWafer: TWafer;                                                                //
+  X, Y, i, vX, vY: DWORD;                                                          //
+begin                                                                              //
+  Result := False;                                                                 //
+                                                                                   //
+  if Waf.NTotal = 0 then Exit;                                                     //
+                                                                                   //
+  if not MapLoaded() then                                                          //
+  begin                                                                            //
+    Waf.SaveSTS(fName);                                                            //
+                                                                                   //
+    Result := True;                                                                //
+                                                                                   //
+    Exit;                                                                          //
+  end;                                                                             //
+                                                                                   //
+  tmpWafer := TWafer.Create(Handle);                                               //
+  CloneBlankWafer(Lot.BlankWafer, tmpWafer);                                       //
+                                                                                   //
+  tmpWafer.fName := Waf.fName;                                                     //
+  tmpWafer.Code  := Waf.Code;                                                      //
+  tmpWafer.TimeDate := Waf.TimeDate;                                               //
+  tmpWafer.NLot := Waf.NLot;                                                       //
+  tmpWafer.Num  := Waf.Num;                                                        //
+                                                                                   //
+  SetLength(tmpWafer.TestsParams, Length(Waf.TestsParams));                        //
+  for i := 0 to Length(tmpWafer.TestsParams)-1 do                                  //
+  begin                                                                            //
+    tmpWafer.TestsParams[i].Name      := Waf.TestsParams[i].Name;                  //
+    tmpWafer.TestsParams[i].Norma.Min := Waf.TestsParams[i].Norma.Min;             //
+    tmpWafer.TestsParams[i].Norma.Max := Waf.TestsParams[i].Norma.Max;             //
+  end;                                                                             //
+                                                                                   //
+  for Y := 0 to Length(tmpWafer.Chip)-1 do                                         //
+    for X := 0 to Length(tmpWafer.Chip[0])-1 do                                    //
+      if tmpWafer.Chip[Y, X].Status = 0 then                                       //
+      begin                                                                        //
+        if (tmpWafer.Chip[Y, X].ID-1) < Waf.NTotal then                            //
+        begin                                                                      //
+          vX := Waf.ChipN[tmpWafer.Chip[Y, X].ID-1].X;                             //
+          vY := Waf.ChipN[tmpWafer.Chip[Y, X].ID-1].Y;                             //
+                                                                                   //
+          tmpWafer.Chip[Y, X].Status := Waf.Chip[vY, vX].Status;                   //
+                                                                                   //
+          SetLength(tmpWafer.Chip[Y, X].ChipParams, Length(tmpWafer.TestsParams)); //
+          for i := 0 to Length(tmpWafer.TestsParams)-1 do                          //
+            tmpWafer.Chip[Y, X].ChipParams[i] := Waf.Chip[vY, vX].ChipParams[i];   //
+        end;                                                                       //
+      end;                                                                         //
+                                                                                   //
+  tmpWafer.SaveSTS(fName);                                                         //
+                                                                                   //
+  tmpWafer.Free();                                                                 //
+                                                                                   //
+  Result := True;                                                                  //
+end;                                                                               //
+/////////////////////////////////////////////////////////////////////////////////////
 
 //////////////////////////////////////////////////////////////////////////////////////////////
 procedure TMDBForm.GetSchusterFileInfo(const fName: TFileName; var Module: string);         //
@@ -1005,43 +1039,6 @@ begin                                 //
   Result := (EndTime-BegTime)/Freq;   //
 end;                                  //
 ////////////////////////////////////////
-
-////////////////////////////////////////////////////////////////////////////////////////////////
-procedure TMDBForm.LoadTXTMapBtnClick(Sender: TObject);                                       //
-var                                                                                           //
-  OpenDlg: TOpenDialog;                                                                       //
-begin                                                                                         //
-  OpenDlg := TOpenDialog.Create(self);                                                        //
-  with OpenDlg do                                                                             //
-  begin                                                                                       //
-    InitialDir := MeasPath;                                                                   //
-//    Filter := 'Карта обхода (*.map)|*.map*';                                                  //
-    Title := 'Загрузить карту обхода';                                                        //
-                                                                                              //
-    if Execute then                                                                           //
-      if Lot.BlankWafer.LoadBlankTXT(FileName) then                                           //
-      begin                                                                                   //
-//        LoadMapLab.Font.Color := $00CAF90D;                                                   //
-                                                                                              //
-        Print_Result('* Карта обхода '+ExtractFileName(FileName)+' загружена!', clTeal);      //
-                                                                                              //
-//        ProcSchusterBtn.Enabled := True;                                                      //
-      end                                                                                     //
-      else                                                                                    //
-      begin                                                                                   //
-//        LoadMapLab.Font.Color := clRed;                                                       //
-                                                                                              //
-        Print_Result('* Ошибка загрузки карты обхода '+ExtractFileName(FileName), clRed);     //
-                                                                                              //
-//        ProcSchusterBtn.Enabled := False;                                                     //
-      end;                                                                                    //
-                                                                                              //
-    Free;                                                                                     //
-  end;                                                                                        //
-end;                                                                                          //
-////////////////////////////////////////////////////////////////////////////////////////////////
-
-
 
 
 end.

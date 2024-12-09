@@ -487,7 +487,7 @@ begin                                                                           
   else                                                                                //
     Lot.SaveXLS(False, MapByParams = 1);                                              //
                                                                                       //
-  Print_Result( 'Время обработки '+FormatFloat('0.0', StopTime)+' сек.');             //
+  Print_Result( 'Время обработки '+FormatFloat('0.0', StopTime())+' сек.');           //
 end;                                                                                  //
 ////////////////////////////////////////////////////////////////////////////////////////
 ////////////////////////////////////////////////////////////////////////////////////////
@@ -581,7 +581,7 @@ begin                                                                           
                                                                                       //
   Lot.SaveXLS(ToFirstFail = 1, MapByParams = 1);                                      //
                                                                                       //
-  Print_Result(' Время обработки '+FormatFloat('0.0', StopTime)+' сек.')              //
+  Print_Result(' Время обработки '+FormatFloat('0.0', StopTime())+' сек.')            //
 end;                                                                                  //
 ////////////////////////////////////////////////////////////////////////////////////////
 
@@ -611,7 +611,7 @@ end;
 function TMDBForm.LoadMDB(const fName: TFileName): Boolean; //
 var                                                         //
   ADOConnection: TADOConnection;                            //
-  n: WORD;                                                  //
+  n: DWORD;                                                 //
 begin                                                       //
   Result := False;                                          //
                                                             //
@@ -678,8 +678,8 @@ end;                                                                            
 ////////////////////////////////////////////////////////////////////////
 function TMDBForm.LoadNorms(const fName: TFileName): Boolean;         //
 var                                                                   //
-  n, Cnt: WORD;                                                       //
-  P, P1, P2: byte;                                                    //
+  n, Cnt: DWORD;                                                      //
+  P, P1, P2: WORD;                                                    //
   SL: TStringList;                                                    //
   Str: string;                                                        //
 begin                                                                 //

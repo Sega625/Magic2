@@ -14,7 +14,7 @@ const
   xlThin     = 2;     //	Тонкая граница
 
 
-  NotSpec: Single=987654321.0;
+  NotSpec: Real=987654321.0;
 
   dURightToLeft = 0;
   dURightSnake  = 1;
@@ -59,7 +59,7 @@ const
 type
   TEventType = (evError, evOK, evInfo, evSave, evCreate);
 
-  TDynArray = array of Single;
+  TDynArray = array of Real;
 
   TCadre = record
     StartX: WORD;
@@ -79,7 +79,7 @@ type
 /////////////////////////////////////////
 
   TChipParams = record
-    Value: Single;
+    Value: Real;
     Stat : byte; // 0-?; 1-Годный; 2-ниже нормы; 3-выше нормы; 4-не измерялся
   end;
 
@@ -96,7 +96,7 @@ type
   TFail = record
     Status  : WORD;
     Name    : string;
-    Quantity: WORD;
+    Quantity: DWORD;
 //    Col     : TColor;
   end;
   TFails = array of TFail;
@@ -104,8 +104,8 @@ type
 /////////////////////////////////////////
 
   TNorma = record
-    Min: Single;
-    Max: Single;
+    Min: Real;
+    Max: Real;
   end;
 
   TTestParams = record
@@ -120,21 +120,21 @@ type
 /////////////////////////////////////////
 
   TCalcParams = record
-    Asum: Single;       // Сумма для Среднего
-    Qsum: Single;       // Сумма квадратов для Стд. отклонения
+    Asum: Real;       // Сумма для Среднего
+    Qsum: Real;       // Сумма квадратов для Стд. отклонения
     ValMass: TDynArray; // Массив параметров для медианы и квартилей
     ValCount: DWORD;    // Кол-во параметров
 
     NOKVal   : DWORD;
     NFailsVal: DWORD;
     
-    AvrVal : Single; // Среднее
-    MinVal : Single; // Минимальное
-    MaxVal : Single; // Максимальное
-    StdVal : Single; // Стд. отклонение
-    MedVal : Single; // Медиана
-    Qrt1Val: Single; // 1-й квартиль
-    Qrt3Val: Single; // 3-й квартиль
+    AvrVal : Real; // Среднее
+    MinVal : Real; // Минимальное
+    MaxVal : Real; // Максимальное
+    StdVal : Real; // Стд. отклонение
+    MedVal : Real; // Медиана
+    Qrt1Val: Real; // 1-й квартиль
+    Qrt3Val: Real; // 3-й квартиль
   end;
   TCalcsParams = array of TCalcParams;
 
@@ -142,23 +142,23 @@ type
 
   THistGroup = record //
     Name: string;     // Для считывания
-    Num: WORD;        // из файла
+    Num: DWORD;       // из файла
   end;                //
 
   TGroup = record
-    Min: Single;
-    Max: Single;
-    Num: WORD;
+    Min: Real;
+    Max: Real;
+    Num: DWORD;
   end;
 
   THistParams = record
     Name: string;
     ShortName: string;
 //    AllValMass: TDynArray; // Массив параметров для гистограмм
-//    AllMinVal : Single;    // Минимальный параметр
-//    AllMaxVal : Single;    // Максимальный параметр
+//    AllMinVal : Real;    // Минимальный параметр
+//    AllMaxVal : Real;    // Максимальный параметр
 
-    NGroups: WORD; // Кол-во групп
+    NGroups: DWORD; // Кол-во групп
     Group: array of TGroup; // Группы
   end;
 
@@ -179,8 +179,8 @@ implementation
 //////////////////////////////////////////////////
 procedure SortMassByValue(var Mass: TDynArray); //
 var                                             //
-  n, m, b_m: WORD;                              //
-  b_val, tmpVal: Single;                        //
+  n, m, b_m: DWORD;                             //
+  b_val, tmpVal: Real;                          //
 begin                                           //
   if Length(Mass) < 2 then Exit;                //
                                                 //
