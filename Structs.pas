@@ -16,18 +16,27 @@ const
 
   NotSpec: Real=987654321.0;
 
+  csTop    = 1;
+  csLeft   = 2;
+  csBottom = 3;
+  csRight  = 4;
+
+
   dURightToLeft = 0;
   dURightSnake  = 1;
   dULeftToRight = 2;
   dULeftSnake   = 3;
+
   dLUpToDown    = 4;
   dLUpSnake     = 5;
   dLDownToUp    = 6;
   dLDownSnake   = 7;
-  dDLeftToRight = 8;
-  dDLeftSnake   = 9;
-  dDRightToLeft = 10;
-  dDRightSnake  = 11;
+
+  dDLeftToRight = 8;  //
+  dDLeftSnake   = 9;  //
+  dDRightToLeft = 10; //
+  dDRightSnake  = 11; //
+
   dRDownToUp    = 12;
   dRDownSnake   = 13;
   dRUpToDown    = 14;
@@ -90,6 +99,10 @@ type
   end;
   PChip = ^TChip;
   TChips = array of array of TChip;
+
+/////////////////////////////////////////
+
+  TChipsN = array of TPoint; // Координаты чипов в порядке измерения
 
 /////////////////////////////////////////
 

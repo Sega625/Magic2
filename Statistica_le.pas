@@ -49,7 +49,7 @@ type
     HLChip  : TPoint;
 
     Chip : TChips;
-    ChipN: array of TPoint; // Координаты чипов в порядке измерения
+    ChipN: TChipsN;
 
     TestsParams  : TTestsParams;
     CalcsParams  : TCalcsParams;
@@ -1483,6 +1483,7 @@ var                                                                      //
   X, Y, MinX, MaxX, MaxY: Integer;                                       //
   Str: string;                                                           //
   TmpChip: TChips;                                                       //
+  TmpNChip: TChipsN;                                                     //
   TmpValue: Real;                                                        //
 begin                                                                    //
   Result := False;                                                       //
@@ -1684,6 +1685,9 @@ begin                                                                    //
 
   for n := NPStr+1 to SL.Count-1 do // Ещё раз пройдёмся по рез-там измерений
   begin
+    Str := SL.Strings[n];
+    if Trim(SL.Strings[n]) = '' then Continue;
+
     NCh := n-(NPStr+1);
 
     if Diameter <> 0 then ChipN[NCh].X := ChipN[NCh].X-MinX; // Нормализуем X
@@ -1692,7 +1696,7 @@ begin                                                                    //
 
     Chip[Y, X].ID := NCh+1;
 
-    Str := SL.Strings[n];         // Удалим
+             // Удалим
     Delete(Str, 1, Pos(#9, Str)); // FILE
     Delete(Str, 1, Pos(#9, Str)); // NAME
     Delete(Str, 1, Pos(#9, Str)); // ADAPTER
@@ -1738,7 +1742,7 @@ begin                                                                    //
 
   if Diameter <> 0 then // Если пластина
   begin
-    SetLength(TmpChip, Length(Chip[0]), Length(Chip));
+    SetLength(TmpChip, Length(Chip), Length(Chip[0]));
     for Y := 0 to Length(Chip)-1 do
       for X := 0 to Length(Chip[0])-1 do
       begin
@@ -1746,16 +1750,16 @@ begin                                                                    //
         SetLength(TmpChip[Length(Chip)-Y-1, X].ChipParams, Length(Chip[Y, X].ChipParams));
       end;
     Chip := TmpChip;
-    SetLength(Chip, Length(TmpChip[0]), Length(TmpChip));
+    SetLength(Chip, Length(TmpChip), Length(TmpChip[0]));
     TmpChip := nil;
 
-    Direct  := 9; // Обход на Schusterе - нижняя левая змейка
-    CutSide := 3; // Срез внизу
+    Direct  := 11;       // Обход на Schusterе - нижняя левая змейка (когда ставишь dDLeftSnake получается dDRightSnake (из-за SetChipsID))
+    CutSide := csBottom; // Срез внизу
   end
   else                  // Если микросхема
   begin
-    Direct  := 2;
-    CutSide := 1;
+    Direct  := 2;     // Обход - слева направо
+    CutSide := csTop; // Срез вверху
   end;
 
   SetChipsID();

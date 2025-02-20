@@ -14,7 +14,7 @@ const
   xlThin     = 2;     //	Тонкая граница
 
 
-  NotSpec: Single=987654321.0;
+  NotSpec: Real=987654321.0;
 
   dURightToLeft = 0;
   dURightSnake  = 1;
@@ -59,7 +59,7 @@ const
 type
   TEventType = (evError, evOK, evInfo, evSave, evCreate);
 
-  TDynArray = array of Single;
+  TDynArray = array of Real;
 
   TCadre = record
     StartX: WORD;
@@ -68,11 +68,19 @@ type
     ScaleY: WORD;
   end;
 
+  TZone2 = record
+    Y1: WORD;
+    Y2: WORD;
+    X3: WORD;
+    X4: WORD;
+  end;
+  TZones2 = array of TZone2;
+
 /////////////////////////////////////////
 
   TChipParams = record
-    Value: Single;
-    Stat : byte; // 0-?; 1-Годный; 2-ниже нормы; 3-выше нормы
+    Value: Real;
+    Stat : byte; // 0-?; 1-Годный; 2-ниже нормы; 3-выше нормы; 4-не измерялся
   end;
 
   TChip = record
@@ -85,10 +93,14 @@ type
 
 /////////////////////////////////////////
 
+  TChipsN = array of TPoint; // Координаты чипов в порядке измерения
+
+/////////////////////////////////////////
+
   TFail = record
     Status  : WORD;
-    Name    : String[40];
-    Quantity: WORD;
+    Name    : string;
+    Quantity: DWORD;
 //    Col     : TColor;
   end;
   TFails = array of TFail;
@@ -96,44 +108,69 @@ type
 /////////////////////////////////////////
 
   TNorma = record
-    Min: Single;
-    Max: Single;
+    Min: Real;
+    Max: Real;
   end;
 
   TTestParams = record
-    Name  : string[40];
+    Name  : string;
     Norma : TNorma;
-    MUnit : string[10];
+    PUnit : string;
+    PMode : string;
     Status: WORD;
   end;
   TTestsParams = array of TTestParams;
-  PTestsParams = ^TTestsParams;
 
 /////////////////////////////////////////
 
   TCalcParams = record
-    Asum: Single;       // Сумма для Среднего
-    Qsum: Single;       // Сумма квадратов для Стд. отклонения
+    Asum: Real;       // Сумма для Среднего
+    Qsum: Real;       // Сумма квадратов для Стд. отклонения
     ValMass: TDynArray; // Массив параметров для медианы и квартилей
-    SumCount: DWORD;    // Кол-во параметров
+    ValCount: DWORD;    // Кол-во параметров
 
     NOKVal   : DWORD;
     NFailsVal: DWORD;
     
-    AvrVal : Single; // Среднее
-    MinVal : Single; // Минимальное
-    MaxVal : Single; // Максимальное
-    StdVal : Single; // Стд. отклонение
-    MedVal : Single; // Медиана
-    Qrt1Val: Single; // 1-й квартиль
-    Qrt3Val: Single; // 3-й квартиль
+    AvrVal : Real; // Среднее
+    MinVal : Real; // Минимальное
+    MaxVal : Real; // Максимальное
+    StdVal : Real; // Стд. отклонение
+    MedVal : Real; // Медиана
+    Qrt1Val: Real; // 1-й квартиль
+    Qrt3Val: Real; // 3-й квартиль
   end;
   TCalcsParams = array of TCalcParams;
 
 /////////////////////////////////////////
 
+  THistGroup = record //
+    Name: string;     // Для считывания
+    Num: DWORD;       // из файла
+  end;                //
+
+  TGroup = record
+    Min: Real;
+    Max: Real;
+    Num: DWORD;
+  end;
+
+  THistParams = record
+    Name: string;
+    ShortName: string;
+//    AllValMass: TDynArray; // Массив параметров для гистограмм
+//    AllMinVal : Real;    // Минимальный параметр
+//    AllMaxVal : Real;    // Максимальный параметр
+
+    NGroups: DWORD; // Кол-во групп
+    Group: array of TGroup; // Группы
+  end;
+
+/////////////////////////////////////////
+
   procedure SortMassByValue(var Mass: TDynArray);
   function  GetExcelAppName2(): string;
+  function  GetFreeFileName(fName: TFileName): TFileName;
   function  IsChip    (const Status: WORD): Boolean;
   function  IsFailChip(const Status: WORD): Boolean;
   function  EqualStatus(const Status1, Status2 : WORD): Boolean;
@@ -146,8 +183,8 @@ implementation
 //////////////////////////////////////////////////
 procedure SortMassByValue(var Mass: TDynArray); //
 var                                             //
-  n, m, b_m: WORD;                              //
-  b_val, tmpVal: Single;                        //
+  n, m, b_m: DWORD;                             //
+  b_val, tmpVal: Real;                          //
 begin                                           //
   if Length(Mass) < 2 then Exit;                //
                                                 //
@@ -200,6 +237,30 @@ begin                                              //
   SL.Free();                                       //
 end;                                               //
 /////////////////////////////////////////////////////
+
+//////////////////////////////////////////////////////////////
+function GetFreeFileName(fName: TFileName): TFileName;      //
+var                                                         //
+  n, P: WORD;                                               //
+  tPath, tfName, tExt: TFileName;                           //
+begin                                                       //
+  tPath  := ExtractFilePath(fName);                         //
+  Result := ExtractFileName(fName);                         //
+  tExt   := ExtractFileExt(fName);                          //
+  Result := ChangeFileExt(Result, '');                      //
+                                                            //
+  n := 0;                                                   //
+  while FileExists(tPath+Result+tExt) do                    //
+  begin                                                     //
+    P := LastDelimiter('(', Result);                        //
+    if P <> 0 then Delete(Result, P, (Length(Result)-P)+1); //
+    Inc(n);                                                 //
+    Result := Result+'('+IntToStr(n)+')';                   //
+  end;                                                      //
+                                                            //
+  Result := tPath+Result+tExt;                              //
+end;                                                        //
+//////////////////////////////////////////////////////////////
 
 ////////////////////////////////////////////////////
 function IsChip(const Status: WORD): Boolean;     //

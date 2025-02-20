@@ -28,20 +28,20 @@ type
     NOperator : string;
     NLot      : string;
     Num       : string;
-    NTotal    : WORD;
-    NMeased   : WORD;
-    NOK       : WORD;
-    NFailNC   : WORD;
-    NFailSC   : WORD;
-    NFailFC   : WORD;
+    NTotal    : DWORD;
+    NMeased   : DWORD;
+    NOK       : DWORD;
+    NFailNC   : DWORD;
+    NFailSC   : DWORD;
+    NFailFC   : DWORD;
     TimeDate  : string;
     Diameter  : WORD;
-    LDiameter : Single;
-    Radius    : Single;
-    LRadius   : Single;
-    Chord     : Single;
-    StepX     : Single;
-    StepY     : Single;
+    LDiameter : Real;
+    Radius    : Real;
+    LRadius   : Real;
+    Chord     : Real;
+    StepX     : Real;
+    StepY     : Real;
 
     fName   : TFileName;
     Cadre   : TCadre;
@@ -49,7 +49,7 @@ type
     HLChip  : TPoint;
 
     Chip : TChips;
-    ChipN: array of TPoint; // Координаты чипов в порядке измерения
+    ChipN: TChipsN;
 
     TestsParams  : TTestsParams;
     CalcsParams  : TCalcsParams;
@@ -92,7 +92,7 @@ type
     procedure SetChipsID();
     function  IsWafer(): Boolean; // Пластина или корпус?
 
-    function GetChipParamsStat(const Val, Min, Max: Single): byte;
+    function GetChipParamsStat(const Val, Min, Max: Real): byte;
     function GetStatusName(const Status: WORD): String;
   private
     Handle: THandle;
@@ -156,9 +156,6 @@ end;                                      //
 
 ///////////////////////////////
 procedure TWafer.Init();     //
-var                          //
-  INIfName: TIniFile;        //
-  X, Y: WORD;                //
 begin                        //
   fName := '';               //
                              //
@@ -218,7 +215,7 @@ end;                         //
 function TWafer.LoadSTSHeader(): Boolean;                                           //
 var                                                                                 //
   INIfName: TIniFile;                                                               //
-  X, Y, n: WORD;                                                                    //
+  X, Y, n: DWORD;                                                                   //
   P: byte;                                                                          //
   tmpSL: TStringList;                                                               //
   Str: String;                                                                      //
@@ -351,7 +348,7 @@ end;                                                                            
 function TWafer.LoadBlankSTSHeader(): Boolean;              //
 var                                                         //
   INIfName: TIniFile;                                       //
-  X, Y: WORD;                                               //
+  X, Y: DWORD;                                              //
 begin                                                       //
   Result := True;                                           //
                                                             //
@@ -414,7 +411,7 @@ var                                                         //
   SL: TStringList;                                          //
   n, TotalChips: DWORD;                                     //
   P: byte;                                                  //
-  X, Y: WORD;                                               //
+  X, Y: DWORD;                                              //
   NumChip, PrevChip, Str, tmpStr: AnsiString;               //
   FirstTime: Boolean;                                       //
 begin                                                       //
@@ -536,7 +533,7 @@ var                                                         //
   SL, NKKSL, NFCSL: TStringList;                            //
   n, TotalChips: DWORD;                                     //
   P, eP: byte;                                              //
-  X, Y, NFC, NKK: WORD;                                     //
+  X, Y, NFC, NKK: DWORD;                                    //
   Str, tmpStr1, tmpStr2: String;                            //
 begin                                                       //
   Result := True;                                           //
@@ -674,7 +671,7 @@ var                                                         //
   SL, NKKSL, NFCSL: TStringList;                            //
   n, TotalChips: DWORD;                                     //
   P, eP: byte;                                              //
-  X, Y, NFC, NKK: WORD;                                     //
+  X, Y, NFC, NKK: DWORD;                                    //
   Str, tmpStr1, tmpStr2: String;                            //
 begin                                                       //
   Result := True;                                           //
@@ -809,7 +806,7 @@ label                                                                 //
   X0_End, X1_End, Y0_End, Y1_End; // Стыыыддннооо                     //
 var                                                                   //
   tmpChip: TChips;                                                    //
-  X, Y, X0, X1, Y0, Y1: WORD;                                         //
+  X, Y, X0, X1, Y0, Y1: DWORD;                                        //
 begin                                                                 //
   X0 := 0;                                                            //
   for X := 0 to Length(Chip[0])-1 do                                  //
@@ -874,10 +871,10 @@ end;                                                                  //
 //////////////////////////////////////////////////////////////////////////////////////////////
 procedure TWafer.Rotate();                                                                  //
 var                                                                                         //
-  X, Y: WORD;                                                                               //
+  X, Y: DWORD;                                                                              //
   TmpChip: TChips;                                                                          //
   TmpInt: Integer;                                                                          //
-  TmpSingle: Single;                                                                        //
+  TmpReal: Real;                                                                            //
 begin                                                                                       //
   TmpInt := BaseChip.X;                                                                     //
   BaseChip.X := BaseChip.Y;                                                                 //
@@ -913,9 +910,9 @@ begin                                                                           
                                                                                             //
   if (StepX <> 0) and (StepY <> 0) then                                                     //
   begin                                                                                     //
-    TmpSingle := StepX;                                                                     //
+    TmpReal := StepX;                                                                       //
     StepX := StepY;                                                                         //
-    StepY := TmpSingle;                                                                     //
+    StepY := TmpReal;                                                                       //
   end;                                                                                      //
                                                                                             //
   SetChipsID;                                                                               //
@@ -928,7 +925,7 @@ procedure TWafer.CalcChips();                                 //
 //////////////////////////////////////////                    //
 procedure SortFails(var Fails: TFails); //                    //
 var                                     //                    //
-  n, m, b_val, b_m: WORD;               //                    //
+  n, m, b_val, b_m: DWORD;              //                    //
   TmpFail: TFail;                       //                    //
 begin                                   //                    //
   if Length(Fails) < 2 then Exit;       //                    //
@@ -951,7 +948,7 @@ end;                                    //                    //
 //////////////////////////////////////////                    //
                                                               //
 var                                                           //
-  X, Y: WORD;                                                 //
+  X, Y: DWORD;                                                //
 begin                                                         //
   if Length(Chip) = 0 then Exit;                              //
                                                               //
@@ -994,10 +991,9 @@ end;                                                          //
 ////////////////////////////////////////////////////////////////////////////////////
 procedure TWafer.SetChipsID();                                                    //
 var                                                                               //
-  N: DWORD;                                                                       //
-  X, Y, XY: WORD;                                                                 //
+  N, X, Y, XY: WORD;                                                              //
   tmp: byte;                                                                      //
-  MassXY: array of WORD; // Массив не пустых строк                                //
+  MassXY: array of DWORD; // Массив не пустых строк                               //
 begin                                                                             //
   if Length(Chip) = 0 then Exit;                                                  //
                                                                                   //
@@ -1312,7 +1308,7 @@ end;                                //
 /////////////////////////////////////////////////////////////////////
 function TWafer.GetStatusName(const Status: WORD): String;         //
 var                                                                //
-  n, Tmp: WORD;                                                    //
+  n, Tmp: DWORD;                                                   //
   P: byte;                                                         //
 begin                                                              //
   Result := '';                                                    //
@@ -1436,7 +1432,7 @@ begin                                                                      //
           for i := 3 to Fields.Count-1 do // Пропустим 3 колонки           //
           begin                                                            //
             try                                                            //
-              Chip[Y, X].ChipParams[i-3].Value := Single(Fields[i].Value); //
+              Chip[Y, X].ChipParams[i-3].Value := Real(Fields[i].Value);   //
             except                                                         //
               Chip[Y, X].ChipParams[i-3].Value := NotSpec;                 //
             end;                                                           //
@@ -1483,12 +1479,12 @@ function TWafer.LoadSchusterTXT(const TXTfName: TFileName): Boolean;     //
 var                                                                      //
   SL: TStringList;                                                       //
   P: byte;                                                               //
-  n, NPStr, NCh: DWORD;                                                  //
-  i: WORD;                                                               //
+  n, i, NPStr, NCh: DWORD;                                               //
   X, Y, MinX, MaxX, MaxY: Integer;                                       //
   Str: string;                                                           //
   TmpChip: TChips;                                                       //
-  TmpValue: Single;                                                      //
+  TmpNChip: TChipsN;                                                     //
+  TmpValue: Real;                                                        //
 begin                                                                    //
   Result := False;                                                       //
                                                                          //
@@ -1689,6 +1685,9 @@ begin                                                                    //
 
   for n := NPStr+1 to SL.Count-1 do // Ещё раз пройдёмся по рез-там измерений
   begin
+    Str := SL.Strings[n];
+    if Trim(SL.Strings[n]) = '' then Continue;
+
     NCh := n-(NPStr+1);
 
     if Diameter <> 0 then ChipN[NCh].X := ChipN[NCh].X-MinX; // Нормализуем X
@@ -1697,7 +1696,7 @@ begin                                                                    //
 
     Chip[Y, X].ID := NCh+1;
 
-    Str := SL.Strings[n];         // Удалим
+             // Удалим
     Delete(Str, 1, Pos(#9, Str)); // FILE
     Delete(Str, 1, Pos(#9, Str)); // NAME
     Delete(Str, 1, Pos(#9, Str)); // ADAPTER
@@ -1720,8 +1719,12 @@ begin                                                                    //
       begin
         P := Pos(#9, Str);
 
-        TmpValue := StrToFloat(Trim(Copy(Str, 1, P-1)));
-        if TmpValue = -999 then TmpValue := NotSpec;
+        try
+          TmpValue := StrToFloat(Trim(Copy(Str, 1, P-1)));
+        except
+          TmpValue := NotSpec;
+        end;
+        if TmpValue = -999 then TmpValue := NotSpec; // -999 убираем (Арнаутов)
 
         Chip[Y, X].ChipParams[i].Value := TmpValue;
         Chip[Y, X].ChipParams[i].Stat  := GetChipParamsStat(Chip[Y, X].ChipParams[i].Value,
@@ -1739,19 +1742,20 @@ begin                                                                    //
 
   if Diameter <> 0 then // Если пластина
   begin
-    SetLength(TmpChip, Length(Chip[0]), Length(Chip));
-    for Y := 0 to Length(Chip)-1 do
-      for X := 0 to Length(Chip[0])-1 do
-      begin
-        TmpChip[Length(Chip)-Y-1, X] := Chip[Y, X];
-        SetLength(TmpChip[Length(Chip)-Y-1, X].ChipParams, Length(Chip[Y, X].ChipParams));
-      end;
-    Chip := TmpChip;
-    SetLength(Chip, Length(TmpChip[0]), Length(TmpChip));
-    TmpChip := nil;
+////    SetLength(TmpChip, Length(Chip[0]), Length(Chip));
+//    SetLength(TmpChip, Length(Chip), Length(Chip[0]));
+//    for Y := 0 to Length(Chip)-1 do
+//      for X := 0 to Length(Chip[0])-1 do
+//      begin
+//        TmpChip[Length(Chip)-Y-1, X] := Chip[Y, X];
+//        SetLength(TmpChip[Length(Chip)-Y-1, X].ChipParams, Length(Chip[Y, X].ChipParams));
+//      end;
+//    Chip := TmpChip;
+//    SetLength(Chip, Length(TmpChip[0]), Length(TmpChip));
+//    TmpChip := nil;
 
-    Direct  := 9; // Обход на Schusterе - нижняя левая змейка
-    CutSide := 3; // Срез внизу
+//    Direct  := 9; // Обход на Schusterе - нижняя левая змейка
+//    CutSide := 3; // Срез внизу
   end
   else                  // Если микросхема
   begin
@@ -1759,7 +1763,7 @@ begin                                                                    //
     CutSide := 1;
   end;
 
-  SetChipsID();
+//  SetChipsID();
 
 ////////////////////////////////////////////////////////////////////////////////
 
@@ -1930,7 +1934,7 @@ var                                                                //
   IniFile: TIniFile;                                               //
   Zone: TZones2;                                                   //
   P: byte;                                                         //
-  X, Y, n: WORD;                                                   //
+  X, Y, n: DWORD;                                                  //
   MinX, MinY, MaxX, MaxY: Integer;                                 //
   SL: TStringList;                                                 //
   Str: String;                                                     //
@@ -2049,13 +2053,12 @@ end;                                                               //
 ///////////////////////////////////////////////////////////////////////////////////////////////////////
 function TWafer.LoadSTS(const STSfName: TFileName): Boolean;                                         //
 var                                                                                                  //
-  i, X, Y: WORD;                                                                                     //
-  n, Count: DWORD;                                                                                   //
+  i, X, Y, n, Count: DWORD;                                                                          //
                                                                                                      //
   SL: TStringList;                                                                                   //
   Str, S: String;                                                                                    //
   P: byte;                                                                                           //
-  Mass: array of Single;                                                                             //
+  Mass: array of Real;                                                                               //
   Stat: WORD;                                                                                        //
 begin                                                                                                //
   Result := False;                                                                                   //
@@ -2189,12 +2192,11 @@ end;                                                                            
 ///////////////////////////////////////////////////////////////////////////////////////////////////////
 function TWafer.AddSTS(const STSfName: TFileName): Boolean;                                          //
 var                                                                                                  //
-  i, X, Y: WORD;                                                                                     //
-  n, Count: DWORD;                                                                                   //
+  i, X, Y, n, Count: DWORD;                                                                          //
   SL: TStringList;                                                                                   //
   Str, S: String;                                                                                    //
   P: byte;                                                                                           //
-  Mass: array of Single;                                                                             //
+  Mass: array of Real;                                                                               //
   Stat: WORD;                                                                                        //
   tmpWafer: TWafer;                                                                                  //
 begin                                                                                                //
@@ -2378,8 +2380,7 @@ end;                                                                            
 ///////////////////////////////////////////////////////////////////////////////////////////////////////
 function TWafer.LoadBlankSTS(const STSfName: TFileName): Boolean;                                    //
 var                                                                                                  //
-  X, Y: WORD;                                                                                        //
-  n, Count, nParams, i: DWORD;                                                                       //
+  X, Y, n, Count, nParams, i: DWORD;                                                                 //
   SL: TStringList;                                                                                   //
   Str, S: String;                                                                                    //
   P: byte;                                                                                           //
@@ -2492,7 +2493,7 @@ const                                                                           
   CR = AnsiString(#13#10);                                                                           //
 var                                                                                                  //
   INIfName: TIniFile;                                                                                //
-  X, Y: WORD;                                                                                        //
+  X, Y: DWORD;                                                                                       //
   n, P: WORD;                                                                                        //
   FS: TFileStream;                                                                                   //
   DateTime: TDateTime;                                                                               //
@@ -2624,7 +2625,7 @@ var                                                                             
   n, m: DWORD;                                                                                       //
   Str, NumChip, PrevChip: String;                                                                    //
   SL: TStringList;                                                                                   //
-  HeaderCount, X, Y, k: WORD;                                                                        //
+  HeaderCount, X, Y, k: DWORD;                                                                       //
   FirstTime: Boolean;                                                                                //
 begin                                                                                                //
   Result := False;                                                                                   //
@@ -2715,7 +2716,7 @@ function TWafer.LoadXML(const XMLfName: TFileName): Boolean;                    
 var                                                                                                           //
   n: DWORD;                                                                                                   //
   Str: String;                                                                                                //
-  X, Y: WORD;                                                                                                 //
+  X, Y: DWORD;                                                                                                //
   P1, P2, P3: byte;                                                                                           //
   XMLDoc1: IXMLDocument;                                                                                      //
   SL: TStringList;                                                                                            //
@@ -2828,7 +2829,7 @@ function TWafer.AddXML(const XMLfName: TFileName): Boolean;                     
 var                                                                                                           //
   n, ErrCount: DWORD;                                                                                         //
   Str: String;                                                                                                //
-  X, Y: WORD;                                                                                                 //
+  X, Y: DWORD;                                                                                                //
   P1, P2, P3: byte;                                                                                           //
   XMLDoc1: IXMLDocument;                                                                                      //
   SL: TStringList;                                                                                            //
@@ -2994,7 +2995,7 @@ var                                                                             
   SL: TStringList;                                                                            //
   m, Y, X: DWORD;                                                                             //
   Str: string;                                                                                //
-  n, NFC, NKK: WORD;                                                                          //
+  n, NFC, NKK: DWORD;                                                                         //
   OK_param: Boolean;                                                                          //
 begin                                                                                         //
   Result := False;                                                                            //
@@ -3120,7 +3121,7 @@ var                                                                             
   SL: TStringList;                                                                            //
   m, Y, X, Nm: DWORD;                                                                         //
   Str: string;                                                                                //
-  n, NFC, NKK: WORD;                                                                          //
+  n, NFC, NKK: DWORD;                                                                         //
 begin                                                                                         //
   Result := False;                                                                            //
                                                                                               //
@@ -3668,26 +3669,26 @@ end;
 
 
 
-////////////////////////////////////////////////////////////////////////
-function TWafer.GetChipParamsStat(const Val, Min, Max: Single): byte; //
-begin                                                                 //
-  Result := 1;                                                        //
-                                                                      //
-  if (Min = NotSpec)  and (Max = NotSpec) then Result := 0;           //
-                                                                      //
-  if (Min = NotSpec)  and (Max <> NotSpec) then                       //
-    if Val > Max then Result := 3;                                    //
-                                                                      //
-  if (Min <> NotSpec) and (Max = NotSpec)  then                       //
-    if Val < Min then Result := 2;                                    //
-                                                                      //
-  if (Min <> NotSpec) and (Max <> NotSpec) then                       //
-  begin                                                               //
-    if Val < Min then Result := 2;                                    //
-    if Val > Max then Result := 3;                                    //
-  end;                                                                //
-end;                                                                  //
-////////////////////////////////////////////////////////////////////////
+//////////////////////////////////////////////////////////////////////
+function TWafer.GetChipParamsStat(const Val, Min, Max: Real): byte; //
+begin                                                               //
+  Result := 1;                                                      //
+                                                                    //
+  if (Min = NotSpec)  and (Max = NotSpec) then Result := 0;         //
+                                                                    //
+  if (Min = NotSpec)  and (Max <> NotSpec) then                     //
+    if Val > Max then Result := 3;                                  //
+                                                                    //
+  if (Min <> NotSpec) and (Max = NotSpec)  then                     //
+    if Val < Min then Result := 2;                                  //
+                                                                    //
+  if (Min <> NotSpec) and (Max <> NotSpec) then                     //
+  begin                                                             //
+    if Val < Min then Result := 2;                                  //
+    if Val > Max then Result := 3;                                  //
+  end;                                                              //
+end;                                                                //
+//////////////////////////////////////////////////////////////////////
 
 
 { TLot }
@@ -3834,14 +3835,14 @@ var                                                                             
   VarMass1, VarMass2: OleVariant;                                                                      //
   XLSfName: TFileName;                                                                                 //
   ClassID: TCLSID;                                                                                     //
-  AvrSum, MinSum, MaxSum, StdSum, Qrt1Sum, MedSum, Qrt3Sum: array of Single;                           //
+  AvrSum, MinSum, MaxSum, StdSum, Qrt1Sum, MedSum, Qrt3Sum: array of Real;                             //
   HistParams: array of THistParams;                                                                    //
   QuantSum, OKSum, FailsSum, MeasSum: array of DWORD;                                                  //
   Col: TColor;                                                                                         //
   Str: string;                                                                                         //
-  StX, LenX, StY, P: WORD;                                                                             //
+  StX, LenX, StY, P: DWORD;                                                                             //
   MinLength, MaxLength: array of DWORD;                                                                //
-  GroupDiap: Single;                                                                                   //
+  GroupDiap: Real;                                                                                     //
   BottomSheet: WORD;                                                                                   //
 begin                                                                                                  //
   Result := False;                                                                                     //
@@ -3857,12 +3858,14 @@ begin                                                                           
     if Assigned(OnEvent) then OnEvent(evError, 'Excel не найден!');                                    //
     Exit;                                                                                              //
   end;                                                                                                 //
-                                                                                                       //
+{                                                                                                       //
   try                                                                                                  //
     Excel := GetActiveOleObject(GetExcelAppName2);                                                     //
   except                                                                                               //
     Excel := CreateOleObject(GetExcelAppName2);                                                        //
   end;                                                                                                 //
+}                                                                                                      //
+  Excel := CreateOleObject(GetExcelAppName2);                                                          //
   Excel.DisplayAlerts := False; // Запретим вывод предупреждений                                       //
                                                                                                        //
   GetModuleFileName(0, Buffer, MAX_PATH);                                                              //
@@ -3997,11 +4000,12 @@ begin                                                                           
 
       SetLength(CalcsParams, Length(TestsParams));
       for i := 0 to Length(CalcsParams)-1 do
+      begin
         with CalcsParams[i] do
         begin
           AvrVal    := 0.0;
-          MinVal    :=  MaxSingle;
-          MaxVal    := -MaxSingle;
+          MinVal    :=  MaxDouble;
+          MaxVal    := -MaxDouble;
           StdVal    := 0.0;
           ASum      := 0.0;
           QSum      := 0.0;
@@ -4013,6 +4017,9 @@ begin                                                                           
           ValCount  := 0;
           SetLength(ValMass, NTotal);
         end;
+
+        SetLength(HistParams[i].Group, 0); // Очистим от предыдущих значений
+      end;
 
 //////////// Запишем в variant массивы
 
@@ -4059,7 +4066,6 @@ begin                                                                           
             if not ToFirstFail then // Если не до 1-го брака
               for i := 0 to Length(TestsParams)-1 do
               begin
-                // if Chip[Y, X].ChipParams[i].Value = NotSpec then Continue; // Если неправильно измерено
                 if Chip[Y, X].ChipParams[i].Value = NotSpec then //
                 begin                                            // Параметр
                   VarMass1[Nm+1, i+1] := '';                     // не
@@ -4088,7 +4094,12 @@ begin                                                                           
               for i := 0 to Length(TestsParams)-1 do
                 if i < Chip[Y, X].Status-1999 then
                 begin
-                  if Chip[Y, X].ChipParams[i].Value = NotSpec then Continue; // Если неправильно измерено
+                  if Chip[Y, X].ChipParams[i].Value = NotSpec then //
+                  begin                                            // Параметр
+                    VarMass1[Nm+1, i+1] := '';                     // не
+                    Chip[Y, X].ChipParams[i].Stat := 4;            // измерялся
+                    Continue;                                      //
+                  end;
 
                   VarMass1[Nm+1, i+1] := Chip[Y, X].ChipParams[i].Value;
 
@@ -4164,16 +4175,16 @@ begin                                                                           
               end;                                        //
 
               Nm := 0;
-              if Length(ValMass) > 0 then
-                for m := 0 to Length(ValMass)-1 do                 //
-                begin                                              // Распределим
-                  if ValMass[m] > Group[Nm].Max then               // измерения
-                    while (ValMass[m] > Group[Nm].Max) do Inc(Nm); // по
-                                                                   // группам
-                  Inc(Group[Nm].Num);                              //
-                end;                                               //
+
+              for m := 0 to Length(ValMass)-1 do                 //
+              begin                                              // Распределим
+                if ValMass[m] > Group[Nm].Max then               // измерения
+                  while (ValMass[m] > Group[Nm].Max) do Inc(Nm); // по
+                                                                 // группам
+                Inc(Group[Nm].Num);                              //
+              end;                                               //
             end;
-          end;
+          end; // if ValCount > 0
         end;
       end;
 
@@ -4186,6 +4197,7 @@ begin                                                                           
       Chart[0].Copy;
 
       for i := 0 to Length(HistParams)-1 do
+//      if Wafer[n].CalcsParams[i].ValCount > 0 then /////////////
         with HistParams[i] do
         begin
           WorkBook1.ActiveSheet.Cells[BottomSheet+2+26*i, 5].Font.Bold := True; //
@@ -4245,20 +4257,23 @@ begin                                                                           
 
       for i := 0 to Length(TestsParams)-1 do
       begin
-        WorkBook1.ActiveSheet.Cells[NTotal+3,  4+i] := CalcsParams[i].AvrVal;  // Среднее
-        WorkBook1.ActiveSheet.Cells[NTotal+4,  4+i] := CalcsParams[i].Qrt1Val; // 1-й квартиль
-        WorkBook1.ActiveSheet.Cells[NTotal+5,  4+i] := CalcsParams[i].MedVal;  // Медиана
-        WorkBook1.ActiveSheet.Cells[NTotal+6,  4+i] := CalcsParams[i].Qrt3Val; // 3-й квартиль
-        if CalcsParams[i].MinVal <> MaxSingle then
-          WorkBook1.ActiveSheet.Cells[NTotal+7,  4+i] := CalcsParams[i].MinVal;  // Мин.
-        if CalcsParams[i].MaxVal <> -MaxSingle then
-          WorkBook1.ActiveSheet.Cells[NTotal+8,  4+i] := CalcsParams[i].MaxVal;  // Мах.
-        WorkBook1.ActiveSheet.Cells[NTotal+9,  4+i] := CalcsParams[i].StdVal;  // Сигма
-        WorkBook1.ActiveSheet.Cells[NTotal+10, 4+i] := Wafer[n].NOK;           // Счёт ???????????????????
+        if CalcsParams[i].ValCount > 0 then
+        begin
+          WorkBook1.ActiveSheet.Cells[NTotal+3,  4+i] := CalcsParams[i].AvrVal;  // Среднее
+          WorkBook1.ActiveSheet.Cells[NTotal+4,  4+i] := CalcsParams[i].Qrt1Val; // 1-й квартиль
+          WorkBook1.ActiveSheet.Cells[NTotal+5,  4+i] := CalcsParams[i].MedVal;  // Медиана
+          WorkBook1.ActiveSheet.Cells[NTotal+6,  4+i] := CalcsParams[i].Qrt3Val; // 3-й квартиль
+          if CalcsParams[i].MinVal <> MaxDouble then
+            WorkBook1.ActiveSheet.Cells[NTotal+7,  4+i] := CalcsParams[i].MinVal;  // Мин.
+          if CalcsParams[i].MaxVal <> -MaxDouble then
+            WorkBook1.ActiveSheet.Cells[NTotal+8,  4+i] := CalcsParams[i].MaxVal;  // Мах.
+          WorkBook1.ActiveSheet.Cells[NTotal+9,  4+i] := CalcsParams[i].StdVal;  // Сигма
+          WorkBook1.ActiveSheet.Cells[NTotal+10, 4+i] := Wafer[n].NOK;           // Счёт ???????????????????
 
-        WorkBook1.ActiveSheet.Cells[NTotal+11, 4+i] := (Wafer[n].NOK*100)/NMeased; // %Годных ??????????????
-        WorkBook1.ActiveSheet.Cells[NTotal+13, 4+i] := CalcsParams[i].NOKVal;      // Годных
-        WorkBook1.ActiveSheet.Cells[NTotal+14, 4+i] := CalcsParams[i].NFailsVal;   // Брак
+          WorkBook1.ActiveSheet.Cells[NTotal+11, 4+i] := (Wafer[n].NOK*100)/NMeased; // %Годных ??????????????
+          WorkBook1.ActiveSheet.Cells[NTotal+13, 4+i] := CalcsParams[i].NOKVal;      // Годных
+          WorkBook1.ActiveSheet.Cells[NTotal+14, 4+i] := CalcsParams[i].NFailsVal;   // Брак
+        end;
 
         WorkBook1.ActiveSheet.Columns[4+i].EntireColumn.AutoFit; /////
       end;
@@ -4344,23 +4359,25 @@ begin                                                                           
 
       WorkBook1.ActiveSheet.Cells[4+9*n, 1] := Wafer[n].Num;
       WorkBook1.ActiveSheet.Columns[1].EntireColumn.AutoFit;
+
       for i := 0 to Length(TestsParams)-1 do
-      begin
-        WorkBook1.ActiveSheet.Cells[4+ 9*n, 3+i] := Wafer[n].CalcsParams[i].AvrVal;   // Среднее
-        WorkBook1.ActiveSheet.Cells[5+ 9*n, 3+i] := Wafer[n].CalcsParams[i].Qrt1Val;  // 1-й квартиль
-        WorkBook1.ActiveSheet.Cells[6+ 9*n, 3+i] := Wafer[n].CalcsParams[i].MedVal;   // Медиана
-        WorkBook1.ActiveSheet.Cells[7+ 9*n, 3+i] := Wafer[n].CalcsParams[i].Qrt3Val;  // 3-й квартиль
-        if Wafer[n].CalcsParams[i].MinVal <> MaxSingle then
-          WorkBook1.ActiveSheet.Cells[8+ 9*n, 3+i] := Wafer[n].CalcsParams[i].MinVal; // Мин.
-        if Wafer[n].CalcsParams[i].MaxVal <> -MaxSingle then
-          WorkBook1.ActiveSheet.Cells[9+ 9*n, 3+i] := Wafer[n].CalcsParams[i].MaxVal; // Макс.
-        WorkBook1.ActiveSheet.Cells[10+9*n, 3+i] := Wafer[n].CalcsParams[i].StdVal;   // Сигма
+        if CalcsParams[i].ValCount > 0 then
+        begin
+          WorkBook1.ActiveSheet.Cells[4+ 9*n, 3+i] := Wafer[n].CalcsParams[i].AvrVal;   // Среднее
+          WorkBook1.ActiveSheet.Cells[5+ 9*n, 3+i] := Wafer[n].CalcsParams[i].Qrt1Val;  // 1-й квартиль
+          WorkBook1.ActiveSheet.Cells[6+ 9*n, 3+i] := Wafer[n].CalcsParams[i].MedVal;   // Медиана
+          WorkBook1.ActiveSheet.Cells[7+ 9*n, 3+i] := Wafer[n].CalcsParams[i].Qrt3Val;  // 3-й квартиль
+          if Wafer[n].CalcsParams[i].MinVal <> MaxDouble then
+            WorkBook1.ActiveSheet.Cells[8+ 9*n, 3+i] := Wafer[n].CalcsParams[i].MinVal; // Мин.
+          if Wafer[n].CalcsParams[i].MaxVal <> -MaxDouble then
+            WorkBook1.ActiveSheet.Cells[9+ 9*n, 3+i] := Wafer[n].CalcsParams[i].MaxVal; // Макс.
+          WorkBook1.ActiveSheet.Cells[10+9*n, 3+i] := Wafer[n].CalcsParams[i].StdVal;   // Сигма
 
-        WorkBook1.ActiveSheet.Cells[11+9*n, 3+i] := Wafer[n].NOK;      // Счёт ??????
-        WorkBook1.ActiveSheet.Cells[12+9*n, 3+i] := (NOK*100)/NMeased; // %Годных ??????????????
+          WorkBook1.ActiveSheet.Cells[11+9*n, 3+i] := Wafer[n].NOK;      // Счёт ??????
+          WorkBook1.ActiveSheet.Cells[12+9*n, 3+i] := (NOK*100)/NMeased; // %Годных ??????????????
 
-        WorkBook1.ActiveSheet.Columns[3+i].EntireColumn.AutoFit;
-      end;
+          WorkBook1.ActiveSheet.Columns[3+i].EntireColumn.AutoFit;
+        end;
 
     end;
 
@@ -4418,12 +4435,12 @@ begin                                                                           
         Qrt1Sum[i]  := Qrt1Sum[i]+CalcsParams[i].Qrt1Val;
         MedSum[i]   := MedSum[i] +CalcsParams[i].MedVal;
         Qrt3Sum[i]  := Qrt3Sum[i]+CalcsParams[i].Qrt3Val;
-        if CalcsParams[i].MinVal <> MaxSingle then
+        if CalcsParams[i].MinVal <> MaxDouble then
           MinSum[i] := MinSum[i]+CalcsParams[i].MinVal
         else
           Inc(MinLength[i]);
 
-        if CalcsParams[i].MaxVal <> -MaxSingle then
+        if CalcsParams[i].MaxVal <> -MaxDouble then
           MaxSum[i] := MaxSum[i]+CalcsParams[i].MaxVal
         else
           Inc(MaxLength[i]);
@@ -4459,199 +4476,8 @@ begin                                                                           
     WorkBook1.ActiveSheet.Cells[12+X, i+3] := OKSum[i]+FailsSum[i]; // Всего
   end;
 
-  for i := 0 to Length(HistParams)-1 do                        //
-  begin                                                        // Инициализация
-    SetLength(HistParams[i].AllValMass, 0);                    // групп
-                                                               //
-    HistParams[i].AllMinVal := Wafer[0].CalcsParams[i].MinVal; //
-    HistParams[i].AllMaxVal := Wafer[0].CalcsParams[i].MaxVal; //
-
-    SetLength(HistParams[i].Group, 0);
-  end;
-
-//////////////////// * Общие гистограммы по параметрам * ///////////////////////
-
-  for i := 0 to Length(HistParams)-1 do                        //
-  begin                                                        // Инициализация
-    SetLength(HistParams[i].AllValMass, 0);                    // групп
-                                                               //
-    HistParams[i].AllMinVal := Wafer[0].CalcsParams[i].MinVal; //
-    HistParams[i].AllMaxVal := Wafer[0].CalcsParams[i].MaxVal; //
-
-    SetLength(HistParams[i].Group, 0);
-  end;
-
-  for n := 0 to Length(Wafer)-1 do                                                         //
-    for i := 0 to Length(HistParams)-1 do                                                  //
-      with Wafer[n].CalcsParams[i] do                                                      // Сложим
-      begin                                                                                // параметры
-        Nm := Length(HistParams[i].AllValMass);                                            // по всем
-        SetLength(HistParams[i].AllValMass, Nm+ValCount);                                  // пластинам
-          for m := 0 to Length(ValMass)-1 do HistParams[i].AllValMass[Nm+m] := ValMass[m]; //
-                                                                                           //
-        if HistParams[i].AllMinVal > MinVal then HistParams[i].AllMinVal := MinVal;        // Найдём мин
-        if HistParams[i].AllMaxVal < MaxVal then HistParams[i].AllMaxVal := MaxVal;        // и макс
-      end;
-
-
-  for i := 0 to Length(HistParams)-1 do
-    with HistParams[i] do
-    begin
-      SortMassByValue(AllValMass); // Отсортируем массивы
-
-      GroupDiap := (AllMaxVal-AllMinVal)/NGroups; // Диапазон группы
-
-      SetLength(Group, NGroups);
-      for m := 0 to Length(Group)-1 do            //
-      begin                                       //
-        Group[m].Num := 0;                        //
-        Group[m].Min := AllMinVal+GroupDiap*m;    // Создадим
-        if m < Length(Group)-1 then               // группы
-          Group[m].Max := Group[m].Min+GroupDiap  // для
-        else                                      // гистограмм
-          Group[m].Max := AllMaxVal;              //
-      end;                                        //
-
-      Nm := 0;                                              //
-      for m := 0 to Length(AllValMass)-1 do                 //
-      begin                                                 // Распределим
-        if AllValMass[m] > Group[Nm].Max then               // измерения
-          while (AllValMass[m] > Group[Nm].Max) do Inc(Nm); // по
-                                                            // группам
-        Inc(Group[Nm].Num);                                 //
-      end;                                                  //
-    end;                                                    //
-
-
-  SetLength(Chart, 0);
-  SetLength(Chart, Length(HistParams));
-  Chart[0] := Workbook1.ActiveSheet.ChartObjects(2);             // Первая
-  Chart[0].Top := WorkBook1.ActiveSheet.Rows[BottomSheet+3].Top; // гистограмма
-  Chart[0].Copy;
-
-  for i := 0 to Length(HistParams)-1 do
-    with HistParams[i] do
-    begin
-      WorkBook1.ActiveSheet.Cells[BottomSheet+2+26*i, 5].Font.Bold := True; //
-      WorkBook1.ActiveSheet.Cells[BottomSheet+2+26*i, 5].Font.Size := 12;   // Имя
-      WorkBook1.ActiveSheet.Cells[BottomSheet+2+26*i, 5] := Name;           // гистограммы
-
-      if i > 0 then
-      begin
-        WorkBook1.ActiveSheet.Cells[BottomSheet+3+26*i, 1].Select;
-        WorkBook1.ActiveSheet.Paste;
-
-        Chart[i] := Workbook1.ActiveSheet.ChartObjects(i+2);
-      end;
-
-      for m := 0 to Length(Group)-1 do
-      begin                                                                                                                                   // Выведем
-        WorkBook1.ActiveSheet.Cells[BottomSheet+3+26*i+m, 13+2*i] := FormatFloat('0.000',Group[m].Min)+'-'+FormatFloat('0.000',Group[m].Max); // границы
-        WorkBook1.ActiveSheet.Cells[BottomSheet+3+26*i+m, 14+2*i] := Group[m].Num;                                                            // и кол-во
-      end;
-
-      Cell1 := WorkBook1.ActiveSheet.Cells[BottomSheet+3+26*i, 13+2*i];           //
-      Cell2 := WorkBook1.ActiveSheet.Cells[BottomSheet+3+26*i+NGroups-1, 14+2*i]; // Укажем
-      Range2 := WorkBook1.ActiveSheet.Range[Cell1, Cell2];                        // данные
-      Chart[i].Chart.SetSourceData(Range2);                                       //
-
-      Range2.Font.Color := clWhite; // Сделаем данные невидимыми
-    end;
-
-
   if Assigned(OnEvent) then OnEvent(evOK, '>>> Обработаны все пластины!');
 
-////////////////////////////////////////////////////////////////////////////////
-//////////////////////////// * Лист "Гистограммы" * ////////////////////////////
-////////////////////////////////////////////////////////////////////////////////
-
-//  try
-//    Workbook1.Sheets['Гистограммы'].Activate;
-//  except
-//    if Assigned(OnEvent) then OnEvent(evError, 'В шаблоне отсутствует лист <Гистограммы>');
-//
-//  end;
-//
-//  for i := 0 to Length(HistParams)-1 do                        //
-//  begin                                                        // Инициализация
-//    SetLength(HistParams[i].AllValMass, 0);                    // групп
-//                                                               //
-//    HistParams[i].AllMinVal := Wafer[0].CalcsParams[i].MinVal; //
-//    HistParams[i].AllMaxVal := Wafer[0].CalcsParams[i].MaxVal; //
-//
-//    SetLength(HistParams[i].Group, 0);
-//  end;
-//
-//  for n := 0 to Length(Wafer)-1 do                                                         //
-//    for i := 0 to Length(HistParams)-1 do                                                  //
-//      with Wafer[n].CalcsParams[i] do                                                      // Сложим
-//      begin                                                                                // параметры
-//        Nm := Length(HistParams[i].AllValMass);                                            // по всем
-//        SetLength(HistParams[i].AllValMass, Nm+ValCount);                                  // пластинам
-//          for m := 0 to Length(ValMass)-1 do HistParams[i].AllValMass[Nm+m] := ValMass[m]; //
-//                                                                                           //
-//        if HistParams[i].AllMinVal > MinVal then HistParams[i].AllMinVal := MinVal;        // Найдём мин
-//        if HistParams[i].AllMaxVal < MaxVal then HistParams[i].AllMaxVal := MaxVal;        // и макс
-//      end;
-//
-//
-//  for i := 0 to Length(HistParams)-1 do
-//    with HistParams[i] do
-//    begin
-//      SortMassByValue(AllValMass); // Отсортируем массивы
-//
-//      GroupDiap := (AllMaxVal-AllMinVal)/NGroups; // Диапазон группы
-//
-//      SetLength(Group, NGroups);
-//      for m := 0 to Length(Group)-1 do            //
-//      begin                                       //
-//        Group[m].Num := 0;                        //
-//        Group[m].Min := AllMinVal+GroupDiap*m;    // Создадим
-//        if m < Length(Group)-1 then               // группы
-//          Group[m].Max := Group[m].Min+GroupDiap  // для
-//        else                                      // гистограмм
-//          Group[m].Max := AllMaxVal;              //
-//      end;                                        //
-//
-//      Nm := 0;                                              //
-//      for m := 0 to Length(AllValMass)-1 do                 //
-//      begin                                                 // Распределим
-//        if AllValMass[m] > Group[Nm].Max then               // измерения
-//          while (AllValMass[m] > Group[Nm].Max) do Inc(Nm); // по
-//                                                            // группам
-//        Inc(Group[Nm].Num);                                 //
-//      end;                                                  //
-//    end;                                                    //
-//
-//  Chart[0] := Workbook1.ActiveSheet.ChartObjects(1);
-//
-//  Cell1 := WorkBook1.ActiveSheet.Cells[2, 1];
-//  Cell2 := WorkBook1.ActiveSheet.Cells[23, 12];
-//  Range1 := WorkBook1.ActiveSheet.Range[Cell1, Cell2];
-//
-//  for i := 0 to Length(HistParams)-1 do
-//    with HistParams[i] do
-//    begin
-//      WorkBook1.ActiveSheet.Cells[1+25*i, 6] := Name;
-//
-//      if i > 0 then
-//      begin
-//        Range1.Copy(WorkBook1.ActiveSheet.Cells[2+25*i, 1]); // Скопируем чарт
-//
-//        Chart[i] := Workbook1.ActiveSheet.ChartObjects(i+1);
-//      end;
-//
-//      for m := 0 to Length(Group)-1 do
-//      begin
-//        WorkBook1.ActiveSheet.Cells[2+m, 16+i*3] := FormatFloat('0.000',Group[m].Min)+'-'+FormatFloat('0.000',Group[m].Max);
-//        WorkBook1.ActiveSheet.Cells[2+m, 17+i*3] := Group[m].Num;
-//      end;
-//
-//      Cell1 := WorkBook1.ActiveSheet.Cells[2, 16+i*3];           //
-//      Cell2 := WorkBook1.ActiveSheet.Cells[2+NGroups-1, 17+i*3]; // Укажем
-//      Range2 := WorkBook1.ActiveSheet.Range[Cell1, Cell2];       // данные
-//      Chart[i].Chart.SetSourceData(Range2);                      //
-//    end;
 
 ////////////////////////////////////////////////////////////////////////////////
 //////////////////////////// * Лист "Карта обхода" * ///////////////////////////
@@ -4835,7 +4661,8 @@ begin                                                                           
 ////////////////////////////////////////////////////////////////////////////////
 
   XLSfName := ChangeFileExt(LfName, '')+'.xlsx';
-  Workbook1.SaveAs(GetFreeFileName(XLSfName));
+  XLSfName := GetFreeFileName(XLSfName);
+  Workbook1.SaveAs(XLSfName);
 
   if Assigned(OnEvent) then OnEvent(evCreate, '-------------------------------------------');
   if Assigned(OnEvent) then OnEvent(evCreate, 'Создан файл: '+ExtractFileName(XLSfName)); // Пошлем сообщение о создании файла
